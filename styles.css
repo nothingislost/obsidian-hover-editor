@@ -1,0 +1,18 @@
+.popover.hover-popover .workspace-leaf,
+.popover.hover-popover .workspace-split {
+  height: 100%;
+  width: 100%;
+  min-height: 40vh;
+}
+
+.popover.hover-popover {
+  height: 40vh;
+  min-height: 40vh;
+  max-height: unset;
+  resize: both;
+}
+
+.popover.hover-popover .view-header-icon {
+  /* otherwise you can drag the leaf into the normal workspace */
+  display: none;
+}
