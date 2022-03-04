@@ -1,8 +1,9 @@
 import { App, HoverPopover, WorkspaceLeaf } from "obsidian";
-import interact from "interactjs";
+import { Interactable } from "@interactjs/types";
 
 export class HoverLeaf extends WorkspaceLeaf {
   popover: HoverPopover;
+  interact: Interactable;
 
   constructor(app: App) {
     // @ts-ignore

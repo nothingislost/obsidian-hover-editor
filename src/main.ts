@@ -2,6 +2,7 @@ import { around } from "monkey-around";
 import { HoverParent, HoverPopover, parseLinktext, Plugin, PopoverState, WorkspaceSplit } from "obsidian";
 import { HoverLeaf } from "./leaf";
 import interact from "interactjs";
+import { InteractEvent } from "@interactjs/types";
 
 declare module "obsidian" {
   interface App {
@@ -12,6 +13,9 @@ declare module "obsidian" {
   interface WorkspaceSplit {
     insertChild(index: number, leaf: WorkspaceLeaf, resize?: boolean): void;
     containerEl: HTMLElement;
+  }
+  interface View {
+    iconEl: HTMLElement;
   }
   enum PopoverState {
     Showing,
@@ -83,7 +87,7 @@ export default class ObsidianHoverEditor extends Plugin {
                 hoverEl.appendChild(split.containerEl);
                 await leaf.openFile(tFile);
                 // shed the default event handler
-                let clone = leaf.view.iconEl.cloneNode(true);
+                let clone = leaf.view.iconEl.cloneNode(true) as HTMLElement;
                 clone.addClass("draggable");
                 leaf.view.iconEl.replaceWith(clone);
                 leaf.interact = interact(hoverEl).draggable({
@@ -129,16 +133,16 @@ export default class ObsidianHoverEditor extends Plugin {
   }
 }
 
-function dragMoveListener(event) {
-  var target = event.target;
+function dragMoveListener(event: InteractEvent) {
+  var target = event.target as HTMLElement;
   // keep the dragged position in the data-x/data-y attributes
-  var x = (parseFloat(target.getAttribute("data-x")) || 0) + event.dx;
-  var y = (parseFloat(target.getAttribute("data-y")) || 0) + event.dy;
+  let x = (parseFloat(target.getAttribute("data-x")) || 0) + event.dx;
+  let y = (parseFloat(target.getAttribute("data-y")) || 0) + event.dy;
 
   // translate the element
   target.style.transform = "translate(" + x + "px, " + y + "px)";
 
   // update the posiion attributes
-  target.setAttribute("data-x", x);
-  target.setAttribute("data-y", y);
+  target.setAttribute("data-x", String(x));
+  target.setAttribute("data-y", String(y));
 }
