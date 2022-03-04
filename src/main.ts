@@ -1,11 +1,6 @@
 import { around } from "monkey-around";
-import {
-  HoverParent,
-  HoverPopover, parseLinktext,
-  Plugin,
-  PopoverState, WorkspaceLeaf,
-  WorkspaceSplit
-} from "obsidian";
+import { HoverParent, HoverPopover, parseLinktext, Plugin, PopoverState, WorkspaceSplit } from "obsidian";
+import { HoverLeaf } from "./leaf";
 
 declare module "obsidian" {
   interface App {
@@ -28,6 +23,7 @@ declare module "obsidian" {
     hoverEl: HTMLElement;
     position(pos?: Pos): void;
     hide(): void;
+    explicitClose?: boolean;
   }
   interface Pos {
     x: number;
@@ -42,6 +38,7 @@ export default class ObsidianHoverEditor extends Plugin {
   async onload() {
     let InternalPlugins = this.app.internalPlugins.plugins["page-preview"].instance.constructor;
     let plugin = this;
+
     this.patchUninstaller = around(InternalPlugins.prototype, {
       onLinkHover(old: any) {
         return function (
@@ -52,7 +49,7 @@ export default class ObsidianHoverEditor extends Plugin {
           state: unknown,
           ...args: any[]
         ) {
-          var popover = parent.hoverPopover;
+          let popover = parent.hoverPopover;
           if (!(popover && popover.state !== PopoverState.Hidden && popover.targetEl === targetEl)) {
             popover = new HoverPopover(parent, targetEl);
             setTimeout(async () => {
@@ -65,17 +62,25 @@ export default class ObsidianHoverEditor extends Plugin {
                 let link = parseLinktext(linkText);
                 if (!link.path.match(/\.[a-zA-Z0-9]+$/)) link.path = link.path + ".md";
 
-                let _path = this.app.metadataCache.getFirstLinkpathDest(link.path, path);
+                let tFile = this.app.metadataCache.getFirstLinkpathDest(link.path, path);
+
+                if (!tFile?.path) {
+                  popover.hide();
+                  return;
+                }
 
                 //@ts-ignore the official API has no contructor for WorkspaceSplit
                 let split = new WorkspaceSplit(plugin.app.workspace, "horizontal");
 
                 //@ts-ignore the official API has no contructor for WorkspaceLeaf
-                let leaf = (popover.leaf = new WorkspaceLeaf(this.app));
+                let leaf = new HoverLeaf(this.app);
 
+                leaf.popover = popover;
                 split.insertChild(0, leaf);
                 hoverEl.appendChild(split.containerEl);
-                await leaf.openFile(_path);
+                await leaf.openFile(tFile);
+                // enable this and take a heap dump to look for leaks
+                // leaf.view.memLeak = new Uint8Array(1024*1024*100);
               }
             }, 100);
           }
@@ -86,10 +91,10 @@ export default class ObsidianHoverEditor extends Plugin {
     this.patchUninstaller2 = around(HoverPopover.prototype, {
       hide(old: any) {
         return function (...args) {
-          if (this.onHover) {
-            return;
-          } else {
-            this.leaf && this.leaf.detach();
+          console.log("hide");
+          // prevent the popover from being closed unless closed using the leaf close button
+          // TODO: stop the eventListeners from constantly calling hide();
+          if (this.explicitClose) {
             const result = old.call(this, ...args);
             return result;
           }
