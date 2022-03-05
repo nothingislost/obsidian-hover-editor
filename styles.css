@@ -9,10 +9,46 @@
   height: 40vh;
   min-height: 40vh;
   max-height: unset;
-  resize: both;
 }
 
-.popover.hover-popover .view-header-icon {
-  /* otherwise you can drag the leaf into the normal workspace */
+.popover.hover-popover.is-active {
+  z-index: 31;
+}
+
+.popover.hover-popover[style*="height"],
+.popover.hover-popover[style*="width"] {
+  min-height: 36px;
+}
+
+.popover.hover-popover .resize-handle {
+  position: absolute;
+  padding: 4px;
+}
+
+.popover.hover-popover .resize-handle.bottom-left {
+  bottom: 0;
+  left: 0;
+}
+
+.popover.hover-popover .resize-handle.bottom-right {
+  bottom: 0;
+  right: 0;
+}
+
+.popover.hover-popover .resize-handle.top-left {
+  top: 0;
+  left: 0;
+}
+
+.popover.hover-popover .resize-handle.top-right {
+  top: 0;
+  right: 0;
+}
+
+.popover.hover-popover .workspace-leaf-resize-handle {
   display: none;
+}
+
+body.is-dragging-popover .tooltip {
+  opacity: 0;
 }
