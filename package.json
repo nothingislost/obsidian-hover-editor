@@ -1,6 +1,6 @@
 {
   "name": "obsidian-hover-editor",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Transform the Page Preview hover into a working editor instance",
   "main": "main.js",
   "scripts": {
@@ -25,5 +25,12 @@
     "typescript": "4.4.4"
   },
   "dependencies": {
+    "@interactjs/actions": "^1.10.11",
+    "@interactjs/auto-start": "^1.10.11",
+    "@interactjs/core": "^1.10.11",
+    "@interactjs/inertia": "^1.10.11",
+    "@interactjs/interact": "^1.10.11",
+    "@interactjs/modifiers": "^1.10.11",
+    "@interactjs/reflow": "^1.10.11"
   }
 }
