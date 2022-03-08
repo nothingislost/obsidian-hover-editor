@@ -26,6 +26,10 @@ I will attempt to keep this plugin working across Obsidian updates but my goal i
 - When hovering a link containing header or block ref, the editor will open and auto scroll to the ref location
 - When multiple popovers are active and on top of each other, the currently active popover will remain on top
 
+### Demo
+
+https://user-images.githubusercontent.com/89109712/157270975-4d647b8c-2257-437a-8b93-d7a3f8bdc6db.mp4
+
 ### Acknowledgments
 
 Thanks to murf, liam, obadiahcruz, and javalent for the early testing and feedback
