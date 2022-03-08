@@ -33,8 +33,8 @@ declare module "obsidian" {
     dom: HTMLElement;
   }
   interface EphemeralState {
-    focus: Boolean;
-    subpath: string;
+    focus?: Boolean;
+    subpath?: string;
     line?: number;
     startLoc?: Loc;
     endLoc?: Loc;

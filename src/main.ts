@@ -141,7 +141,7 @@ export default class HoverEditorPlugin extends Plugin {
     }
   ) {
     let subpath = resolveSubpath(this.app.metadataCache.getFileCache(file), link?.subpath);
-    let eState: EphemeralState = { focus: true, subpath: link?.subpath };
+    let eState: EphemeralState = { subpath: link?.subpath };
     if (subpath) {
       eState.line = subpath.start.line;
       eState.startLoc = subpath.start;
@@ -197,130 +197,142 @@ async function onLinkHover(
   }
 
   // setTimeout(async () => {
-    let link = parseLinktext(linkText);
-  
-    let tFile = link ? this.app.metadataCache.getFirstLinkpathDest(link.path, path) : undefined;
+  let link = parseLinktext(linkText);
 
-    if (!tFile?.path) {
-      return old.call(this, parent, targetEl, linkText, path, oldState, ...args);
-    }
+  let tFile = link ? this.app.metadataCache.getFirstLinkpathDest(link.path, path) : undefined;
 
-    let popover = new HoverEditor(parent, targetEl);
+  if (!tFile?.path) {
+    return old.call(this, parent, targetEl, linkText, path, oldState, ...args);
+  }
 
-    //@ts-ignore the official API has no contructor for WorkspaceSplit
-    let split = new WorkspaceSplit(plugin.app.workspace, "horizontal");
+  let popover = new HoverEditor(parent, targetEl);
 
-    //@ts-ignore the official API has no contructor for WorkspaceLeaf
-    let leaf = new HoverLeaf(this.app);
+  //@ts-ignore the official API has no contructor for WorkspaceSplit
+  let split = new WorkspaceSplit(plugin.app.workspace, "horizontal");
 
-    split.insertChild(0, leaf);
+  //@ts-ignore the official API has no contructor for WorkspaceLeaf
+  let leaf = new HoverLeaf(this.app);
 
-    // leaf.id = genId(4);
-    // console.log(`creating leaf: ${leaf.id}`);
+  split.insertChild(0, leaf);
 
-    leaf.popover = popover;
-    popover.leaf = leaf;
+  // leaf.id = genId(4);
+  // console.log(`creating leaf: ${leaf.id}`);
 
-    let { hoverEl } = popover;
-    hoverEl.appendChild(split.containerEl);
-    createResizeHandles(hoverEl);
-    let pinEl = addPinButton(popover);
+  leaf.popover = popover;
+  popover.leaf = leaf;
 
-    let eState = plugin.buildEphemeralState(tFile, link);
-    let parentMode = parent?.view?.getMode ? parent.view.getMode() : "preview";
-    let state = plugin.buildState(parentMode, eState);
+  let { hoverEl } = popover;
+  hoverEl.appendChild(split.containerEl);
+  createResizeHandles(hoverEl);
+  let pinEl = addPinButton(popover);
 
-    await leaf.openFile(tFile, state);
+  let eState = plugin.buildEphemeralState(tFile, link);
+  let parentMode = parent?.view?.getMode ? parent.view.getMode() : "preview";
+  let state = plugin.buildState(parentMode, eState);
 
-    leaf.view.iconEl.replaceWith(pinEl);
+  await leaf.openFile(tFile, state);
 
-    let { appContainerEl } = plugin.app.dom;
+  // TODO: Improve this logic which forces the popover to focus even when cycling through popover panes
+  // without this, if you rapdidly open/close popovers, the leaf onHide logic will set the focus back
+  // to the previous document
+  setTimeout(() => {
+    plugin.app.workspace.setActiveLeaf(leaf, false, true);
+  }, 200);
 
+  // TODO: Improve this logic which exists to scroll to header/block refs when in source mode
+  if (state.state.mode === "source") {
+    setTimeout(() => {
+      leaf.view?.setEphemeralState(eState);
+    }, 400);
+  }
 
+  leaf.view.iconEl.replaceWith(pinEl);
 
-    let _interact = (leaf.interact = interact(hoverEl)
-      .preventDefault("always")
+  let { appContainerEl } = plugin.app.dom;
 
-      .on("doubletap", onDoubleTap)
+  let _interact = (leaf.interact = interact(hoverEl)
+    .preventDefault("always")
 
-      .draggable({
-        // inertiajs has a core lib memory leak currently. leave disabled
-        // inertia: false,
-        modifiers: [
-          interact.modifiers.restrictRect({
-            restriction: appContainerEl,
-            endOnly: true,
-          }),
-        ],
-        allowFrom: ".top",
+    .on("doubletap", onDoubleTap)
 
-        listeners: {
-          start(event: DragEvent) {
-            popover.isPinned = true;
-            pinEl.toggleClass("is-active", true);
-          },
-          move: dragMoveListener,
-        },
-      })
+    .draggable({
+      // inertiajs has a core lib memory leak currently. leave disabled
+      // inertia: false,
+      modifiers: [
+        interact.modifiers.restrictRect({
+          restriction: appContainerEl,
+          endOnly: true,
+        }),
+      ],
+      allowFrom: ".top",
 
-      .resizable({
-        edges: {
-          top: ".top-left, .top-right",
-          left: ".top-left, .bottom-left",
-          bottom: ".bottom-left, .bottom-right",
-          right: ".top-right, .bottom-right",
-        },
-        listeners: {
-          start(event: ResizeEvent) {
-            let viewEl = event.target.parentElement as HTMLElement;
-            viewEl.style.removeProperty("max-height");
-            popover.isPinned = true;
-            pinEl.toggleClass("is-active", true);
-          },
-          move: function (event: ResizeEvent) {
-            let { x, y } = event.target.dataset;
-
-            x = String((parseFloat(x) || 0) + event.deltaRect.left);
-            y = String((parseFloat(y) || 0) + event.deltaRect.top);
-
-            Object.assign(event.target.style, {
-              width: `${event.rect.width}px`,
-              height: `${event.rect.height}px`,
-              transform: `translate(${x}px, ${y}px)`,
-            });
-
-            Object.assign(event.target.dataset, { x, y });
-          },
-        },
-      }));
-
-      function onDoubleTap(event: InteractEvent) {
-        if (event.target.hasClass("drag-handle")) {
-          event.preventDefault();
+      listeners: {
+        start(event: DragEvent) {
           popover.isPinned = true;
           pinEl.toggleClass("is-active", true);
-          let viewEl = event.target.parentElement as HTMLElement;
-          let viewHeader = viewEl.querySelector(".view-header") as HTMLElement;
-          let headerHeight = viewHeader.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
-          if (!viewEl.style.maxHeight) {
-            viewEl.style.minHeight = headerHeight + "px";
-            viewEl.style.maxHeight = headerHeight + "px";
-          } else {
-            viewEl.style.removeProperty("max-height");
-          }
-          _interact.reflow({ name: "drag", axis: "xy" });
-        }
-      }
+        },
+        move: dragMoveListener,
+      },
+    })
 
-    // enable this and take a heap dump to look for leaks
-    // // @ts-ignore
-    // hoverEl.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
-    // // @ts-ignore
-    // popover.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
-    // // @ts-ignore
-    // leaf.leafMemLeak = new Uint8Array(1024 * 1024 * 10);
-    // // @ts-ignore
-    // leaf.view.leafViewMemLeak = new Uint8Array(1024 * 1024 * 10);
+    .resizable({
+      edges: {
+        top: ".top-left, .top-right",
+        left: ".top-left, .bottom-left",
+        bottom: ".bottom-left, .bottom-right",
+        right: ".top-right, .bottom-right",
+      },
+      listeners: {
+        start(event: ResizeEvent) {
+          let viewEl = event.target.parentElement as HTMLElement;
+          viewEl.style.removeProperty("max-height");
+          popover.isPinned = true;
+          pinEl.toggleClass("is-active", true);
+        },
+        move: function (event: ResizeEvent) {
+          let { x, y } = event.target.dataset;
+
+          x = String((parseFloat(x) || 0) + event.deltaRect.left);
+          y = String((parseFloat(y) || 0) + event.deltaRect.top);
+
+          Object.assign(event.target.style, {
+            width: `${event.rect.width}px`,
+            height: `${event.rect.height}px`,
+            transform: `translate(${x}px, ${y}px)`,
+          });
+
+          Object.assign(event.target.dataset, { x, y });
+        },
+      },
+    }));
+
+  function onDoubleTap(event: InteractEvent) {
+    if (event.target.hasClass("drag-handle")) {
+      event.preventDefault();
+      popover.isPinned = true;
+      pinEl.toggleClass("is-active", true);
+      let viewEl = event.target.parentElement as HTMLElement;
+      let viewHeader = viewEl.querySelector(".view-header") as HTMLElement;
+      let headerHeight = viewHeader.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
+      if (!viewEl.style.maxHeight) {
+        viewEl.style.minHeight = headerHeight + "px";
+        viewEl.style.maxHeight = headerHeight + "px";
+      } else {
+        viewEl.style.removeProperty("max-height");
+      }
+      _interact.reflow({ name: "drag", axis: "xy" });
+    }
+  }
+
+  // enable this and take a heap dump to look for leaks
+  // // @ts-ignore
+  // hoverEl.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
+  // // @ts-ignore
+  // popover.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
+  // // @ts-ignore
+  // leaf.leafMemLeak = new Uint8Array(1024 * 1024 * 10);
+  // // @ts-ignore
+  // leaf.view.leafViewMemLeak = new Uint8Array(1024 * 1024 * 10);
   // }, 100);
 }
 
@@ -352,7 +364,3 @@ export function genId(size: number) {
 
   return e.join("");
 }
-
-
-
-
