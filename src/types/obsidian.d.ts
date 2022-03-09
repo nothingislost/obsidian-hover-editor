@@ -17,6 +17,9 @@ declare module "obsidian" {
     insertChild(index: number, leaf: WorkspaceLeaf, resize?: boolean): void;
     containerEl: HTMLElement;
   }
+  interface Workspace {
+    recordHistory(leaf: WorkspaceLeaf, pushHistory: boolean): void;
+  }
   interface View {
     iconEl: HTMLElement;
     setMode(mode: MarkdownSubView): Promise<void>;

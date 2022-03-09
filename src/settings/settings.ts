@@ -4,11 +4,15 @@ import HoverEditorPlugin from "../main";
 export interface HoverEditorSettings {
   defaultMode: string;
   autoPin: string;
+  triggerDelay: number;
+  autoFocus: boolean;
 }
 
 export const DEFAULT_SETTINGS: HoverEditorSettings = {
   defaultMode: "preview",
   autoPin: "onMove",
+  triggerDelay: 200,
+  autoFocus: true,
 };
 
 export const modeOptions = {
@@ -19,7 +23,6 @@ export const modeOptions = {
 
 export const pinOptions = {
   onMove: "On drag or resize",
-  onClick: "On drag, resize, or click",
   always: "Always",
 };
 
@@ -38,7 +41,7 @@ export class SettingTab extends PluginSettingTab {
 
     containerEl.empty();
 
-    new Setting(containerEl).setName("Default hover editor mode").addDropdown(cb => {
+    new Setting(containerEl).setName("Default Mode").addDropdown(cb => {
       cb.addOptions(modeOptions);
       cb.setValue(this.plugin.settings.defaultMode);
       cb.onChange(async value => {
@@ -47,13 +50,39 @@ export class SettingTab extends PluginSettingTab {
       });
     });
 
-    new Setting(containerEl).setName("Auto pin popovers").addDropdown(cb => {
-      cb.addOptions(pinOptions);
-      cb.setValue(this.plugin.settings.autoPin);
-      cb.onChange(async value => {
-        this.plugin.settings.autoPin = value;
-        await this.plugin.saveSettings();
+    new Setting(containerEl)
+      .setName("Auto Pin")
+      .setDesc("Set the hover editor as the active pane when opened")
+      .addDropdown(cb => {
+        cb.addOptions(pinOptions);
+        cb.setValue(this.plugin.settings.autoPin);
+        cb.onChange(async value => {
+          this.plugin.settings.autoPin = value;
+          await this.plugin.saveSettings();
+        });
       });
-    });
+
+    new Setting(containerEl)
+      .setName("Auto Focus")
+      .setDesc("Set the hover editor as the active pane when opened")
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.autoFocus).onChange(value => {
+          this.plugin.settings.autoFocus = value;
+          this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName("Hover Trigger Delay (ms)")
+      .setDesc("How long to wait before triggering a Hover Editor when hovering over a link")
+      .addText(textfield => {
+        textfield.setPlaceholder(String(200));
+        textfield.inputEl.type = "number";
+        textfield.setValue(String(this.plugin.settings.triggerDelay));
+        textfield.onChange(async value => {
+          this.plugin.settings.triggerDelay = Number(value);
+          this.plugin.saveSettings();
+        });
+      });
   }
 }

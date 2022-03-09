@@ -73,13 +73,14 @@ export class HoverLeaf extends WorkspaceLeaf {
     let parentMode = this.hoverParent?.view?.getMode ? this.hoverParent.view.getMode() : "preview";
     let state = this.buildState(parentMode, eState);
     await this.openFile(file, state);
+    this.view.iconEl.replaceWith(this.pinEl);
 
     // TODO: Improve this logic which forces the popover to focus even when cycling through popover panes
     // without this, if you rapdidly open/close popovers, the leaf onHide logic will set the focus back
     // to the previous document
-    setTimeout(() => {
-      this.app.workspace.setActiveLeaf(this, false, true);
-    }, 200);
+    // setTimeout(() => {
+    //   this.app.workspace.setActiveLeaf(this, false, true);
+    // }, 200);
 
     // TODO: Improve this logic which exists to scroll to header/block refs when in source mode
     if (state.state.mode === "source") {
@@ -88,7 +89,6 @@ export class HoverLeaf extends WorkspaceLeaf {
       }, 400);
     }
 
-    this.view.iconEl.replaceWith(this.pinEl);
     return true;
   }
 
@@ -96,7 +96,7 @@ export class HoverLeaf extends WorkspaceLeaf {
     let defaultMode = this.plugin.settings.defaultMode;
     let mode = defaultMode === "match" ? parentMode : this.plugin.settings.defaultMode;
     return {
-      active: true,
+      active: this.plugin.settings.autoFocus,
       state: { mode: mode },
       eState: eState,
     };
@@ -130,24 +130,13 @@ export class HoverLeaf extends WorkspaceLeaf {
   detach() {
     this.app.workspace.activeLeaf = null;
     super.detach();
-    // TODO: Research this possible memory leak in CodeMirror6 core
+    // TODO: Research this possible scrollTargets memory leak in CodeMirror6 core
     // @ts-ignore
     if (this.view?.editMode?.cm?.observer?.scrollTargets) this.view.editMode.cm.observer.scrollTargets = null;
     if (this.popover) {
-      // console.log(`detaching leaf: ${this.popover.leaf.id}`);
       this.popover.leaf = null;
       this.popover?.explicitHide && this.popover.explicitHide();
       this.popover = null;
-      this.interact?.unset && this.interact.unset();
-      try {
-        this.interact =
-          (this.interact as any)._doc =
-          (this.interact as any)._context =
-          (this.interact as any).target =
-          (this.interact as any)._scopeEvents =
-          (this.interact as any)._win =
-            null;
-      } catch {}
     }
   }
 }

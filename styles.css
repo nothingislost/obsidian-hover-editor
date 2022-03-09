@@ -89,3 +89,7 @@ body.is-dragging-popover .tooltip {
 .mod-pin-popover.is-active > svg {
   transform: unset;
 }
+
+.popover.hover-popover .view-header-icon {
+  visibility: hidden;
+}

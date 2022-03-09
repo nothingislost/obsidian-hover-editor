@@ -7,7 +7,10 @@ import {
   MenuItem,
   Notice,
   Plugin,
+  PopoverState,
+  SplitDirection,
   TAbstractFile,
+  Workspace,
   WorkspaceLeaf,
   WorkspaceSplit,
 } from "obsidian";
@@ -34,10 +37,40 @@ export default class HoverEditorPlugin extends Plugin {
       this.registerActivePopoverHandler();
       this.registerContextMenuHandler();
       this.acquireActivePopoverArray();
+      this.patchRecordHistory();
       this.patchSlidingPanes();
 
       this.patchLinkHover();
     });
+  }
+
+  patchRecordHistory() {
+    let uninstaller = around(Workspace.prototype, {
+      recordHistory(old: any) {
+        return function (leaf: WorkspaceLeaf, pushHistory: boolean, ...args: any[]) {
+          if (leaf instanceof HoverLeaf) return;
+          return old.call(this, leaf, pushHistory, ...args);
+        };
+      },
+      trigger(old: any) {
+        return function (event: string, ...args: any[]) {
+          if (event === "file-open" && this.activeLeaf instanceof HoverLeaf) {
+            return;
+          }
+          return old.call(this, event, ...args);
+        };
+      },
+      splitActiveLeaf(old: any) {
+        return function (direction?: SplitDirection, ...args: any[]) {
+          let currentLeaf = this.activeLeaf;
+          if (currentLeaf instanceof HoverLeaf) {
+            this.activeLeaf = null;
+          }
+          return old.call(this, direction, ...args);
+        };
+      },
+    });
+    this.register(uninstaller);
   }
 
   patchSlidingPanes() {
@@ -69,7 +102,7 @@ export default class HoverEditorPlugin extends Plugin {
           state: unknown,
           ...args: any[]
         ) {
-          delayedOnLinkHover(plugin, old, parent, targetEl, linkText, path, state, ...args);
+          onLinkHover(plugin, old, parent, targetEl, linkText, path, state, ...args);
         };
       },
     });
@@ -104,8 +137,8 @@ export default class HoverEditorPlugin extends Plugin {
   registerActivePopoverHandler() {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", leaf => {
+        document.querySelector("body > .popover.hover-popover.is-active")?.removeClass("is-active");
         if (leaf instanceof HoverLeaf) {
-          document.querySelector("body > .popover.hover-popover.is-active")?.removeClass("is-active");
           leaf.popover.hoverEl.addClass("is-active");
         }
       })
@@ -149,9 +182,7 @@ export default class HoverEditorPlugin extends Plugin {
   }
 }
 
-let delayedOnLinkHover = debounce(onLinkHover, 400, true);
-
-async function onLinkHover(
+function onLinkHover(
   plugin: HoverEditorPlugin,
   old: Function,
   parent: HoverEditorParent,
@@ -161,33 +192,43 @@ async function onLinkHover(
   oldState: unknown,
   ...args: any[]
 ) {
-  if (parent.hoverPopover) {
-    return old.call(this, parent, targetEl, linkText, path, oldState, ...args);
+  let hoverPopover = parent.hoverPopover;
+  if (!(hoverPopover && hoverPopover.state !== PopoverState.Hidden && hoverPopover.targetEl === targetEl)) {
+    hoverPopover = new HoverEditor(parent, targetEl, plugin);
+
+    setTimeout(async () => {
+      if (hoverPopover.state == PopoverState.Hidden) {
+        return;
+      }
+
+      //@ts-ignore the official API has no contructor for WorkspaceSplit
+      let split = new WorkspaceSplit(plugin.app.workspace, "horizontal");
+
+      let leaf = new HoverLeaf(this.app, plugin, parent);
+
+      hoverPopover.attachLeaf(leaf, split);
+
+      let result = await leaf.openLink(linkText, path);
+
+      if (!result) {
+        leaf.detach();
+        return old.call(this, parent, targetEl, linkText, path, oldState, ...args);
+      }
+
+      if (hoverPopover.state == PopoverState.Shown) {
+        hoverPopover.position();
+      }
+      // enable this and take heap dumps to check for leaks
+      // // @ts-ignore
+      // hoverPopover.hoverEl.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
+      // // @ts-ignore
+      // hoverPopover.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
+      // // @ts-ignore
+      // leaf.leafMemLeak = new Uint8Array(1024 * 1024 * 10);
+      // // @ts-ignore
+      // leaf.view.leafViewMemLeak = new Uint8Array(1024 * 1024 * 10);
+    }, plugin.settings.triggerDelay);
   }
-
-  //@ts-ignore the official API has no contructor for WorkspaceSplit
-  let split = new WorkspaceSplit(plugin.app.workspace, "horizontal");
-
-  let leaf = new HoverLeaf(this.app, plugin, parent);
-
-  let result = await leaf.openLink(linkText, path);
-
-  if (!result) {
-    leaf.detach();
-    return old.call(this, parent, targetEl, linkText, path, oldState, ...args);
-  }
-
-  let popover = new HoverEditor(parent, targetEl, this.app, leaf, split);
-
-  // enable this and take a heap dump to look for leaks
-  // // @ts-ignore
-  // popover.hoverEl.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
-  // // @ts-ignore
-  // popover.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
-  // // @ts-ignore
-  // leaf.leafMemLeak = new Uint8Array(1024 * 1024 * 10);
-  // // @ts-ignore
-  // leaf.view.leafViewMemLeak = new Uint8Array(1024 * 1024 * 10);
 }
 
 export function genId(size: number) {

@@ -1,7 +1,8 @@
 import { Interactable, InteractEvent, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
-import { App, HoverParent, HoverPopover, WorkspaceSplit } from "obsidian";
+import { App, HoverParent, HoverPopover, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import { HoverLeaf } from "./leaf";
+import HoverEditorPlugin from "./main";
 
 export class HoverEditor extends HoverPopover {
   explicitClose: boolean;
@@ -13,32 +14,36 @@ export class HoverEditor extends HoverPopover {
   isResizing: boolean;
   isMenuActive: boolean;
   parent: HoverParent;
-  pinEl: HTMLElement;
   interact: Interactable;
-  app: App;
+  plugin: HoverEditorPlugin;
 
-  constructor(
-    parent: HoverParent,
-    targetEl: HTMLElement,
-    app: App,
-    leaf: HoverLeaf,
-    split: WorkspaceSplit,
-    waitTime?: number
-  ) {
+  constructor(parent: HoverParent, targetEl: HTMLElement, plugin: HoverEditorPlugin, waitTime?: number) {
     super(parent, targetEl, waitTime);
-    this.app = app;
-    this.leaf = leaf;
+    this.plugin = plugin;
     this.createResizeHandles();
-    this.leaf.isPinned = false;
+  }
+
+  attachLeaf(leaf: HoverLeaf, split: WorkspaceSplit) {
+    this.leaf = leaf;
+    this.leaf.togglePin(this.plugin.settings.autoPin === "always" ? true : false);
     this.leaf.popover = this;
-    this.registerInteract();
     split.insertChild(0, leaf);
     this.hoverEl.prepend(split.containerEl);
   }
 
-  onShow() {}
+  onShow() {
+    if (this.parent?.hoverPopover) {
+      this.parent.hoverPopover.hide();
+    }
+    this.parent.hoverPopover = this;
+    this.registerInteract();
+  }
 
-  onHide() {}
+  onHide() {
+    if (this.parent?.hoverPopover === this) {
+      this.parent.hoverPopover = null;
+    }
+  }
 
   shouldShow() {
     return this.shouldShowSelf() || this.shouldShowChild();
@@ -58,9 +63,9 @@ export class HoverEditor extends HoverPopover {
   }
 
   registerInteract() {
-    let { appContainerEl } = this.app.dom;
+    let { appContainerEl } = this.plugin.app.dom;
     let self = this;
-    let i = (this.leaf.interact = interact(this.hoverEl)
+    let i = interact(this.hoverEl)
       .preventDefault("always")
 
       .on("doubletap", this.onDoubleTap.bind(this))
@@ -112,7 +117,8 @@ export class HoverEditor extends HoverPopover {
             Object.assign(event.target.dataset, { x, y });
           },
         },
-      }));
+      });
+    this.interact = i;
   }
 
   createResizeHandles() {
@@ -122,8 +128,6 @@ export class HoverEditor extends HoverPopover {
     this.hoverEl.createDiv("resize-handle top-right");
     this.hoverEl.createDiv("drag-handle top");
   }
-
-  maybePin() {}
 
   onDoubleTap(event: InteractEvent) {
     if (event.target.hasClass("drag-handle")) {
@@ -138,7 +142,7 @@ export class HoverEditor extends HoverPopover {
       } else {
         viewEl.style.removeProperty("max-height");
       }
-      this.leaf.interact.reflow({ name: "drag", axis: "xy" });
+      this.interact.reflow({ name: "drag", axis: "xy" });
     }
   }
 
@@ -151,6 +155,16 @@ export class HoverEditor extends HoverPopover {
       } else {
         this.leaf = null;
         this.parent = null;
+        this.interact?.unset && this.interact.unset();
+        try {
+          this.interact =
+            (this.interact as any)._doc =
+            (this.interact as any)._context =
+            (this.interact as any).target =
+            (this.interact as any)._scopeEvents =
+            (this.interact as any)._win =
+              null;
+        } catch {}
         return super.hide();
       }
     }
