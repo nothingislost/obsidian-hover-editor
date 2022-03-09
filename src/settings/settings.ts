@@ -3,16 +3,24 @@ import HoverEditorPlugin from "../main";
 
 export interface HoverEditorSettings {
   defaultMode: string;
+  autoPin: string;
 }
 
 export const DEFAULT_SETTINGS: HoverEditorSettings = {
   defaultMode: "preview",
+  autoPin: "onMove",
 };
 
 export const modeOptions = {
   preview: "Reading view",
   source: "Editing view",
   match: "Match current view",
+};
+
+export const pinOptions = {
+  onMove: "On drag or resize",
+  onClick: "On drag, resize, or click",
+  always: "Always",
 };
 
 export class SettingTab extends PluginSettingTab {
@@ -34,7 +42,16 @@ export class SettingTab extends PluginSettingTab {
       cb.addOptions(modeOptions);
       cb.setValue(this.plugin.settings.defaultMode);
       cb.onChange(async value => {
-        (this.plugin.settings.defaultMode as any) = value;
+        this.plugin.settings.defaultMode = value;
+        await this.plugin.saveSettings();
+      });
+    });
+
+    new Setting(containerEl).setName("Auto pin popovers").addDropdown(cb => {
+      cb.addOptions(pinOptions);
+      cb.setValue(this.plugin.settings.autoPin);
+      cb.onChange(async value => {
+        this.plugin.settings.autoPin = value;
         await this.plugin.saveSettings();
       });
     });
