@@ -6,7 +6,7 @@ export interface HoverEditorSettings {
 }
 
 export const DEFAULT_SETTINGS: HoverEditorSettings = {
-  defaultMode: "reading",
+  defaultMode: "preview",
 };
 
 export const modeOptions = {

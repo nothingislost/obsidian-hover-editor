@@ -1,9 +1,15 @@
+import type { Plugin } from "obsidian";
 import { HoverEditor } from "../popover";
 
 declare module "obsidian" {
   interface App {
     internalPlugins: {
       plugins: Record<string, { _loaded: boolean; instance: { name: string; id: string } }>;
+    };
+    plugins: {
+      manifests: Record<string, PluginManifest>;
+      plugins: Record<string, Plugin>;
+      getPlugin(id: string): Plugin;
     };
     dom: { appContainerEl: HTMLElement };
   }

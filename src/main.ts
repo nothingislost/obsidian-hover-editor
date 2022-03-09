@@ -43,9 +43,26 @@ export default class HoverEditorPlugin extends Plugin {
       this.registerActivePopoverHandler();
       this.registerContextMenuHandler();
       this.acquireActivePopoverArray();
+      this.patchSlidingPanes();
 
       this.patchLinkHover();
     });
+  }
+
+  patchSlidingPanes() {
+    let SlidingPanesPlugin = this.app.plugins.plugins["sliding-panes-obsidian"]?.constructor;
+    if (SlidingPanesPlugin) {
+      let uninstaller = around(SlidingPanesPlugin.prototype, {
+        focusActiveLeaf(old: any) {
+          return function (...args: any[]) {
+            // sliding panes will try and make popovers part of the sliding area if we don't exclude them
+            if (this.app.workspace.activeLeaf instanceof HoverLeaf) return;
+            return old.call(this, ...args);
+          };
+        },
+      });
+      this.register(uninstaller);
+    }
   }
 
   patchLinkHover() {
