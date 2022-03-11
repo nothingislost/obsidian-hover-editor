@@ -59,14 +59,14 @@ export function onLinkHover(
       }
 
       // enable this and take heap dumps to check for leaks
-      // @ts-ignore
-      hoverPopover.hoverEl.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
-      // @ts-ignore
-      hoverPopover.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
-      // @ts-ignore
-      leaf.leafMemLeak = new Uint8Array(1024 * 1024 * 10);
-      // @ts-ignore
-      leaf.view.leafViewMemLeak = new Uint8Array(1024 * 1024 * 10);
+      // // @ts-ignore
+      // hoverPopover.hoverEl.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
+      // // @ts-ignore
+      // hoverPopover.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
+      // // @ts-ignore
+      // leaf.leafMemLeak = new Uint8Array(1024 * 1024 * 10);
+      // // @ts-ignore
+      // leaf.view.leafViewMemLeak = new Uint8Array(1024 * 1024 * 10);
     }, plugin.settings.triggerDelay);
   }
 }

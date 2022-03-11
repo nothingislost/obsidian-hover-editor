@@ -97,3 +97,16 @@ body.is-dragging-popover .tooltip {
 .popover.hover-popover .workspace-split > .workspace-leaf:last-child > .workspace-leaf-resize-handle {
   display: none;
 }
+
+.popover.hover-popover .empty-state-title,
+.popover.hover-popover .workspace-leaf-content[data-type="empty"] .view-header {
+  display: unset;
+}
+
+.popover.hover-popover .workspace-leaf-content[data-type="empty"] .view-header-icon {
+  display: none;
+}
+
+.popover.hover-popover .empty-state-title {
+  display: none;
+}
