@@ -139,6 +139,7 @@ export class HoverLeaf extends WorkspaceLeaf {
   ) {
     let subpath = resolveSubpath(this.app.metadataCache.getFileCache(file), link?.subpath);
     let eState: EphemeralState = { subpath: link?.subpath };
+    if (this.plugin.settings.autoFocus) eState.focus = true;
     if (subpath) {
       eState.line = subpath.start.line;
       eState.startLoc = subpath.start;
