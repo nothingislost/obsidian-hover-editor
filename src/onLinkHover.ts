@@ -31,7 +31,7 @@ export function onLinkHover(
       setTimeout(unlock, 1000);
     };
 
-    targetEl.addEventListener("mousedown", onClick, { signal: controller.signal });
+    targetEl?.addEventListener("mousedown", onClick, { signal: controller.signal });
 
     setTimeout(async () => {
       controller.abort(); // cancel the click handler
