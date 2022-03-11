@@ -3,11 +3,11 @@ import {
   debounce,
   HoverEditorParent,
   HoverPopover,
+  MarkdownView,
   Menu,
   MenuItem,
   Notice,
   Plugin,
-  PopoverState,
   SplitDirection,
   TAbstractFile,
   Workspace,
@@ -15,11 +15,12 @@ import {
   WorkspaceSplit,
 } from "obsidian";
 import { HoverLeaf } from "./leaf";
+import { onLinkHover } from "./onLinkHover";
 import { HoverEditor } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
 
 export default class HoverEditorPlugin extends Plugin {
-  activePopovers: HoverPopover[];
+  activePopovers: HoverEditor[];
   settings: HoverEditorSettings;
   settingsTab: SettingTab;
 
@@ -35,7 +36,9 @@ export default class HoverEditorPlugin extends Plugin {
         );
       }
       this.registerActivePopoverHandler();
+      this.registerViewportResizeHandler();
       this.registerContextMenuHandler();
+      this.registerCommands();
       this.acquireActivePopoverArray();
       this.patchRecordHistory();
       this.patchSlidingPanes();
@@ -48,7 +51,8 @@ export default class HoverEditorPlugin extends Plugin {
     let uninstaller = around(Workspace.prototype, {
       recordHistory(old: any) {
         return function (leaf: WorkspaceLeaf, pushHistory: boolean, ...args: any[]) {
-          if (leaf instanceof HoverLeaf) return;
+          let paneReliefLoaded = this.app.plugins.plugins["pane-relief"]?._loaded;
+          if (!paneReliefLoaded && leaf instanceof HoverLeaf) return;
           return old.call(this, leaf, pushHistory, ...args);
         };
       },
@@ -58,6 +62,17 @@ export default class HoverEditorPlugin extends Plugin {
             return;
           }
           return old.call(this, event, ...args);
+        };
+      },
+      createLeafBySplit(old: any) {
+        return function (leaf: WorkspaceLeaf, direction: string, hasChildren: boolean, ...args: any[]) {
+          if (leaf instanceof HoverLeaf) {
+            let newLeaf = new HoverLeaf(this.app, this, leaf.hoverParent);
+            this.splitLeaf(leaf, newLeaf, direction, hasChildren);
+            newLeaf.popover = leaf.popover;
+            return newLeaf;
+          }
+          return old.call(this, leaf, direction, hasChildren, ...args);
         };
       },
       splitActiveLeaf(old: any) {
@@ -145,6 +160,25 @@ export default class HoverEditorPlugin extends Plugin {
     );
   }
 
+  debouncedPopoverReflow = debounce(
+    () => {
+      this.activePopovers?.forEach(popover => {
+        popover.interact.reflow({ name: "drag", axis: "xy" });
+      });
+    },
+    100,
+    true
+  );
+
+  registerViewportResizeHandler() {
+    // we can't use the native obsidian onResize event because
+    // it triggers for WAY more than just a main window resize
+    window.addEventListener("resize", this.debouncedPopoverReflow);
+    this.register(() => {
+      window.removeEventListener("resize", this.debouncedPopoverReflow);
+    });
+  }
+
   acquireActivePopoverArray() {
     let plugin = this;
     // hack to get at the internal array that holds the active popover instances
@@ -162,6 +196,12 @@ export default class HoverEditorPlugin extends Plugin {
       },
     });
     this.register(uninstall);
+    // immediately spawn a popover so we don't leave the array hook in place for longer than needed
+    setTimeout(() => {
+      let popover = this.spawnPopover();
+      popover.shouldShowChild(); // this is what calls Array.some()
+      popover.explicitHide();
+    }, 100);
   }
 
   onunload(): void {
@@ -176,58 +216,78 @@ export default class HoverEditorPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
+  registerCommands() {
+    this.addCommand({
+      id: "open-new-popover",
+      name: "Open new popover",
+      checkCallback: (checking: boolean) => {
+        let activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!!activeView) {
+          if (!checking) {
+            let popover = this.spawnPopover();
+            popover.leaf.togglePin(true);
+          }
+          return true;
+        }
+        return false;
+      },
+    });
+    this.addCommand({
+      id: "open-link-in-new-popover",
+      name: "Open link under cursor in new popover",
+      checkCallback: (checking: boolean) => {
+        let activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!!activeView) {
+          if (!checking) {
+            let token = activeView.editor.getClickableTokenAt(activeView.editor.getCursor());
+            if (token?.type === "internal-link") {
+              let pos = activeView.editor.posToOffset(token.start);
+              let targetEl = activeView.editMode.cm.domAtPos(pos);
+              let popover = this.spawnPopover();
+              popover.leaf.togglePin(true);
+              popover.leaf.openLink(token.text, activeView.file.path);
+            }
+          }
+          return true;
+        }
+        return false;
+      },
+    });
+    this.addCommand({
+      id: "open-current-file-in-new-popover",
+      name: "Open current file in new popover",
+      checkCallback: (checking: boolean) => {
+        let activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!!activeView) {
+          if (!checking) {
+            let popover = this.spawnPopover();
+            popover.leaf.togglePin(true);
+            popover.leaf.openFile(activeView.file);
+          }
+          return true;
+        }
+        return false;
+      },
+    });
+  }
+
+  spawnPopover(initiatingEl?: HTMLElement) {
+    let parent = this.app.workspace.activeLeaf as unknown as HoverEditorParent;
+    if (!initiatingEl) initiatingEl = parent.containerEl;
+    let hoverPopover = new HoverEditor(parent, initiatingEl, this);
+
+    // @ts-ignore
+    let split = new WorkspaceSplit(this.app.workspace, "horizontal");
+
+    let leaf = new HoverLeaf(this.app, this, parent);
+
+    hoverPopover.attachLeaf(leaf, split);
+    return hoverPopover;
+  }
+
   registerSettingsTab() {
     this.settingsTab = new SettingTab(this.app, this);
     this.addSettingTab(this.settingsTab);
-  }
-}
-
-function onLinkHover(
-  plugin: HoverEditorPlugin,
-  old: Function,
-  parent: HoverEditorParent,
-  targetEl: HTMLElement,
-  linkText: string,
-  path: string,
-  oldState: unknown,
-  ...args: any[]
-) {
-  let hoverPopover = parent.hoverPopover;
-  if (!(hoverPopover && hoverPopover.state !== PopoverState.Hidden && hoverPopover.targetEl === targetEl)) {
-    hoverPopover = new HoverEditor(parent, targetEl, plugin);
-
-    setTimeout(async () => {
-      if (hoverPopover.state == PopoverState.Hidden) {
-        return;
-      }
-
-      //@ts-ignore the official API has no contructor for WorkspaceSplit
-      let split = new WorkspaceSplit(plugin.app.workspace, "horizontal");
-
-      let leaf = new HoverLeaf(this.app, plugin, parent);
-
-      hoverPopover.attachLeaf(leaf, split);
-
-      let result = await leaf.openLink(linkText, path);
-
-      if (!result) {
-        leaf.detach();
-        return old.call(this, parent, targetEl, linkText, path, oldState, ...args);
-      }
-
-      if (hoverPopover.state == PopoverState.Shown) {
-        hoverPopover.position();
-      }
-      // enable this and take heap dumps to check for leaks
-      // // @ts-ignore
-      // hoverPopover.hoverEl.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
-      // // @ts-ignore
-      // hoverPopover.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
-      // // @ts-ignore
-      // leaf.leafMemLeak = new Uint8Array(1024 * 1024 * 10);
-      // // @ts-ignore
-      // leaf.view.leafViewMemLeak = new Uint8Array(1024 * 1024 * 10);
-    }, plugin.settings.triggerDelay);
   }
 }
 

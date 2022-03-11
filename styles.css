@@ -20,6 +20,10 @@
   z-index: 31;
 }
 
+.popover.hover-popover.is-new {
+  z-index: 32;
+}
+
 .popover.hover-popover[style*="height"],
 .popover.hover-popover[style*="width"] {
   /* min-height: 36px; */
@@ -60,10 +64,6 @@
   cursor: grab;
 }
 
-.popover.hover-popover .workspace-leaf-resize-handle {
-  display: none;
-}
-
 body.is-dragging-popover .tooltip {
   opacity: 0;
 }
@@ -92,4 +92,8 @@ body.is-dragging-popover .tooltip {
 
 .popover.hover-popover .view-header-icon {
   visibility: hidden;
+}
+
+.popover.hover-popover .workspace-split > .workspace-leaf:last-child > .workspace-leaf-resize-handle {
+  display: none;
 }

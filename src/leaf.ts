@@ -3,6 +3,7 @@ import {
   App,
   EphemeralState,
   HoverEditorParent,
+  OpenViewState,
   parseLinktext,
   requireApiVersion,
   resolveSubpath,
@@ -65,6 +66,25 @@ export class HoverLeaf extends WorkspaceLeaf {
     this.isPinned = value;
   }
 
+  toggleMinimized(value?: boolean) {
+    let hoverEl = this.popover.hoverEl;
+
+    let viewHeader = this.view.headerEl;
+    let headerHeight = viewHeader.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
+
+    if (!hoverEl.style.maxHeight) {
+      this.plugin.settings.rollDown && expandContract(hoverEl, false);
+      hoverEl.style.minHeight = headerHeight + "px";
+      hoverEl.style.maxHeight = headerHeight + "px";
+      hoverEl.toggleClass("is-minimized", true);
+    } else {
+      hoverEl.style.removeProperty("max-height");
+      hoverEl.toggleClass("is-minimized", false);
+      this.plugin.settings.rollDown && expandContract(hoverEl, true);
+    }
+    this.popover.interact.reflow({ name: "drag", axis: "xy" });
+  }
+
   async openLink(linkText: string, sourcePath: string) {
     let file = this.resolveLink(linkText, sourcePath);
     if (!file) return false;
@@ -73,7 +93,6 @@ export class HoverLeaf extends WorkspaceLeaf {
     let parentMode = this.hoverParent?.view?.getMode ? this.hoverParent.view.getMode() : "preview";
     let state = this.buildState(parentMode, eState);
     await this.openFile(file, state);
-    this.view.iconEl.replaceWith(this.pinEl);
 
     // TODO: Improve this logic which forces the popover to focus even when cycling through popover panes
     // without this, if you rapdidly open/close popovers, the leaf onHide logic will set the focus back
@@ -90,6 +109,15 @@ export class HoverLeaf extends WorkspaceLeaf {
     }
 
     return true;
+  }
+
+  async openFile(file: TFile, openState?: OpenViewState) {
+    if (!openState) {
+      let parentMode = this.hoverParent?.view?.getMode ? this.hoverParent.view.getMode() : "preview";
+      openState = this.buildState(parentMode);
+    }
+    await super.openFile(file, openState);
+    this.view.iconEl.replaceWith(this.pinEl);
   }
 
   buildState(parentMode: string, eState?: EphemeralState) {
@@ -139,4 +167,14 @@ export class HoverLeaf extends WorkspaceLeaf {
       this.popover = null;
     }
   }
+}
+
+function expandContract(el: HTMLElement, expand: boolean) {
+  let contentHeight = (el.querySelector(".view-content") as HTMLElement).offsetHeight;
+  contentHeight = expand ? -contentHeight : contentHeight;
+  let x = parseFloat(el.getAttribute("data-x")) || 0;
+  let y = (parseFloat(el.getAttribute("data-y")) || 0) + contentHeight;
+
+  el.style.transform = "translate(" + x + "px, " + y + "px)";
+  el.setAttribute("data-y", String(y));
 }

@@ -1,6 +1,6 @@
 import { Interactable, InteractEvent, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
-import { App, HoverParent, HoverPopover, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
+import { HoverParent, HoverPopover, WorkspaceSplit } from "obsidian";
 import { HoverLeaf } from "./leaf";
 import HoverEditorPlugin from "./main";
 
@@ -16,6 +16,7 @@ export class HoverEditor extends HoverPopover {
   parent: HoverParent;
   interact: Interactable;
   plugin: HoverEditorPlugin;
+  lockedOut: boolean;
 
   constructor(parent: HoverParent, targetEl: HTMLElement, plugin: HoverEditorPlugin, waitTime?: number) {
     super(parent, targetEl, waitTime);
@@ -32,6 +33,14 @@ export class HoverEditor extends HoverPopover {
   }
 
   onShow() {
+    this.hoverEl.toggleClass("is-new", true);
+    document.body.addEventListener(
+      "click",
+      () => {
+        this.hoverEl.toggleClass("is-new", false);
+      },
+      { once: true, capture: true }
+    );
     if (this.parent?.hoverPopover) {
       this.parent.hoverPopover.hide();
     }
@@ -133,16 +142,7 @@ export class HoverEditor extends HoverPopover {
     if (event.target.hasClass("drag-handle")) {
       event.preventDefault();
       this.leaf.togglePin(true);
-      let viewEl = event.target.parentElement as HTMLElement;
-      let viewHeader = viewEl.querySelector(".view-header") as HTMLElement;
-      let headerHeight = viewHeader.getBoundingClientRect().bottom - this.hoverEl.getBoundingClientRect().top;
-      if (!viewEl.style.maxHeight) {
-        viewEl.style.minHeight = headerHeight + "px";
-        viewEl.style.maxHeight = headerHeight + "px";
-      } else {
-        viewEl.style.removeProperty("max-height");
-      }
-      this.interact.reflow({ name: "drag", axis: "xy" });
+      this.leaf.toggleMinimized();
     }
   }
 

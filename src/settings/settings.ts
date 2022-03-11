@@ -6,6 +6,7 @@ export interface HoverEditorSettings {
   autoPin: string;
   triggerDelay: number;
   autoFocus: boolean;
+  rollDown: boolean;
 }
 
 export const DEFAULT_SETTINGS: HoverEditorSettings = {
@@ -13,6 +14,7 @@ export const DEFAULT_SETTINGS: HoverEditorSettings = {
   autoPin: "onMove",
   triggerDelay: 200,
   autoFocus: true,
+  rollDown: false,
 };
 
 export const modeOptions = {
@@ -50,17 +52,14 @@ export class SettingTab extends PluginSettingTab {
       });
     });
 
-    new Setting(containerEl)
-      .setName("Auto Pin")
-      .setDesc("Set the hover editor as the active pane when opened")
-      .addDropdown(cb => {
-        cb.addOptions(pinOptions);
-        cb.setValue(this.plugin.settings.autoPin);
-        cb.onChange(async value => {
-          this.plugin.settings.autoPin = value;
-          await this.plugin.saveSettings();
-        });
+    new Setting(containerEl).setName("Auto Pin").addDropdown(cb => {
+      cb.addOptions(pinOptions);
+      cb.setValue(this.plugin.settings.autoPin);
+      cb.onChange(async value => {
+        this.plugin.settings.autoPin = value;
+        await this.plugin.saveSettings();
       });
+    });
 
     new Setting(containerEl)
       .setName("Auto Focus")
@@ -68,6 +67,16 @@ export class SettingTab extends PluginSettingTab {
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.autoFocus).onChange(value => {
           this.plugin.settings.autoFocus = value;
+          this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName("Minimize downwards")
+      .setDesc("When double clicking to minimize, the window will roll down instead of rolling up")
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.rollDown).onChange(value => {
+          this.plugin.settings.rollDown = value;
           this.plugin.saveSettings();
         })
       );

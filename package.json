@@ -22,9 +22,8 @@
     "monkey-around": "^2.2.0",
     "obsidian": "^0.13.26",
     "tslib": "2.3.1",
-    "typescript": "4.4.4"
-  },
-  "dependencies": {
+    "typescript": "4.4.4",
+    "@codemirror/view": "^0.19.47",
     "@interactjs/actions": "^1.10.11",
     "@interactjs/auto-start": "^1.10.11",
     "@interactjs/core": "^1.10.11",

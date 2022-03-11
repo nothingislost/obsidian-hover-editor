@@ -1,3 +1,4 @@
+import type { EditorView } from "@codemirror/view";
 import type { Plugin } from "obsidian";
 import { HoverEditor } from "../popover";
 
@@ -17,14 +18,28 @@ declare module "obsidian" {
     insertChild(index: number, leaf: WorkspaceLeaf, resize?: boolean): void;
     containerEl: HTMLElement;
   }
+  interface MarkdownView {
+    editMode: { cm: EditorView };
+  }
   interface Workspace {
     recordHistory(leaf: WorkspaceLeaf, pushHistory: boolean): void;
+  }
+  interface Editor {
+    getClickableTokenAt(pos: EditorPosition): {
+      text: string;
+      type: string;
+      start: EditorPosition;
+      end: EditorPosition;
+    };
   }
   interface View {
     iconEl: HTMLElement;
     setMode(mode: MarkdownSubView): Promise<void>;
+    followLinkUnderCursor(newLeaf: boolean): void;
     modes: Record<string, MarkdownSubView>;
     getMode(): string;
+    headerEl: HTMLElement;
+    contentEl: HTMLElement;
   }
   enum PopoverState {
     Showing,
@@ -60,9 +75,11 @@ declare module "obsidian" {
     x: number;
     y: number;
   }
+
   interface HoverEditorParent {
     hoverPopover: HoverEditor | null;
-    view: View;
+    containerEl?: HTMLElement;
+    view?: View;
     dom?: HTMLElement;
   }
 }
