@@ -60,6 +60,7 @@ export class HoverEditor extends HoverPopover {
 
   explicitHide() {
     this.onTarget = this.onHover = this.isMenuActive = false;
+    if (this.leaf) this.leaf.isPinned = false;
     this.hide();
   }
 
