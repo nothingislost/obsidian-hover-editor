@@ -9,7 +9,7 @@ import {
   Notice,
   Plugin,
   SplitDirection,
-  TAbstractFile,
+  TAbstractFile, TFile,
   Workspace,
   WorkspaceLeaf,
   WorkspaceSplit,
@@ -152,6 +152,21 @@ export default class HoverEditorPlugin extends Plugin {
               if (leaf.popover) leaf.popover.isMenuActive = false;
             }, 1000);
           };
+        }
+        if (file instanceof TFile && !(leaf instanceof HoverLeaf)) {
+          // Use this way to hover panel, so that we can hover backlink panel now.
+          menu.addItem((item) => {
+            item.setIcon("popup-open")
+                .setTitle("Popover It")
+                .onClick(() => {
+                  let popover = this.spawnPopover();
+                  popover.leaf.togglePin(true);
+                  if(!leaf) {
+                    popover.leaf.openFile(file);
+                  }
+                  popover.leaf.setViewState(leaf.getViewState());
+                });
+          });
         }
       })
     );
