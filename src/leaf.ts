@@ -7,7 +7,7 @@ import {
   parseLinktext,
   requireApiVersion,
   resolveSubpath,
-  setIcon, TAbstractFile,
+  setIcon,
   TFile,
   WorkspaceLeaf,
 } from "obsidian";
