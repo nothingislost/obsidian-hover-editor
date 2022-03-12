@@ -214,7 +214,7 @@ export default class HoverEditorPlugin extends Plugin {
   }
 
   onunload(): void {
-    // TODO: close all active popovers?
+    [...this.activePopovers].forEach(popover => popover.explicitHide()); 
   }
 
   async loadSettings() {
