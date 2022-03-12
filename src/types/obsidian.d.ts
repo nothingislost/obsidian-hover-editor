@@ -75,6 +75,7 @@ declare module "obsidian" {
     line?: number;
     startLoc?: Loc;
     endLoc?: Loc;
+    scroll?: number;
   }
   interface HoverPopover {
     targetEl: HTMLElement;

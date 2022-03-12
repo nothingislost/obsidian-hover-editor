@@ -85,21 +85,15 @@ export class HoverLeaf extends WorkspaceLeaf {
     this.popover.interact.reflow({ name: "drag", axis: "xy" });
   }
 
-  async openLink(linkText: string, sourcePath: string) {
+  async openLink(linkText: string, sourcePath: string, eState?: EphemeralState) {
+    // if (eState && eState.scroll) eState.line = eState.scroll;
     let file = this.resolveLink(linkText, sourcePath);
     if (!file) return false;
     let link = parseLinktext(linkText);
-    let eState = this.buildEphemeralState(file, link);
+    eState = Object.assign(this.buildEphemeralState(file, link), eState);
     let parentMode = this.hoverParent?.view?.getMode ? this.hoverParent.view.getMode() : "preview";
     let state = this.buildState(parentMode, eState);
     await this.openFile(file, state);
-
-    // TODO: Improve this logic which forces the popover to focus even when cycling through popover panes
-    // without this, if you rapdidly open/close popovers, the leaf onHide logic will set the focus back
-    // to the previous document
-    // setTimeout(() => {
-    //   this.app.workspace.setActiveLeaf(this, false, true);
-    // }, 200);
 
     // TODO: Improve this logic which exists to scroll to header/block refs when in source mode
     if (state.state.mode === "source") {
@@ -157,7 +151,7 @@ export class HoverLeaf extends WorkspaceLeaf {
   // }
 
   detach() {
-    this.app.workspace.activeLeaf = null;
+    if (this.app.workspace.activeLeaf === this) this.app.workspace.activeLeaf = null;
     super.detach();
     // TODO: Research this possible scrollTargets memory leak in CodeMirror6 core
     // @ts-ignore

@@ -47,7 +47,7 @@ export function onLinkHover(
 
       hoverPopover.attachLeaf(leaf, split);
 
-      let result = await leaf.openLink(linkText, path);
+      let result = await leaf.openLink(linkText, path, oldState);
 
       if (!result) {
         leaf.view.actionListEl.empty();
