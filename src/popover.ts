@@ -41,10 +41,12 @@ export class HoverEditor extends HoverPopover {
       },
       { once: true, capture: true }
     );
-    if (this.parent?.hoverPopover) {
-      this.parent.hoverPopover.hide();
+    // if (this.parent?.hoverPopover) {
+    //   this.parent.hoverPopover.hide();
+    // }
+    if (this.parent) {
+      this.parent.hoverPopover = this;
     }
-    this.parent.hoverPopover = this;
     this.registerInteract();
   }
 
@@ -65,7 +67,7 @@ export class HoverEditor extends HoverPopover {
   }
 
   shouldShowSelf() {
-    return this.onTarget || this.onHover || this.leaf?.isPinned || this.isMenuActive;
+    return this.onTarget || this.onHover ;
   }
 
   shouldShowChild() {
@@ -148,7 +150,7 @@ export class HoverEditor extends HoverPopover {
   }
 
   hide() {
-    if (!this.shouldShow()) {
+    if (!(this.leaf?.isPinned || this.isMenuActive || this.onHover)) {
       if (this.leaf) {
         // the leaf detach logic needs to be called first before we close the popover
         // leaf detach will make a call to back to this method to complete the unloading

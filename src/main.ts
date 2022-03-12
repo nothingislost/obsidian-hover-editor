@@ -42,7 +42,6 @@ export default class HoverEditorPlugin extends Plugin {
       this.acquireActivePopoverArray();
       this.patchRecordHistory();
       this.patchSlidingPanes();
-
       this.patchLinkHover();
     });
   }
@@ -122,6 +121,15 @@ export default class HoverEditorPlugin extends Plugin {
       },
     });
     this.register(uninstaller);
+
+    // This will recycle the event handlers so that they pick up the patched onLinkHover method
+    this.app.internalPlugins.plugins["page-preview"].disable();
+    this.app.internalPlugins.plugins["page-preview"].enable();
+
+    plugin.register(function () {
+      plugin.app.internalPlugins.plugins["page-preview"].disable();
+      plugin.app.internalPlugins.plugins["page-preview"].enable();
+    });
   }
 
   registerContextMenuHandler() {
@@ -141,7 +149,7 @@ export default class HoverEditorPlugin extends Plugin {
           leaf.popover.isMenuActive = true;
           menu.hideCallback = function () {
             setTimeout(() => {
-              leaf.popover.isMenuActive = false;
+              if (leaf.popover) leaf.popover.isMenuActive = false;
             }, 1000);
           };
         }

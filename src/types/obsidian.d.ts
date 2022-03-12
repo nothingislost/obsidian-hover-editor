@@ -5,7 +5,16 @@ import { HoverEditor } from "../popover";
 declare module "obsidian" {
   interface App {
     internalPlugins: {
-      plugins: Record<string, { _loaded: boolean; instance: { name: string; id: string } }>;
+      plugins: Record<
+        string,
+        {
+          _loaded: boolean;
+          disable(): void;
+          enable(): void;
+          _events: Function[];
+          instance: { name: string; id: string };
+        }
+      >;
     };
     plugins: {
       manifests: Record<string, PluginManifest>;
