@@ -50,8 +50,17 @@ export function onLinkHover(
       let result = await leaf.openLink(linkText, path);
 
       if (!result) {
-        leaf.detach();
-        return old.call(this, parent, targetEl, linkText, path, oldState, ...args);
+        leaf.view.actionListEl.empty();
+        let createEl = leaf.view.actionListEl.createDiv("empty-state-action");
+        createEl.textContent = `${linkText} is not yet created. Click to create.`;
+        createEl.addEventListener(
+          "click",
+          async function () {
+            await leaf.openLinkText(linkText, path);
+            await leaf.openLink(linkText, path);
+          },
+          { once: true }
+        );
       }
 
       if (hoverPopover.state == PopoverState.Shown) {

@@ -21,6 +21,9 @@ declare module "obsidian" {
   interface MarkdownView {
     editMode: { cm: EditorView };
   }
+  interface WorkspaceLeaf {
+    openLinkText(linkText: string, path: string, state?: any): Promise<void>;
+  }
   interface Workspace {
     recordHistory(leaf: WorkspaceLeaf, pushHistory: boolean): void;
   }
@@ -34,6 +37,7 @@ declare module "obsidian" {
   }
   interface View {
     iconEl: HTMLElement;
+    actionListEl?: HTMLElement;
     setMode(mode: MarkdownSubView): Promise<void>;
     followLinkUnderCursor(newLeaf: boolean): void;
     modes: Record<string, MarkdownSubView>;

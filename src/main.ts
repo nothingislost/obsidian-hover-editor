@@ -198,8 +198,8 @@ export default class HoverEditorPlugin extends Plugin {
     this.register(uninstall);
     // immediately spawn a popover so we don't leave the array hook in place for longer than needed
     let parent = this.app.workspace.activeLeaf as unknown as HoverEditorParent;
-    let popover = new HoverPopover(parent, parent.containerEl, 0)
-    setTimeout(() => { 
+    let popover = new HoverPopover(parent, parent.containerEl, 0);
+    setTimeout(() => {
       popover.shouldShowChild(); // this is what calls Array.some()
       popover.hide();
     }, 10);
