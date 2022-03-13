@@ -15,7 +15,14 @@ export function onLinkHover(
 ) {
   let hoverPopover = parent.hoverPopover;
   if (hoverPopover?.lockedOut) return;
-  if (!(hoverPopover && hoverPopover.state !== PopoverState.Hidden && hoverPopover.targetEl === targetEl)) {
+  if (
+    !(
+      hoverPopover &&
+      hoverPopover.state !== PopoverState.Hidden &&
+      hoverPopover.targetEl !== null &&
+      hoverPopover.targetEl === targetEl
+    )
+  ) {
     hoverPopover = parent.hoverPopover = new HoverEditor(parent, targetEl, plugin, plugin.settings.triggerDelay + 200);
 
     const controller = (hoverPopover.abortController = new AbortController());
