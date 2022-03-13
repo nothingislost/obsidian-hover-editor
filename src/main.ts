@@ -214,7 +214,7 @@ export default class HoverEditorPlugin extends Plugin {
   }
 
   onunload(): void {
-    [...this.activePopovers].forEach(popover => popover.explicitHide()); 
+    [...this.activePopovers].forEach(popover => popover.explicitHide());
   }
 
   async loadSettings() {
@@ -229,16 +229,11 @@ export default class HoverEditorPlugin extends Plugin {
     this.addCommand({
       id: "open-new-popover",
       name: "Open new popover",
-      checkCallback: (checking: boolean) => {
-        let activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (!!activeView) {
-          if (!checking) {
-            let popover = this.spawnPopover();
-            popover.leaf.togglePin(true);
-          }
-          return true;
-        }
-        return false;
+      callback: () => {
+        let popover = this.spawnPopover();
+        popover.leaf.togglePin(true);
+        // TODO: focus doesn't seem to work on empty panes
+        this.app.workspace.setActiveLeaf(popover.leaf, false, true);
       },
     });
     this.addCommand({
@@ -250,8 +245,6 @@ export default class HoverEditorPlugin extends Plugin {
           if (!checking) {
             let token = activeView.editor.getClickableTokenAt(activeView.editor.getCursor());
             if (token?.type === "internal-link") {
-              let pos = activeView.editor.posToOffset(token.start);
-              let targetEl = activeView.editMode.cm.domAtPos(pos);
               let popover = this.spawnPopover();
               popover.leaf.togglePin(true);
               popover.leaf.openLink(token.text, activeView.file.path);

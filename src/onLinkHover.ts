@@ -18,24 +18,24 @@ export function onLinkHover(
   if (!(hoverPopover && hoverPopover.state !== PopoverState.Hidden && hoverPopover.targetEl === targetEl)) {
     hoverPopover = parent.hoverPopover = new HoverEditor(parent, targetEl, plugin, plugin.settings.triggerDelay + 200);
 
-    const controller = new AbortController();
+    const controller = (hoverPopover.abortController = new AbortController());
 
     let unlock = function () {
       hoverPopover.lockedOut = false;
     };
 
-    let onClick = function () {
-      hoverPopover.state = PopoverState.Hidden;
-      hoverPopover.explicitHide();
-      hoverPopover.lockedOut = true;
-      setTimeout(unlock, 1000);
+    let onMouseDown = function (event: MouseEvent) {
+      if (event.target instanceof HTMLElement && !event.target.closest(".popover")) {
+        hoverPopover.state = PopoverState.Hidden;
+        hoverPopover.hide();
+        hoverPopover.lockedOut = true;
+        setTimeout(unlock, 1000);
+      }
     };
 
-    targetEl?.addEventListener("mousedown", onClick, { signal: controller.signal });
+    document.body.addEventListener("mousedown", onMouseDown, { capture: true, signal: controller.signal });
 
     setTimeout(async () => {
-      controller.abort(); // cancel the click handler
-
       if (hoverPopover.state == PopoverState.Hidden) {
         return;
       }

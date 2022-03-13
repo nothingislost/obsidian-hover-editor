@@ -1,5 +1,5 @@
 import type { EditorView } from "@codemirror/view";
-import type { Plugin } from "obsidian";
+import { Plugin, OpenViewState } from "obsidian";
 import { HoverEditor } from "../popover";
 
 declare module "obsidian" {
@@ -32,6 +32,7 @@ declare module "obsidian" {
   }
   interface WorkspaceLeaf {
     openLinkText(linkText: string, path: string, state?: any): Promise<void>;
+    working: boolean;
   }
   interface Workspace {
     recordHistory(leaf: WorkspaceLeaf, pushHistory: boolean): void;
@@ -76,6 +77,10 @@ declare module "obsidian" {
     startLoc?: Loc;
     endLoc?: Loc;
     scroll?: number;
+  }
+  interface OpenViewState {
+    eState: EphemeralState;
+    state: { mode: string };
   }
   interface HoverPopover {
     targetEl: HTMLElement;

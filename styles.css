@@ -17,11 +17,11 @@
 }
 
 .popover.hover-popover.is-active {
-  z-index: 31;
+  z-index: calc(var(--layer-popover) + 1);
 }
 
 .popover.hover-popover.is-new {
-  z-index: 32;
+  z-index: calc(var(--layer-popover) + 2);
 }
 
 .popover.hover-popover[style*="height"],

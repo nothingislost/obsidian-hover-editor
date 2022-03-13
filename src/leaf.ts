@@ -23,15 +23,16 @@ export class HoverLeaf extends WorkspaceLeaf {
   hoverParent: HoverEditorParent;
   pinEl: HTMLElement;
   isPinned: boolean;
+  detaching: boolean;
+  opening: boolean;
 
   constructor(app: App, plugin: HoverEditorPlugin, parent: HoverEditorParent) {
     // @ts-ignore
     super(app);
+    this.detaching = false;
     this.plugin = plugin;
     this.hoverParent = parent;
     this.addPinButton();
-    // leaf.id = genId(4);
-    // console.log(`creating leaf: ${leaf.id}`);
   }
 
   getRoot() {
@@ -59,6 +60,7 @@ export class HoverLeaf extends WorkspaceLeaf {
   }
 
   togglePin(value?: boolean) {
+    this.popover?.abortController?.abort();
     if (value === undefined) {
       value = !this.isPinned;
     }
@@ -106,12 +108,26 @@ export class HoverLeaf extends WorkspaceLeaf {
   }
 
   async openFile(file: TFile, openState?: OpenViewState) {
-    if (!openState) {
-      let parentMode = this.hoverParent?.view?.getMode ? this.hoverParent.view.getMode() : "preview";
-      openState = this.buildState(parentMode);
+    if (this.detaching) return;
+    this.opening = true;
+    try {
+      if (!openState) {
+        let parentMode = this.hoverParent?.view?.getMode ? this.hoverParent.view.getMode() : "preview";
+        let eState = this.buildEphemeralState(file);
+        openState = this.buildState(parentMode, eState);
+      }
+      await super.openFile(file, openState);
+    } catch {
+    } finally {
+      this.opening = false;
     }
-    await super.openFile(file, openState);
     this.view.iconEl.replaceWith(this.pinEl);
+    if (openState.state.mode === "source") {
+      setTimeout(() => {
+        if (this.detaching) return;
+        this.view?.setEphemeralState(openState.eState);
+      }, 400);
+    }
   }
 
   buildState(parentMode: string, eState?: EphemeralState) {
@@ -124,9 +140,14 @@ export class HoverLeaf extends WorkspaceLeaf {
     };
   }
 
+  onResize(): void {
+    // the native obsidian method does not do a null check on this.view
+    this.view?.onResize();
+  }
+
   buildEphemeralState(
     file: TFile,
-    link: {
+    link?: {
       path: string;
       subpath: string;
     }
@@ -151,6 +172,13 @@ export class HoverLeaf extends WorkspaceLeaf {
   // }
 
   detach() {
+    if (this.opening) {
+      setTimeout(() => {
+        this.detach();
+      }, 20);
+      return;
+    }
+    this.detaching = true;
     if (this.app.workspace.activeLeaf === this) this.app.workspace.activeLeaf = null;
     super.detach();
     // TODO: Research this possible scrollTargets memory leak in CodeMirror6 core

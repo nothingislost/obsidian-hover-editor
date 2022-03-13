@@ -17,6 +17,7 @@ export class HoverEditor extends HoverPopover {
   interact: Interactable;
   plugin: HoverEditorPlugin;
   lockedOut: boolean;
+  abortController: AbortController;
 
   constructor(parent: HoverParent, targetEl: HTMLElement, plugin: HoverEditorPlugin, waitTime?: number) {
     super(parent, targetEl, waitTime);
@@ -159,6 +160,7 @@ export class HoverEditor extends HoverPopover {
         this.leaf = null;
         this.parent = null;
         this.interact?.unset && this.interact.unset();
+        this.abortController?.abort();
         try {
           this.interact =
             (this.interact as any)._doc =
