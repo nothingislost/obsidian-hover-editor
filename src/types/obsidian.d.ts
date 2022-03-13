@@ -55,6 +55,9 @@ declare module "obsidian" {
     headerEl: HTMLElement;
     contentEl: HTMLElement;
   }
+  interface FileManager {
+    createNewMarkdownFile(folder: TFolder, fileName: string): Promise<TFile>;
+  }
   enum PopoverState {
     Showing,
     Shown,

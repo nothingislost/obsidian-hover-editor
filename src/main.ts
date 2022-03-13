@@ -247,7 +247,8 @@ export default class HoverEditorPlugin extends Plugin {
             if (token?.type === "internal-link") {
               let popover = this.spawnPopover();
               popover.leaf.togglePin(true);
-              popover.leaf.openLink(token.text, activeView.file.path);
+              let autoCreate = true;
+              popover.leaf.openLink(token.text, activeView.file.path, undefined, autoCreate);
             }
           }
           return true;
