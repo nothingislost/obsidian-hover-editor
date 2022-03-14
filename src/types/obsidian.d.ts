@@ -1,6 +1,5 @@
 import type { EditorView } from "@codemirror/view";
-import { Plugin, OpenViewState } from "obsidian";
-import { HoverEditor } from "../popover";
+import { Plugin } from "obsidian";
 
 declare module "obsidian" {
   interface App {
@@ -100,12 +99,5 @@ declare module "obsidian" {
   interface Pos {
     x: number;
     y: number;
-  }
-
-  interface HoverEditorParent {
-    hoverPopover: HoverEditor | null;
-    containerEl?: HTMLElement;
-    view?: View;
-    dom?: HTMLElement;
   }
 }

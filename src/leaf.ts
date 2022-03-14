@@ -2,15 +2,23 @@ import type { Interactable } from "@interactjs/types";
 import {
   App,
   EphemeralState,
-  HoverEditorParent,
   OpenViewState,
   parseLinktext,
   resolveSubpath,
   TFile,
+  View,
   WorkspaceLeaf,
 } from "obsidian";
 import HoverEditorPlugin from "./main";
 import { HoverEditor } from "./popover";
+
+export interface HoverEditorParent {
+  hoverPopover: HoverEditor | null;
+  containerEl?: HTMLElement;
+  view?: View;
+  dom?: HTMLElement;
+}
+
 
 export class HoverLeaf extends WorkspaceLeaf {
   popover: HoverEditor;
@@ -39,25 +47,6 @@ export class HoverLeaf extends WorkspaceLeaf {
     let link = parseLinktext(linkText);
     let tFile = link ? this.app.metadataCache.getFirstLinkpathDest(link.path, sourcePath) : undefined;
     return tFile;
-  }
-
-  toggleMinimized(value?: boolean) {
-    let hoverEl = this.popover.hoverEl;
-
-    let viewHeader = this.view.headerEl;
-    let headerHeight = viewHeader.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
-
-    if (!hoverEl.style.maxHeight) {
-      this.plugin.settings.rollDown && expandContract(hoverEl, false);
-      hoverEl.style.minHeight = headerHeight + "px";
-      hoverEl.style.maxHeight = headerHeight + "px";
-      hoverEl.toggleClass("is-minimized", true);
-    } else {
-      hoverEl.style.removeProperty("max-height");
-      hoverEl.toggleClass("is-minimized", false);
-      this.plugin.settings.rollDown && expandContract(hoverEl, true);
-    }
-    this.popover.interact.reflow({ name: "drag", axis: "xy" });
   }
 
   async openLink(linkText: string, sourcePath: string, eState?: EphemeralState, autoCreate?: boolean) {
@@ -178,14 +167,13 @@ export class HoverLeaf extends WorkspaceLeaf {
     if (this.view?.editMode?.cm?.observer?.scrollTargets) this.view.editMode.cm.observer.scrollTargets = null;
     // Close the popover if there's nothing left
     if (this.popover && !nextLeaf) {
-      this.popover.leaf = null;
       this.popover?.explicitHide && this.popover.explicitHide();
       this.popover = null;
     }
   }
 }
 
-function expandContract(el: HTMLElement, expand: boolean) {
+export function expandContract(el: HTMLElement, expand: boolean) {
   let contentHeight = (el.querySelector(".view-content") as HTMLElement).offsetHeight;
   contentHeight = expand ? -contentHeight : contentHeight;
   let x = parseFloat(el.getAttribute("data-x")) || 0;

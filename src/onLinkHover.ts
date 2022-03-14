@@ -1,5 +1,5 @@
-import { HoverEditorParent, PopoverState, WorkspaceSplit } from "obsidian";
-import { HoverLeaf } from "./leaf";
+import { PopoverState, WorkspaceSplit } from "obsidian";
+import { HoverEditorParent, HoverLeaf } from "./leaf";
 import { HoverEditor } from "./popover";
 import HoverEditorPlugin from "./main";
 
@@ -47,12 +47,7 @@ export function onLinkHover(
         return;
       }
 
-      //@ts-ignore the official API has no contructor for WorkspaceSplit
-      let split = new WorkspaceSplit(plugin.app.workspace, "horizontal");
-
-      let leaf = new HoverLeaf(this.app, plugin, parent);
-
-      hoverPopover.attachLeaf(leaf, split);
+      let leaf = hoverPopover.attachLeaf(parent);
 
       let result = await leaf.openLink(linkText, path, oldState);
 

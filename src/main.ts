@@ -1,7 +1,6 @@
 import { around } from "monkey-around";
 import {
   debounce,
-  HoverEditorParent,
   HoverPopover,
   MarkdownView,
   Menu,
@@ -16,7 +15,7 @@ import {
   WorkspaceLeaf,
   WorkspaceSplit,
 } from "obsidian";
-import { HoverLeaf } from "./leaf";
+import { HoverEditorParent, HoverLeaf } from "./leaf";
 import { onLinkHover } from "./onLinkHover";
 import { HoverEditor } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
@@ -161,13 +160,13 @@ export default class HoverEditorPlugin extends Plugin {
               .setIcon("popup-open")
               .setTitle("Open in new popover")
               .onClick(() => {
-                let popover = this.spawnPopover();
-                popover.togglePin(true);
+                let newLeaf = this.spawnPopover();
                 if (!leaf) {
-                  popover.leaf.openFile(file);
+                  newLeaf.openFile(file);
                 }
-                leaf?.getViewState && popover.leaf.setViewState(leaf.getViewState());
+                leaf?.getViewState && newLeaf.setViewState(leaf.getViewState());
               });
+
           });
         }
       })
@@ -260,8 +259,7 @@ export default class HoverEditorPlugin extends Plugin {
       name: "Open new popover",
       callback: () => {
         // Focus the leaf after it's shown
-        let popover = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(popover.leaf, false, true));
-        popover.togglePin(true);
+        let newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
       },
     });
     this.addCommand({
@@ -273,9 +271,7 @@ export default class HoverEditorPlugin extends Plugin {
           if (!checking) {
             let token = activeView.editor.getClickableTokenAt(activeView.editor.getCursor());
             if (token?.type === "internal-link") {
-              let popover = this.spawnPopover();
-              popover.togglePin(true);
-              popover.leaf.openLinkText(token.text, activeView.file.path, {active: true, eState: {focus: true}});
+              this.spawnPopover().openLinkText(token.text, activeView.file.path, {active: true, eState: {focus: true}});
             }
           }
           return true;
@@ -290,9 +286,7 @@ export default class HoverEditorPlugin extends Plugin {
         let activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (!!activeView) {
           if (!checking) {
-            let popover = this.spawnPopover();
-            popover.togglePin(true);
-            popover.leaf.openFile(activeView.file, { active: true, eState: { focus: true } });
+            this.spawnPopover().openFile(activeView.file, { active: true, eState: { focus: true } });
           }
           return true;
         }
@@ -301,18 +295,13 @@ export default class HoverEditorPlugin extends Plugin {
     });
   }
 
-  spawnPopover(initiatingEl?: HTMLElement, onShowCallback?: () => any) {
+  spawnPopover(initiatingEl?: HTMLElement, onShowCallback?: () => any): HoverLeaf {
     let parent = this.app.workspace.activeLeaf as unknown as HoverEditorParent;
     if (!initiatingEl) initiatingEl = parent.containerEl;
     let hoverPopover = new HoverEditor(parent, initiatingEl, this, undefined, onShowCallback);
-
-    // @ts-ignore
-    let split = new WorkspaceSplit(this.app.workspace, "horizontal");
-
-    let leaf = new HoverLeaf(this.app, this, parent);
-
-    hoverPopover.attachLeaf(leaf, split);
-    return hoverPopover;
+    let leaf = hoverPopover.attachLeaf(parent);
+    hoverPopover.togglePin(true);
+    return leaf;
   }
 
   registerSettingsTab() {
