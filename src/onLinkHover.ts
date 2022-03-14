@@ -15,7 +15,14 @@ export function onLinkHover(
 ) {
   let hoverPopover = parent.hoverPopover;
   if (hoverPopover?.lockedOut) return;
-  if (!(hoverPopover && hoverPopover.state !== PopoverState.Hidden && hoverPopover.targetEl === targetEl)) {
+  if (
+    !(
+      hoverPopover &&
+      hoverPopover.state !== PopoverState.Hidden &&
+      hoverPopover.targetEl !== null &&
+      hoverPopover.targetEl === targetEl
+    )
+  ) {
     hoverPopover = parent.hoverPopover = new HoverEditor(parent, targetEl, plugin, plugin.settings.triggerDelay + 200);
 
     const controller = (hoverPopover.abortController = new AbortController());
@@ -51,11 +58,15 @@ export function onLinkHover(
 
       if (!result) {
         leaf.view.actionListEl.empty();
-        let createEl = leaf.view.actionListEl.createDiv("empty-state-action");
+        let createEl = leaf.view.actionListEl.createEl("button", "empty-state-action");
         createEl.textContent = `${linkText} is not yet created. Click to create.`;
+        setTimeout(() => {
+          createEl.focus();
+        }, 200);
         createEl.addEventListener(
           "click",
           async function () {
+            leaf.togglePin(true);
             await leaf.openLinkText(linkText, path);
             await leaf.openLink(linkText, path);
           },

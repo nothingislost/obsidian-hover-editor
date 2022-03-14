@@ -87,11 +87,15 @@ export class HoverLeaf extends WorkspaceLeaf {
     this.popover.interact.reflow({ name: "drag", axis: "xy" });
   }
 
-  async openLink(linkText: string, sourcePath: string, eState?: EphemeralState) {
+  async openLink(linkText: string, sourcePath: string, eState?: EphemeralState, autoCreate?: boolean) {
     // if (eState && eState.scroll) eState.line = eState.scroll;
     let file = this.resolveLink(linkText, sourcePath);
-    if (!file) return false;
     let link = parseLinktext(linkText);
+    if (!file && autoCreate) {
+      let folder = this.app.fileManager.getNewFileParent(sourcePath);
+      file = await this.app.fileManager.createNewMarkdownFile(folder, link.path);
+    }
+    if (!file) return false;
     eState = Object.assign(this.buildEphemeralState(file, link), eState);
     let parentMode = this.hoverParent?.view?.getMode ? this.hoverParent.view.getMode() : "preview";
     let state = this.buildState(parentMode, eState);
