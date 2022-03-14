@@ -44,10 +44,10 @@ export class HoverEditor extends HoverPopover {
   }
 
   togglePin(value?: boolean) {
-    this.abortController?.abort();
     if (value === undefined) {
       value = !this.isPinned;
     }
+    if (value) this.abortController?.abort();
     this.pinEl.toggleClass("is-active", value);
     this.isPinned = value;
   }
@@ -216,6 +216,7 @@ export class HoverEditor extends HoverPopover {
         this.parent = null;
         this.interact?.unset && this.interact.unset();
         this.abortController?.abort();
+        this.abortController = null;
         try {
           this.interact =
             (this.interact as any)._doc =
