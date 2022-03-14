@@ -4,6 +4,8 @@ import { HoverParent, HoverPopover, WorkspaceSplit } from "obsidian";
 import { HoverLeaf } from "./leaf";
 import HoverEditorPlugin from "./main";
 
+const popovers = new WeakMap<HTMLElement, HoverEditor>();
+
 export class HoverEditor extends HoverPopover {
   explicitClose: boolean;
   onTarget: boolean;
@@ -19,9 +21,14 @@ export class HoverEditor extends HoverPopover {
   lockedOut: boolean;
   abortController: AbortController;
 
+  static activePopovers() {
+    return document.body.findAll(".hover-popover").map(el => popovers.get(el)).filter(he => he);
+  }
+
   constructor(parent: HoverParent, targetEl: HTMLElement, plugin: HoverEditorPlugin, waitTime?: number, public onShowCallback?: () => any) {
     super(parent, targetEl, waitTime);
     this.plugin = plugin;
+    popovers.set(this.hoverEl, this);
     this.createResizeHandles();
   }
 

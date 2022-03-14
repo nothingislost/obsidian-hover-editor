@@ -22,7 +22,6 @@ import { HoverEditor } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
 
 export default class HoverEditorPlugin extends Plugin {
-  activePopovers: HoverEditor[];
   settings: HoverEditorSettings;
   settingsTab: SettingTab;
 
@@ -41,7 +40,6 @@ export default class HoverEditorPlugin extends Plugin {
       this.registerViewportResizeHandler();
       this.registerContextMenuHandler();
       this.registerCommands();
-      this.acquireActivePopoverArray();
       this.patchUnresolvedGraphNodeHover();
       this.patchRecordHistory();
       this.patchSlidingPanes();
@@ -189,7 +187,7 @@ export default class HoverEditorPlugin extends Plugin {
 
   debouncedPopoverReflow = debounce(
     () => {
-      this.activePopovers?.forEach(popover => {
+      HoverEditor.activePopovers().forEach(popover => {
         popover.interact.reflow({ name: "drag", axis: "xy" });
       });
     },
@@ -244,34 +242,8 @@ export default class HoverEditorPlugin extends Plugin {
     leaf.detach();
   }
 
-  acquireActivePopoverArray() {
-    let plugin = this;
-    // hack to get at the internal array that holds the active popover instances
-    // maybe only run kick this of on initial link hover
-    let uninstall = around(Array.prototype, {
-      // @ts-ignore
-      some(old: any) {
-        return function (...items: any[]) {
-          if (this.first() instanceof HoverPopover) {
-            plugin.activePopovers = this;
-            uninstall();
-          }
-          return old.call(this, ...items);
-        };
-      },
-    });
-    this.register(uninstall);
-    // immediately spawn a popover so we don't leave the array hook in place for longer than needed
-    let parent = this.app.workspace.activeLeaf as unknown as HoverEditorParent;
-    let popover = new HoverPopover(parent, parent.containerEl, 0);
-    setTimeout(() => {
-      popover.shouldShowChild(); // this is what calls Array.some()
-      popover.hide();
-    }, 10);
-  }
-
   onunload(): void {
-    [...this.activePopovers].forEach(popover => popover.explicitHide());
+    HoverEditor.activePopovers().forEach(popover => popover.explicitHide());
   }
 
   async loadSettings() {
