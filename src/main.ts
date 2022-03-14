@@ -46,6 +46,10 @@ export default class HoverEditorPlugin extends Plugin {
     });
   }
 
+  get activePopovers(): HoverEditor[] {
+    return HoverEditor.activePopovers();
+  }
+
   patchRecordHistory() {
     let uninstaller = around(Workspace.prototype, {
       recordHistory(old: any) {
@@ -140,7 +144,7 @@ export default class HoverEditorPlugin extends Plugin {
           menu.items
             .filter((item: MenuItem) =>
               item.iconEl.querySelector(
-                "svg[class$='-split'], svg[class^='links-'], svg.dot-network, svg.pin, svg.link, svg.bullet-list"
+                "svg[class^='links-'], svg.dot-network, svg.pin, svg.link, svg.bullet-list"
               )
             )
             .forEach(item => {
