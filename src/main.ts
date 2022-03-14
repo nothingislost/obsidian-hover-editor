@@ -159,7 +159,7 @@ export default class HoverEditorPlugin extends Plugin {
           // Use this way to hover panel, so that we can hover backlink panel now.
           menu.addItem((item) => {
             item.setIcon("popup-open")
-                .setTitle("Popover It")
+                .setTitle("Open in new popover")
                 .onClick(() => {
                   let popover = this.spawnPopover();
                   popover.leaf.togglePin(true);
