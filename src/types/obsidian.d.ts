@@ -33,9 +33,12 @@ declare module "obsidian" {
   interface WorkspaceLeaf {
     openLinkText(linkText: string, path: string, state?: any): Promise<void>;
     working: boolean;
+    parentSplit: WorkspaceParent;
+    activeTime: number;
   }
   interface Workspace {
     recordHistory(leaf: WorkspaceLeaf, pushHistory: boolean): void;
+    iterateLeaves(callback: (item: WorkspaceItem) => any, item: WorkspaceItem): void;
   }
   interface Editor {
     getClickableTokenAt(pos: EditorPosition): {
