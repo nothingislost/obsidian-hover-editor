@@ -126,7 +126,7 @@ export class HoverLeaf extends WorkspaceLeaf {
       this.opening = false;
     }
     this.view.iconEl.replaceWith(this.pinEl);
-    if (openState.state.mode === "source") {
+    if (openState.state?.mode === "source" || openState.eState) {
       setTimeout(() => {
         if (this.detaching) return;
         this.view?.setEphemeralState(openState.eState);
@@ -171,9 +171,14 @@ export class HoverLeaf extends WorkspaceLeaf {
   //   await super.setViewState(viewState, eState);
   // }
 
-  // setEphemeralState(state: any) {
-  //   super.setEphemeralState(state);
-  // }
+  setEphemeralState(state: any) {
+     super.setEphemeralState(state);
+     if (state.focus && this.view?.getViewType() === "empty") {
+       // Force empty (no-file) view to have focus so dialogs don't reset active pane
+       this.view.contentEl.tabIndex = -1;
+       this.view.contentEl.focus();
+     }
+  }
 
   detach() {
     if (this.opening) {

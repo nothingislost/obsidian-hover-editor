@@ -270,10 +270,9 @@ export default class HoverEditorPlugin extends Plugin {
       id: "open-new-popover",
       name: "Open new popover",
       callback: () => {
-        let popover = this.spawnPopover();
+        // Focus the leaf after it's shown
+        let popover = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(popover.leaf, false, true));
         popover.leaf.togglePin(true);
-        // TODO: focus doesn't seem to work on empty panes
-        this.app.workspace.setActiveLeaf(popover.leaf, false, true);
       },
     });
     this.addCommand({
@@ -287,8 +286,7 @@ export default class HoverEditorPlugin extends Plugin {
             if (token?.type === "internal-link") {
               let popover = this.spawnPopover();
               popover.leaf.togglePin(true);
-              let autoCreate = true;
-              popover.leaf.openLink(token.text, activeView.file.path, undefined, autoCreate);
+              popover.leaf.openLinkText(token.text, activeView.file.path, {active: true, eState: {focus: true}});
             }
           }
           return true;
@@ -305,7 +303,7 @@ export default class HoverEditorPlugin extends Plugin {
           if (!checking) {
             let popover = this.spawnPopover();
             popover.leaf.togglePin(true);
-            popover.leaf.openFile(activeView.file);
+            popover.leaf.openFile(activeView.file, {active: true, eState: {focus: true}});
           }
           return true;
         }
@@ -314,10 +312,10 @@ export default class HoverEditorPlugin extends Plugin {
     });
   }
 
-  spawnPopover(initiatingEl?: HTMLElement) {
+  spawnPopover(initiatingEl?: HTMLElement, onShowCallback?: () => any) {
     let parent = this.app.workspace.activeLeaf as unknown as HoverEditorParent;
     if (!initiatingEl) initiatingEl = parent.containerEl;
-    let hoverPopover = new HoverEditor(parent, initiatingEl, this);
+    let hoverPopover = new HoverEditor(parent, initiatingEl, this, undefined, onShowCallback);
 
     // @ts-ignore
     let split = new WorkspaceSplit(this.app.workspace, "horizontal");
