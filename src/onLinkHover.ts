@@ -66,7 +66,7 @@ export function onLinkHover(
         createEl.addEventListener(
           "click",
           async function () {
-            leaf.togglePin(true);
+            hoverPopover.togglePin(true);
             await leaf.openLinkText(linkText, path);
             await leaf.openLink(linkText, path);
           },

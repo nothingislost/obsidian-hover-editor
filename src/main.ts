@@ -162,7 +162,7 @@ export default class HoverEditorPlugin extends Plugin {
               .setTitle("Open in new popover")
               .onClick(() => {
                 let popover = this.spawnPopover();
-                popover.leaf.togglePin(true);
+                popover.togglePin(true);
                 if (!leaf) {
                   popover.leaf.openFile(file);
                 }
@@ -261,7 +261,7 @@ export default class HoverEditorPlugin extends Plugin {
       callback: () => {
         // Focus the leaf after it's shown
         let popover = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(popover.leaf, false, true));
-        popover.leaf.togglePin(true);
+        popover.togglePin(true);
       },
     });
     this.addCommand({
@@ -274,7 +274,7 @@ export default class HoverEditorPlugin extends Plugin {
             let token = activeView.editor.getClickableTokenAt(activeView.editor.getCursor());
             if (token?.type === "internal-link") {
               let popover = this.spawnPopover();
-              popover.leaf.togglePin(true);
+              popover.togglePin(true);
               popover.leaf.openLinkText(token.text, activeView.file.path, {active: true, eState: {focus: true}});
             }
           }
@@ -291,7 +291,7 @@ export default class HoverEditorPlugin extends Plugin {
         if (!!activeView) {
           if (!checking) {
             let popover = this.spawnPopover();
-            popover.leaf.togglePin(true);
+            popover.togglePin(true);
             popover.leaf.openFile(activeView.file, { active: true, eState: { focus: true } });
           }
           return true;

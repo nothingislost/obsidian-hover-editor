@@ -5,9 +5,7 @@ import {
   HoverEditorParent,
   OpenViewState,
   parseLinktext,
-  requireApiVersion,
   resolveSubpath,
-  setIcon,
   TFile,
   WorkspaceLeaf,
 } from "obsidian";
@@ -21,8 +19,6 @@ export class HoverLeaf extends WorkspaceLeaf {
   id: string;
   plugin: HoverEditorPlugin;
   hoverParent: HoverEditorParent;
-  pinEl: HTMLElement;
-  isPinned: boolean;
   detaching: boolean;
   opening: boolean;
 
@@ -32,7 +28,6 @@ export class HoverLeaf extends WorkspaceLeaf {
     this.detaching = false;
     this.plugin = plugin;
     this.hoverParent = parent;
-    this.addPinButton();
   }
 
   getRoot() {
@@ -44,28 +39,6 @@ export class HoverLeaf extends WorkspaceLeaf {
     let link = parseLinktext(linkText);
     let tFile = link ? this.app.metadataCache.getFirstLinkpathDest(link.path, sourcePath) : undefined;
     return tFile;
-  }
-
-  addPinButton() {
-    let pinEl = (this.pinEl = createDiv("popover-header-icon mod-pin-popover"));
-    pinEl.onclick = () => {
-      this.togglePin();
-    };
-    if (requireApiVersion && requireApiVersion("0.13.27")) {
-      setIcon(pinEl, "lucide-pin", 17);
-    } else {
-      setIcon(pinEl, "pin", 17);
-    }
-    return pinEl;
-  }
-
-  togglePin(value?: boolean) {
-    this.popover?.abortController?.abort();
-    if (value === undefined) {
-      value = !this.isPinned;
-    }
-    this.pinEl.toggleClass("is-active", value);
-    this.isPinned = value;
   }
 
   toggleMinimized(value?: boolean) {
@@ -125,7 +98,7 @@ export class HoverLeaf extends WorkspaceLeaf {
     } finally {
       this.opening = false;
     }
-    this.view.iconEl.replaceWith(this.pinEl);
+    if (this.popover) this.view.iconEl.replaceWith(this.popover.pinEl);
     if (openState.state?.mode === "source" || openState.eState) {
       setTimeout(() => {
         if (this.detaching) return;
