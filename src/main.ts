@@ -8,6 +8,7 @@ import {
   MenuItem,
   Notice,
   Plugin,
+  PopoverState,
   SplitDirection,
   TAbstractFile,
   Workspace,
@@ -40,6 +41,7 @@ export default class HoverEditorPlugin extends Plugin {
       this.registerContextMenuHandler();
       this.registerCommands();
       this.acquireActivePopoverArray();
+      this.patchUnresolvedGraphNodeHover();
       this.patchRecordHistory();
       this.patchSlidingPanes();
       this.patchLinkHover();
@@ -185,6 +187,44 @@ export default class HoverEditorPlugin extends Plugin {
     this.register(() => {
       window.removeEventListener("resize", this.debouncedPopoverReflow);
     });
+  }
+
+  patchUnresolvedGraphNodeHover() {
+    // @ts-ignore
+    let leaf = new WorkspaceLeaf(this.app);
+    // @ts-ignore
+    let GraphEngine = this.app.internalPlugins.plugins.graph.views.localgraph(leaf).engine.constructor;
+    let uninstall = around(GraphEngine.prototype, {
+      // @ts-ignore
+      onNodeHover(old: any) {
+        return function (event: UIEvent, linkText: string, nodeType: string, ...items: any[]) {
+          if (nodeType === "unresolved") {
+            if ((this.onNodeUnhover(), event instanceof MouseEvent)) {
+              if (
+                this.hoverPopover &&
+                this.hoverPopover.state !== PopoverState.Hidden &&
+                this.lastHoverLink === linkText
+              ) {
+                this.hoverPopover.onTarget = true;
+                return void this.hoverPopover.transition();
+              }
+              this.lastHoverLink = linkText;
+              this.app.workspace.trigger("hover-link", {
+                event: event,
+                source: "graph",
+                hoverParent: this,
+                targetEl: null,
+                linktext: linkText,
+              });
+            }
+          } else {
+            return old.call(this, event, linkText, nodeType, ...items);
+          }
+        };
+      },
+    });
+    this.register(uninstall);
+    leaf.detach();
   }
 
   acquireActivePopoverArray() {
