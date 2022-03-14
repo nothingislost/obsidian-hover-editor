@@ -50,6 +50,7 @@ export class HoverEditor extends HoverPopover {
     }
     this.registerInteract();
     this.onShowCallback?.();
+    this.onShowCallback = undefined; // only call it once
   }
 
   onHide() {
