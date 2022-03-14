@@ -19,7 +19,7 @@ export class HoverEditor extends HoverPopover {
   lockedOut: boolean;
   abortController: AbortController;
 
-  constructor(parent: HoverParent, targetEl: HTMLElement, plugin: HoverEditorPlugin, waitTime?: number) {
+  constructor(parent: HoverParent, targetEl: HTMLElement, plugin: HoverEditorPlugin, waitTime?: number, public onShowCallback?: () => any) {
     super(parent, targetEl, waitTime);
     this.plugin = plugin;
     this.createResizeHandles();
@@ -49,6 +49,7 @@ export class HoverEditor extends HoverPopover {
       this.parent.hoverPopover = this;
     }
     this.registerInteract();
+    this.onShowCallback?.();
   }
 
   onHide() {

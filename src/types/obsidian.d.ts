@@ -79,8 +79,9 @@ declare module "obsidian" {
     scroll?: number;
   }
   interface OpenViewState {
-    eState: EphemeralState;
-    state: { mode: string };
+    eState?: EphemeralState;
+    state?: { mode: string };
+    active?: boolean;
   }
   interface HoverPopover {
     targetEl: HTMLElement;
