@@ -2,17 +2,23 @@ import type { Interactable } from "@interactjs/types";
 import {
   App,
   EphemeralState,
-  HoverEditorParent,
   OpenViewState,
   parseLinktext,
-  requireApiVersion,
   resolveSubpath,
-  setIcon,
   TFile,
+  View,
   WorkspaceLeaf,
 } from "obsidian";
 import HoverEditorPlugin from "./main";
 import { HoverEditor } from "./popover";
+
+export interface HoverEditorParent {
+  hoverPopover: HoverEditor | null;
+  containerEl?: HTMLElement;
+  view?: View;
+  dom?: HTMLElement;
+}
+
 
 export class HoverLeaf extends WorkspaceLeaf {
   popover: HoverEditor;
@@ -21,8 +27,6 @@ export class HoverLeaf extends WorkspaceLeaf {
   id: string;
   plugin: HoverEditorPlugin;
   hoverParent: HoverEditorParent;
-  pinEl: HTMLElement;
-  isPinned: boolean;
   detaching: boolean;
   opening: boolean;
 
@@ -32,7 +36,6 @@ export class HoverLeaf extends WorkspaceLeaf {
     this.detaching = false;
     this.plugin = plugin;
     this.hoverParent = parent;
-    this.addPinButton();
   }
 
   getRoot() {
@@ -44,47 +47,6 @@ export class HoverLeaf extends WorkspaceLeaf {
     let link = parseLinktext(linkText);
     let tFile = link ? this.app.metadataCache.getFirstLinkpathDest(link.path, sourcePath) : undefined;
     return tFile;
-  }
-
-  addPinButton() {
-    let pinEl = (this.pinEl = createDiv("popover-header-icon mod-pin-popover"));
-    pinEl.onclick = () => {
-      this.togglePin();
-    };
-    if (requireApiVersion && requireApiVersion("0.13.27")) {
-      setIcon(pinEl, "lucide-pin", 17);
-    } else {
-      setIcon(pinEl, "pin", 17);
-    }
-    return pinEl;
-  }
-
-  togglePin(value?: boolean) {
-    this.popover?.abortController?.abort();
-    if (value === undefined) {
-      value = !this.isPinned;
-    }
-    this.pinEl.toggleClass("is-active", value);
-    this.isPinned = value;
-  }
-
-  toggleMinimized(value?: boolean) {
-    let hoverEl = this.popover.hoverEl;
-
-    let viewHeader = this.view.headerEl;
-    let headerHeight = viewHeader.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
-
-    if (!hoverEl.style.maxHeight) {
-      this.plugin.settings.rollDown && expandContract(hoverEl, false);
-      hoverEl.style.minHeight = headerHeight + "px";
-      hoverEl.style.maxHeight = headerHeight + "px";
-      hoverEl.toggleClass("is-minimized", true);
-    } else {
-      hoverEl.style.removeProperty("max-height");
-      hoverEl.toggleClass("is-minimized", false);
-      this.plugin.settings.rollDown && expandContract(hoverEl, true);
-    }
-    this.popover.interact.reflow({ name: "drag", axis: "xy" });
   }
 
   async openLink(linkText: string, sourcePath: string, eState?: EphemeralState, autoCreate?: boolean) {
@@ -125,7 +87,7 @@ export class HoverLeaf extends WorkspaceLeaf {
     } finally {
       this.opening = false;
     }
-    this.view.iconEl.replaceWith(this.pinEl);
+    if (this.popover) this.view.iconEl.replaceWith(this.popover.pinEl);
     if (openState.state?.mode === "source" || openState.eState) {
       setTimeout(() => {
         if (this.detaching) return;
@@ -188,20 +150,30 @@ export class HoverLeaf extends WorkspaceLeaf {
       return;
     }
     this.detaching = true;
-    if (this.app.workspace.activeLeaf === this) this.app.workspace.activeLeaf = null;
+
+    // Find most recently active leaf in this popover
+    let nextLeaf: WorkspaceLeaf = null;
+    this.app.workspace.iterateLeaves((leaf: WorkspaceLeaf) => {
+      if (leaf !== this && (!nextLeaf || nextLeaf.activeTime < leaf.activeTime))  nextLeaf = leaf;
+    }, this.parentSplit?.getRoot());
+
+    if (this.app.workspace.activeLeaf === this) {
+      // Activate the remaining leaf, or else the most recent main leaf before detaching
+      this.app.workspace.setActiveLeaf(nextLeaf || this.app.workspace.getMostRecentLeaf(), false, true);
+    }
     super.detach();
     // TODO: Research this possible scrollTargets memory leak in CodeMirror6 core
     // @ts-ignore
     if (this.view?.editMode?.cm?.observer?.scrollTargets) this.view.editMode.cm.observer.scrollTargets = null;
-    if (this.popover) {
-      this.popover.leaf = null;
+    // Close the popover if there's nothing left
+    if (this.popover && !nextLeaf) {
       this.popover?.explicitHide && this.popover.explicitHide();
       this.popover = null;
     }
   }
 }
 
-function expandContract(el: HTMLElement, expand: boolean) {
+export function expandContract(el: HTMLElement, expand: boolean) {
   let contentHeight = (el.querySelector(".view-content") as HTMLElement).offsetHeight;
   contentHeight = expand ? -contentHeight : contentHeight;
   let x = parseFloat(el.getAttribute("data-x")) || 0;

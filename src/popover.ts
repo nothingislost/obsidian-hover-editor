@@ -1,36 +1,89 @@
 import { Interactable, InteractEvent, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
-import { HoverParent, HoverPopover, WorkspaceSplit } from "obsidian";
-import { HoverLeaf } from "./leaf";
+import { HoverParent, HoverPopover, requireApiVersion, setIcon, Workspace, WorkspaceSplit } from "obsidian";
+import { expandContract, HoverEditorParent, HoverLeaf } from "./leaf";
 import HoverEditorPlugin from "./main";
+
+const popovers = new WeakMap<HTMLElement, HoverEditor>();
 
 export class HoverEditor extends HoverPopover {
   explicitClose: boolean;
   onTarget: boolean;
   onHover: boolean;
   isPinned: boolean;
-  leaf: HoverLeaf;
   isDragging: boolean;
   isResizing: boolean;
   isMenuActive: boolean;
   parent: HoverParent;
   interact: Interactable;
-  plugin: HoverEditorPlugin;
   lockedOut: boolean;
   abortController: AbortController;
+  rootSplit: WorkspaceSplit = new (
+    // the official API has no contructor for WorkspaceSplit
+    WorkspaceSplit as new(ws: Workspace, dir: string) => WorkspaceSplit
+  )(this.plugin.app.workspace, "horizontal");
+  pinEl: HTMLElement;
 
-  constructor(parent: HoverParent, targetEl: HTMLElement, plugin: HoverEditorPlugin, waitTime?: number, public onShowCallback?: () => any) {
+  static activePopovers() {
+    return document.body.findAll(".hover-popover").map(el => popovers.get(el)).filter(he => he);
+  }
+
+  constructor(parent: HoverParent, targetEl: HTMLElement, public plugin: HoverEditorPlugin, waitTime?: number, public onShowCallback?: () => any) {
     super(parent, targetEl, waitTime);
-    this.plugin = plugin;
+    popovers.set(this.hoverEl, this);
+    const pinEl = this.pinEl = createDiv("popover-header-icon mod-pin-popover");
+    pinEl.onclick = () => {
+      this.togglePin();
+    };
+    if (requireApiVersion && requireApiVersion("0.13.27")) {
+      setIcon(pinEl, "lucide-pin", 17);
+    } else {
+      setIcon(pinEl, "pin", 17);
+    }
     this.createResizeHandles();
   }
 
-  attachLeaf(leaf: HoverLeaf, split: WorkspaceSplit) {
-    this.leaf = leaf;
-    this.leaf.togglePin(this.plugin.settings.autoPin === "always" ? true : false);
-    this.leaf.popover = this;
-    split.insertChild(0, leaf);
-    this.hoverEl.prepend(split.containerEl);
+  togglePin(value?: boolean) {
+    if (value === undefined) {
+      value = !this.isPinned;
+    }
+    if (value) this.abortController?.abort();
+    this.pinEl.toggleClass("is-active", value);
+    this.isPinned = value;
+  }
+
+  toggleMinimized(value?: boolean) {
+    let hoverEl = this.hoverEl;
+
+    let viewHeader = this.leaves()[0].view.headerEl;
+    let headerHeight = viewHeader.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
+
+    if (!hoverEl.style.maxHeight) {
+      this.plugin.settings.rollDown && expandContract(hoverEl, false);
+      hoverEl.style.minHeight = headerHeight + "px";
+      hoverEl.style.maxHeight = headerHeight + "px";
+      hoverEl.toggleClass("is-minimized", true);
+    } else {
+      hoverEl.style.removeProperty("max-height");
+      hoverEl.toggleClass("is-minimized", false);
+      this.plugin.settings.rollDown && expandContract(hoverEl, true);
+    }
+    this.interact.reflow({ name: "drag", axis: "xy" });
+  }
+
+  attachLeaf(hoverParent: HoverEditorParent): HoverLeaf {
+    const leaf = new HoverLeaf(this.plugin.app, this.plugin, hoverParent);
+    leaf.popover = this;
+    this.togglePin(this.plugin.settings.autoPin === "always" ? true : false);
+    this.rootSplit.insertChild(0, leaf);
+    this.hoverEl.prepend(this.rootSplit.containerEl);
+    return leaf;
+  }
+
+  leaves() {
+    const leaves: HoverLeaf[] = []
+    this.plugin.app.workspace.iterateLeaves(leaf => {leaves.push(leaf as HoverLeaf)}, this.rootSplit);
+    return leaves;
   }
 
   onShow() {
@@ -65,7 +118,7 @@ export class HoverEditor extends HoverPopover {
 
   explicitHide() {
     this.onTarget = this.onHover = this.isMenuActive = false;
-    if (this.leaf) this.leaf.isPinned = false;
+    this.isPinned = false;
     this.hide();
   }
 
@@ -98,7 +151,7 @@ export class HoverEditor extends HoverPopover {
 
         listeners: {
           start(event: DragEvent) {
-            self.leaf.togglePin(true);
+            self.togglePin(true);
           },
           move: dragMoveListener,
         },
@@ -115,7 +168,7 @@ export class HoverEditor extends HoverPopover {
           start(event: ResizeEvent) {
             let viewEl = event.target.parentElement as HTMLElement;
             viewEl.style.removeProperty("max-height");
-            self.leaf.togglePin(true);
+            self.togglePin(true);
           },
           move: function (event: ResizeEvent) {
             let { x, y } = event.target.dataset;
@@ -147,22 +200,23 @@ export class HoverEditor extends HoverPopover {
   onDoubleTap(event: InteractEvent) {
     if (event.target.hasClass("drag-handle")) {
       event.preventDefault();
-      this.leaf.togglePin(true);
-      this.leaf.toggleMinimized();
+      this.togglePin(true);
+      this.toggleMinimized();
     }
   }
 
   hide() {
-    if (!(this.leaf?.isPinned || this.isMenuActive || this.onHover)) {
-      if (this.leaf) {
+    if (!(this.isPinned || this.isMenuActive || this.onHover)) {
+      const leaves = this.leaves();
+      if (leaves.length) {
         // the leaf detach logic needs to be called first before we close the popover
         // leaf detach will make a call to back to this method to complete the unloading
-        this.leaf.detach();
+        leaves.forEach(leaf => leaf.detach());
       } else {
-        this.leaf = null;
         this.parent = null;
         this.interact?.unset && this.interact.unset();
         this.abortController?.abort();
+        this.abortController = null;
         try {
           this.interact =
             (this.interact as any)._doc =

@@ -1,6 +1,5 @@
 import type { EditorView } from "@codemirror/view";
-import { Plugin, OpenViewState } from "obsidian";
-import { HoverEditor } from "../popover";
+import { Plugin } from "obsidian";
 
 declare module "obsidian" {
   interface App {
@@ -33,9 +32,12 @@ declare module "obsidian" {
   interface WorkspaceLeaf {
     openLinkText(linkText: string, path: string, state?: any): Promise<void>;
     working: boolean;
+    parentSplit: WorkspaceParent;
+    activeTime: number;
   }
   interface Workspace {
     recordHistory(leaf: WorkspaceLeaf, pushHistory: boolean): void;
+    iterateLeaves(callback: (item: WorkspaceItem) => any, item: WorkspaceItem): void;
   }
   interface Editor {
     getClickableTokenAt(pos: EditorPosition): {
@@ -97,12 +99,5 @@ declare module "obsidian" {
   interface Pos {
     x: number;
     y: number;
-  }
-
-  interface HoverEditorParent {
-    hoverPopover: HoverEditor | null;
-    containerEl?: HTMLElement;
-    view?: View;
-    dom?: HTMLElement;
   }
 }
