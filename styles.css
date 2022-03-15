@@ -91,10 +91,11 @@ body.is-dragging-popover .tooltip {
 }
 
 .popover.hover-popover .view-header-icon {
-  display: none;
+  /* !important since a few themes are forcing display of this element */
+  /* this can not re-enabled until HoverLeafs can be safely added/cloned into the native splits */
+  display: none !important;
 }
 
 .popover.hover-popover .workspace-split > .workspace-leaf:last-child > .workspace-leaf-resize-handle {
   display: none;
 }
-
