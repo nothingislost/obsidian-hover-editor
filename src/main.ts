@@ -67,6 +67,18 @@ export default class HoverEditorPlugin extends Plugin {
           return old.call(this, event, ...args);
         };
       },
+      iterateAllLeaves(old) {
+        return function(cb) {
+          this.iterateRootLeaves(cb);
+          this.iterateLeaves(cb, this.leftSplit);
+          this.iterateLeaves(cb, this.rightSplit);
+        }
+      },
+      iterateRootLeaves(old) {
+        return function(callback: (leaf: WorkspaceLeaf) => any) {
+          return old.call(this, callback) || HoverEditor.iteratePopoverLeaves(this, callback);
+        }
+      },
       createLeafBySplit(old: any) {
         return function (leaf: WorkspaceLeaf, direction: string, hasChildren: boolean, ...args: any[]) {
           if (leaf instanceof HoverLeaf) {
@@ -142,18 +154,17 @@ export default class HoverEditorPlugin extends Plugin {
         if (source === "pane-more-options" && leaf instanceof HoverLeaf) {
           // there's not a great way to remove native items from the context menu... so we hack it
           menu.items
-            .filter((item: MenuItem) =>
-              item.iconEl.querySelector(
-                "svg[class^='links-'], svg.dot-network, svg.pin, svg.link, svg.bullet-list"
-              )
-            )
-            .forEach(item => {
-              menu.dom.removeChild(item.dom);
+            .filter((item: MenuItem) => {
+              if (item.iconEl.querySelector("svg.link")) {
+                menu.dom.removeChild(item.dom);
+                menu.items.remove(item)
+                return true;
+              }
             });
-          leaf.popover.isMenuActive = true;
+          leaf.popover.activeMenu = menu;
           menu.hideCallback = function () {
             setTimeout(() => {
-              if (leaf.popover) leaf.popover.isMenuActive = false;
+              if (leaf.popover?.activeMenu === menu) leaf.popover.activeMenu = null;
             }, 1000);
           };
         }

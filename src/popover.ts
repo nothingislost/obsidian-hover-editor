@@ -1,6 +1,6 @@
 import { Interactable, InteractEvent, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
-import { HoverParent, HoverPopover, requireApiVersion, setIcon, Workspace, WorkspaceSplit } from "obsidian";
+import { HoverParent, HoverPopover, Menu, requireApiVersion, setIcon, Workspace, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import { expandContract, HoverEditorParent, HoverLeaf } from "./leaf";
 import HoverEditorPlugin from "./main";
 
@@ -13,7 +13,7 @@ export class HoverEditor extends HoverPopover {
   isPinned: boolean;
   isDragging: boolean;
   isResizing: boolean;
-  isMenuActive: boolean;
+  activeMenu: Menu;
   parent: HoverParent;
   interact: Interactable;
   lockedOut: boolean;
@@ -21,11 +21,18 @@ export class HoverEditor extends HoverPopover {
   rootSplit: WorkspaceSplit = new (
     // the official API has no contructor for WorkspaceSplit
     WorkspaceSplit as new(ws: Workspace, dir: string) => WorkspaceSplit
-  )(this.plugin.app.workspace, "horizontal");
+  )(this.plugin.app.workspace, "vertical");
   pinEl: HTMLElement;
 
   static activePopovers() {
     return document.body.findAll(".hover-popover").map(el => popovers.get(el)).filter(he => he);
+  }
+
+  static iteratePopoverLeaves(ws: Workspace, cb: (leaf: WorkspaceLeaf) => any) {
+    for (const popover of this.activePopovers()) {
+      if (ws.iterateLeaves(cb, popover.rootSplit)) return true;
+    }
+    return false;
   }
 
   constructor(parent: HoverParent, targetEl: HTMLElement, public plugin: HoverEditorPlugin, waitTime?: number, public onShowCallback?: () => any) {
@@ -130,7 +137,9 @@ export class HoverEditor extends HoverPopover {
   }
 
   explicitHide() {
-    this.onTarget = this.onHover = this.isMenuActive = false;
+    this.activeMenu?.hide();
+    this.activeMenu = null;
+    this.onTarget = this.onHover = false;
     this.isPinned = false;
     this.hide();
   }
@@ -219,7 +228,7 @@ export class HoverEditor extends HoverPopover {
   }
 
   hide() {
-    if (!(this.isPinned || this.isMenuActive || this.onHover)) {
+    if (!(this.isPinned || this.activeMenu || this.onHover)) {
       const leaves = this.leaves();
       if (leaves.length) {
         // the leaf detach logic needs to be called first before we close the popover

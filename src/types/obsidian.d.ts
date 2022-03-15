@@ -37,7 +37,7 @@ declare module "obsidian" {
   }
   interface Workspace {
     recordHistory(leaf: WorkspaceLeaf, pushHistory: boolean): void;
-    iterateLeaves(callback: (item: WorkspaceItem) => any, item: WorkspaceItem): void;
+    iterateLeaves(callback: (item: WorkspaceItem) => any, item: WorkspaceItem): boolean;
   }
   interface Editor {
     getClickableTokenAt(pos: EditorPosition): {
