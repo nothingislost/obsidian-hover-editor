@@ -1,6 +1,5 @@
-import { PopoverState, WorkspaceSplit } from "obsidian";
-import { HoverEditorParent, HoverLeaf } from "./leaf";
-import { HoverEditor } from "./popover";
+import { PopoverState } from "obsidian";
+import { HoverEditorParent, HoverEditor } from "./popover";
 import HoverEditorPlugin from "./main";
 
 export function onLinkHover(
@@ -42,36 +41,11 @@ export function onLinkHover(
 
     document.body.addEventListener("mousedown", onMouseDown, { capture: true, signal: controller.signal });
 
-    setTimeout(async () => {
+    setTimeout(() => {
       if (hoverPopover.state == PopoverState.Hidden) {
         return;
       }
-
-      let leaf = hoverPopover.attachLeaf(parent);
-
-      let result = await leaf.openLink(linkText, path, oldState);
-
-      if (!result) {
-        leaf.view.actionListEl.empty();
-        let createEl = leaf.view.actionListEl.createEl("button", "empty-state-action");
-        createEl.textContent = `${linkText} is not yet created. Click to create.`;
-        setTimeout(() => {
-          createEl.focus();
-        }, 200);
-        createEl.addEventListener(
-          "click",
-          async function () {
-            hoverPopover.togglePin(true);
-            await leaf.openLinkText(linkText, path);
-            await leaf.openLink(linkText, path);
-          },
-          { once: true }
-        );
-      }
-
-      if (hoverPopover.state == PopoverState.Shown) {
-        hoverPopover.position();
-      }
+      hoverPopover.openLink(linkText, path, oldState);
 
       // enable this and take heap dumps to check for leaks
       // // @ts-ignore

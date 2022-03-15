@@ -12,9 +12,8 @@ import {
   Workspace,
   WorkspaceLeaf,
 } from "obsidian";
-import { HoverEditorParent, HoverLeaf } from "./leaf";
 import { onLinkHover } from "./onLinkHover";
-import { HoverEditor } from "./popover";
+import { HoverEditorParent, HoverEditor, isHoverLeaf } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
 
 export default class HoverEditorPlugin extends Plugin {
@@ -37,7 +36,8 @@ export default class HoverEditorPlugin extends Plugin {
       this.registerContextMenuHandler();
       this.registerCommands();
       this.patchUnresolvedGraphNodeHover();
-      this.patchRecordHistory();
+      this.patchWorkspace();
+      this.patchWorkspaceLeaf();
       this.patchSlidingPanes();
       this.patchLinkHover();
     });
@@ -47,18 +47,41 @@ export default class HoverEditorPlugin extends Plugin {
     return HoverEditor.activePopovers();
   }
 
-  patchRecordHistory() {
+  patchWorkspaceLeaf() {
+    this.register(around(WorkspaceLeaf.prototype, {
+      getRoot(old) { return function() {
+        const top = old.call(this);
+        return (top.getRoot === this.getRoot) ? top : top.getRoot();
+      }},
+      onResize(old) { return function() { this.view?.onResize(); } },
+      updateHeader(old) { return function() {
+        old.call(this); HoverEditor.forLeaf(this)?.updateLeaves();
+      }},
+      setEphemeralState(old) {
+        return function (state: any) {
+          old.call(this, state);
+          if (state.focus && this.view?.getViewType() === "empty") {
+            // Force empty (no-file) view to have focus so dialogs don't reset active pane
+            this.view.contentEl.tabIndex = -1;
+            this.view.contentEl.focus();
+          }
+        }
+      }
+    }));
+  }
+
+  patchWorkspace() {
     let uninstaller = around(Workspace.prototype, {
       recordHistory(old: any) {
         return function (leaf: WorkspaceLeaf, pushHistory: boolean, ...args: any[]) {
           let paneReliefLoaded = this.app.plugins.plugins["pane-relief"]?._loaded;
-          if (!paneReliefLoaded && leaf instanceof HoverLeaf) return;
+          if (!paneReliefLoaded && isHoverLeaf(leaf)) return;
           return old.call(this, leaf, pushHistory, ...args);
         };
       },
       trigger(old: any) {
         return function (event: string, ...args: any[]) {
-          if (event === "file-open" && this.activeLeaf instanceof HoverLeaf) {
+          if (event === "file-open" && isHoverLeaf(this.activeLeaf)) {
             return;
           }
           return old.call(this, event, ...args);
@@ -85,26 +108,6 @@ export default class HoverEditorPlugin extends Plugin {
           return old.call(this, event);
         }
       },
-      createLeafBySplit(old: any) {
-        return function (leaf: WorkspaceLeaf, direction: string, hasChildren: boolean, ...args: any[]) {
-          if (leaf instanceof HoverLeaf) {
-            let newLeaf = new HoverLeaf(this.app, this, leaf.hoverParent);
-            this.splitLeaf(leaf, newLeaf, direction, hasChildren);
-            newLeaf.popover = leaf.popover;
-            return newLeaf;
-          }
-          return old.call(this, leaf, direction, hasChildren, ...args);
-        };
-      },
-      splitActiveLeaf(old: any) {
-        return function (direction?: SplitDirection, ...args: any[]) {
-          let currentLeaf = this.activeLeaf;
-          if (currentLeaf instanceof HoverLeaf) {
-            this.activeLeaf = null;
-          }
-          return old.call(this, direction, ...args);
-        };
-      },
     });
     this.register(uninstaller);
   }
@@ -116,7 +119,7 @@ export default class HoverEditorPlugin extends Plugin {
         focusActiveLeaf(old: any) {
           return function (...args: any[]) {
             // sliding panes will try and make popovers part of the sliding area if we don't exclude them
-            if (this.app.workspace.activeLeaf instanceof HoverLeaf) return;
+            if (isHoverLeaf(this.app.workspace.activeLeaf)) return;
             return old.call(this, ...args);
           };
         },
@@ -157,15 +160,16 @@ export default class HoverEditorPlugin extends Plugin {
   registerContextMenuHandler() {
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf) => {
-        if (source === "pane-more-options" && leaf instanceof HoverLeaf) {
-          leaf.popover.activeMenu = menu;
+        const popover = HoverEditor.forLeaf(leaf);
+        if (source === "pane-more-options" && popover) {
+          popover.activeMenu = menu;
           menu.hideCallback = function () {
             setTimeout(() => {
-              if (leaf.popover?.activeMenu === menu) leaf.popover.activeMenu = null;
+              if (popover?.activeMenu === menu) popover.activeMenu = null;
             }, 1000);
           };
         }
-        if (file instanceof TFile && !(leaf instanceof HoverLeaf)) {
+        if (file instanceof TFile && !popover) {
           // Use this way to hover panel, so that we can hover backlink panel now.
           menu.addItem(item => {
             item
@@ -189,9 +193,7 @@ export default class HoverEditorPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", leaf => {
         document.querySelector("body > .popover.hover-popover.is-active")?.removeClass("is-active");
-        if (leaf instanceof HoverLeaf) {
-          leaf.popover.hoverEl.addClass("is-active");
-        }
+        HoverEditor.forLeaf(leaf)?.hoverEl.addClass("is-active");
       })
     );
   }
@@ -307,13 +309,12 @@ export default class HoverEditorPlugin extends Plugin {
     });
   }
 
-  spawnPopover(initiatingEl?: HTMLElement, onShowCallback?: () => any): HoverLeaf {
+  spawnPopover(initiatingEl?: HTMLElement, onShowCallback?: () => any): WorkspaceLeaf {
     let parent = this.app.workspace.activeLeaf as unknown as HoverEditorParent;
     if (!initiatingEl) initiatingEl = parent.containerEl;
     let hoverPopover = new HoverEditor(parent, initiatingEl, this, undefined, onShowCallback);
-    let leaf = hoverPopover.attachLeaf(parent);
     hoverPopover.togglePin(true);
-    return leaf;
+    return hoverPopover.attachLeaf();
   }
 
   registerSettingsTab() {

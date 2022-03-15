@@ -1,23 +1,35 @@
 import { Interactable, InteractEvent, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
-import { HoverParent, HoverPopover, Menu, requireApiVersion, setIcon, Workspace, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
-import { expandContract, HoverEditorParent, HoverLeaf } from "./leaf";
+import { EphemeralState, HoverParent, HoverPopover, Menu, OpenViewState, parseLinktext, requireApiVersion, resolveSubpath, setIcon, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import HoverEditorPlugin from "./main";
 
-const popovers = new WeakMap<HTMLElement, HoverEditor>();
+const popovers = new WeakMap<Element, HoverEditor>();
+
+export function isHoverLeaf(leaf: WorkspaceLeaf) {
+  return !!HoverEditor.forLeaf(leaf);
+}
+
+export interface HoverEditorParent {
+  hoverPopover: HoverEditor | null;
+  containerEl?: HTMLElement;
+  view?: View;
+  dom?: HTMLElement;
+}
 
 export class HoverEditor extends HoverPopover {
   explicitClose: boolean;
   onTarget: boolean;
   onHover: boolean;
-  isPinned: boolean;
+  isPinned: boolean = this.plugin.settings.autoPin === "always" ? true : false;
   isDragging: boolean;
   isResizing: boolean;
   activeMenu: Menu;
-  parent: HoverParent;
+  parent: HoverEditorParent;
   interact: Interactable;
   lockedOut: boolean;
   abortController: AbortController;
+  detaching: boolean = false;
+  opening: boolean = false;
   rootSplit: WorkspaceSplit = new (
     // the official API has no contructor for WorkspaceSplit
     WorkspaceSplit as new(ws: Workspace, dir: string) => WorkspaceSplit
@@ -26,6 +38,10 @@ export class HoverEditor extends HoverPopover {
 
   static activePopovers() {
     return document.body.findAll(".hover-popover").map(el => popovers.get(el)).filter(he => he);
+  }
+
+  static forLeaf(leaf: WorkspaceLeaf) {
+    return popovers.get(leaf.containerEl.matchParent(".hover-popover"));
   }
 
   static iteratePopoverLeaves(ws: Workspace, cb: (leaf: WorkspaceLeaf) => any) {
@@ -59,19 +75,25 @@ export class HoverEditor extends HoverPopover {
     this.isPinned = value;
   }
 
-  placePin() {
-    const firstHeader = this.hoverEl.find(".view-header"), pinHeader = this.hoverEl.find(".popover-header-icon");
-    if (firstHeader && firstHeader !== pinHeader) {
-      firstHeader.prepend(this.pinEl);
-    }
+  getDefaultMode() {
+    return this.parent?.view?.getMode ? this.parent.view.getMode() : "preview";
+  }
+
+  updateLeaves() {
+    this.plugin.app.workspace.iterateLeaves(leaf => {
+      const headerEl = leaf.view?.headerEl;
+      if (!headerEl) return;
+      if (headerEl.firstElementChild !== this.pinEl) headerEl.prepend(this.pinEl);
+      return true;
+    }, this.rootSplit) || this.explicitHide(); // close if nowhere to put the pin
   }
 
   onload() {
     super.onload();
-    this.registerEvent(this.plugin.app.workspace.on("layout-change", this.placePin, this));
+    this.registerEvent(this.plugin.app.workspace.on("layout-change", this.updateLeaves, this));
   }
 
-  toggleMinimized(value?: boolean) {
+  toggleMinimized() {
     let hoverEl = this.hoverEl;
 
     let viewHeader = this.leaves()[0].view.headerEl;
@@ -90,19 +112,17 @@ export class HoverEditor extends HoverPopover {
     this.interact.reflow({ name: "drag", axis: "xy" });
   }
 
-  attachLeaf(hoverParent: HoverEditorParent): HoverLeaf {
-    const leaf = new HoverLeaf(this.plugin.app, this.plugin, hoverParent);
-    leaf.popover = this;
-    this.togglePin(this.plugin.settings.autoPin === "always" ? true : false);
-    this.rootSplit.insertChild(0, leaf);
+  attachLeaf(): WorkspaceLeaf {
+    this.rootSplit.getRoot = () => this.plugin.app.workspace.rootSplit;
     this.hoverEl.prepend(this.rootSplit.containerEl);
-    this.placePin();
+    const leaf = this.plugin.app.workspace.createLeafInParent(this.rootSplit, 0);
+    this.updateLeaves();
     return leaf;
   }
 
   leaves() {
-    const leaves: HoverLeaf[] = []
-    this.plugin.app.workspace.iterateLeaves(leaf => {leaves.push(leaf as HoverLeaf)}, this.rootSplit);
+    const leaves: WorkspaceLeaf[] = []
+    this.plugin.app.workspace.iterateLeaves(leaf => {leaves.push(leaf)}, this.rootSplit);
     return leaves;
   }
 
@@ -115,9 +135,6 @@ export class HoverEditor extends HoverPopover {
       },
       { once: true, capture: true }
     );
-    // if (this.parent?.hoverPopover) {
-    //   this.parent.hoverPopover.hide();
-    // }
     if (this.parent) {
       this.parent.hoverPopover = this;
     }
@@ -132,10 +149,6 @@ export class HoverEditor extends HoverPopover {
     }
   }
 
-  shouldShow() {
-    return this.shouldShowSelf() || this.shouldShowChild();
-  }
-
   explicitHide() {
     this.activeMenu?.hide();
     this.activeMenu = null;
@@ -145,11 +158,8 @@ export class HoverEditor extends HoverPopover {
   }
 
   shouldShowSelf() {
-    return this.onTarget || this.onHover ;
-  }
-
-  shouldShowChild() {
-    return super.shouldShowChild();
+    // Don't let obsidian show() us if we've already started closing
+    return !this.detaching && (this.onTarget || this.onHover);
   }
 
   registerInteract() {
@@ -228,11 +238,33 @@ export class HoverEditor extends HoverPopover {
   }
 
   hide() {
-    if (!(this.isPinned || this.activeMenu || this.onHover)) {
+    if (this.detaching || !(this.isPinned || this.activeMenu || this.onHover)) {
+      // Once we reach this point, we're committed to closing
+      this.detaching = true;
+
+      // A timer might be pending to call show() for the first time, make sure
+      // it doesn't bring us back up after we close
+      if (this.timer) {
+        clearTimeout(this.timer);
+        this.timer = 0;
+      }
+
+      // Hide our HTML element immediately, even if our leaves might not be
+      // detachable yet.  This makes things more responsive and improves the
+      // odds of not showing an empty popup that's just going to disappear
+      // momentarily.
+      this.hoverEl.hide();
+
+      // If a file load is in progress, we need to wait until it's finished before
+      // detaching leaves.  Because we set .detaching, The in-progress openFile()
+      // will call us again when it finishes.
+      if (this.opening) return;
+
       const leaves = this.leaves();
       if (leaves.length) {
-        // the leaf detach logic needs to be called first before we close the popover
-        // leaf detach will make a call to back to this method to complete the unloading
+        // Detach all leaves before we unload the popover and remove it from the DOM.
+        // Each leaf.detach() will trigger layout-changed, and our updateLeaves()
+        // method will then call hide() again when the last one is gone.
         leaves.forEach(leaf => leaf.detach());
       } else {
         this.parent = null;
@@ -252,6 +284,94 @@ export class HoverEditor extends HoverPopover {
       }
     }
   }
+
+  resolveLink(linkText: string, sourcePath: string): TFile {
+    let link = parseLinktext(linkText);
+    let tFile = link ? this.plugin.app.metadataCache.getFirstLinkpathDest(link.path, sourcePath) : undefined;
+    return tFile;
+  }
+
+  async openLink(linkText: string, sourcePath: string, eState?: EphemeralState, autoCreate?: boolean) {
+    // if (eState && eState.scroll) eState.line = eState.scroll;
+    let file = this.resolveLink(linkText, sourcePath);
+    let link = parseLinktext(linkText);
+    if (!file && autoCreate) {
+      let folder = this.plugin.app.fileManager.getNewFileParent(sourcePath);
+      file = await this.plugin.app.fileManager.createNewMarkdownFile(folder, link.path);
+    }
+    if (!file) {
+      const leaf = this.attachLeaf();
+      leaf.view.actionListEl.empty();
+      let createEl = leaf.view.actionListEl.createEl("button", "empty-state-action");
+      createEl.textContent = `${linkText} is not yet created. Click to create.`;
+      setTimeout(() => {
+        createEl.focus();
+      }, 200);
+      createEl.addEventListener(
+        "click",
+        async () => {
+          this.togglePin(true);
+          await this.openLink(linkText, sourcePath, eState, true);
+        },
+        { once: true }
+      );
+      return;
+    }
+    eState = Object.assign(this.buildEphemeralState(file, link), eState);
+    let parentMode = this.getDefaultMode();
+    let state = this.buildState(parentMode, eState);
+    const leaf = await this.openFile(file, state);
+    if (state.state?.mode === "source") {
+      setTimeout(() => {
+        if (this.detaching) return;
+        leaf.view?.setEphemeralState(state.eState);
+      }, 400);
+    }
+  }
+
+  async openFile(file: TFile, openState?: OpenViewState) {
+    if (this.detaching) return;
+    const leaf = this.attachLeaf();
+    this.opening = true;
+    try {
+      await leaf.openFile(file, openState);
+    } catch (e) {
+      console.error(e)
+    } finally {
+      this.opening = false;
+      if (this.detaching) this.explicitHide();
+    }
+    return leaf;
+  }
+
+  buildState(parentMode: string, eState?: EphemeralState) {
+    let defaultMode = this.plugin.settings.defaultMode;
+    let mode = defaultMode === "match" ? parentMode : this.plugin.settings.defaultMode;
+    return {
+      active: this.plugin.settings.autoFocus,
+      state: { mode: mode },
+      eState: eState,
+    };
+  }
+
+  buildEphemeralState(
+    file: TFile,
+    link?: {
+      path: string;
+      subpath: string;
+    }
+  ) {
+    let subpath = resolveSubpath(this.plugin.app.metadataCache.getFileCache(file), link?.subpath);
+    let eState: EphemeralState = { subpath: link?.subpath };
+    if (this.plugin.settings.autoFocus) eState.focus = true;
+    if (subpath) {
+      eState.line = subpath.start.line;
+      eState.startLoc = subpath.start;
+      eState.endLoc = subpath.end || null;
+    }
+    return eState;
+  }
+
 }
 
 function dragMoveListener(event: InteractEvent) {
@@ -264,4 +384,14 @@ function dragMoveListener(event: InteractEvent) {
 
   target.setAttribute("data-x", String(x));
   target.setAttribute("data-y", String(y));
+}
+
+function expandContract(el: HTMLElement, expand: boolean) {
+  let contentHeight = (el.querySelector(".view-content") as HTMLElement).offsetHeight;
+  contentHeight = expand ? -contentHeight : contentHeight;
+  let x = parseFloat(el.getAttribute("data-x")) || 0;
+  let y = (parseFloat(el.getAttribute("data-y")) || 0) + contentHeight;
+
+  el.style.transform = "translate(" + x + "px, " + y + "px)";
+  el.setAttribute("data-y", String(y));
 }
