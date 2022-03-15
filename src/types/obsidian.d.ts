@@ -31,13 +31,17 @@ declare module "obsidian" {
   }
   interface WorkspaceLeaf {
     openLinkText(linkText: string, path: string, state?: any): Promise<void>;
+    updateHeader(): void;
+    containerEl: HTMLElement;
     working: boolean;
     parentSplit: WorkspaceParent;
     activeTime: number;
   }
   interface Workspace {
     recordHistory(leaf: WorkspaceLeaf, pushHistory: boolean): void;
-    iterateLeaves(callback: (item: WorkspaceItem) => any, item: WorkspaceItem): void;
+    iterateLeaves(callback: (item: WorkspaceLeaf) => any, item: WorkspaceParent): boolean;
+    getDropLocation(event: MouseEvent): {target: WorkspaceItem, sidedock: boolean};
+    recursiveGetTarget(event: MouseEvent, parent: WorkspaceParent): WorkspaceItem;
   }
   interface Editor {
     getClickableTokenAt(pos: EditorPosition): {
@@ -94,7 +98,7 @@ declare module "obsidian" {
     position(pos?: Pos): void;
     hide(): void;
     shouldShowSelf(): boolean;
-    shouldShowChild(): boolean;
+    timer: number;
   }
   interface Pos {
     x: number;

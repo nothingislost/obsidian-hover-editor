@@ -24,6 +24,11 @@
   z-index: calc(var(--layer-popover) + 2);
 }
 
+/* Drag/link overlay needs to overlay popups */
+.workspace-fake-target-overlay, .workspace-drop-overlay {
+  z-index: calc(var(--layer-popover) + 3);
+}
+
 .popover.hover-popover[style*="height"],
 .popover.hover-popover[style*="width"] {
   /* min-height: 36px; */
