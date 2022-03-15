@@ -151,24 +151,32 @@ export class HoverLeaf extends WorkspaceLeaf {
     }
     this.detaching = true;
 
-    // Find most recently active leaf in this popover
-    let nextLeaf: WorkspaceLeaf = null;
-    this.app.workspace.iterateLeaves((leaf: WorkspaceLeaf) => {
-      if (leaf !== this && (!nextLeaf || nextLeaf.activeTime < leaf.activeTime))  nextLeaf = leaf;
-    }, this.parentSplit?.getRoot());
-
     if (this.app.workspace.activeLeaf === this) {
-      // Activate the remaining leaf, or else the most recent main leaf before detaching
-      this.app.workspace.setActiveLeaf(nextLeaf || this.app.workspace.getMostRecentLeaf(), false, true);
+      // Activate the most recently active leaf (including popovers) before detaching
+      this.app.workspace.setActiveLeaf(this.mostRecentLeaf(), false, true);
     }
     super.detach();
     // TODO: Research this possible scrollTargets memory leak in CodeMirror6 core
     // @ts-ignore
     if (this.view?.editMode?.cm?.observer?.scrollTargets) this.view.editMode.cm.observer.scrollTargets = null;
     // Close the popover if there's nothing left
-    if (this.popover && !nextLeaf) {
-      this.popover?.explicitHide && this.popover.explicitHide();
+    if (this.popover && !this.popover.leaves().length) {
+      this.popover.explicitHide();
       this.popover = null;
+    }
+  }
+
+  mostRecentLeaf() {
+    const excluding = this;
+    let nextLeaf: WorkspaceLeaf = null;
+    // Find most recently active leaf in any popover or the main workspace area
+    this.app.workspace.iterateRootLeaves(scan);
+    HoverEditor.activePopovers().forEach(popover => {
+      this.app.workspace.iterateLeaves(scan, popover.rootSplit);
+    })
+    return nextLeaf;
+    function scan(leaf: WorkspaceLeaf) {
+      if (leaf !== excluding && (!nextLeaf || nextLeaf.activeTime < leaf.activeTime))  nextLeaf = leaf;
     }
   }
 }
