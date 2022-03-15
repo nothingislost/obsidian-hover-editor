@@ -87,7 +87,7 @@ export class HoverLeaf extends WorkspaceLeaf {
     } finally {
       this.opening = false;
     }
-    if (this.popover) this.view.iconEl.replaceWith(this.popover.pinEl);
+    if (this.popover) this.popover.placePin();
     if (openState.state?.mode === "source" || openState.eState) {
       setTimeout(() => {
         if (this.detaching) return;

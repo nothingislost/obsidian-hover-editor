@@ -52,6 +52,18 @@ export class HoverEditor extends HoverPopover {
     this.isPinned = value;
   }
 
+  placePin() {
+    const firstHeader = this.hoverEl.find(".view-header"), pinHeader = this.hoverEl.find(".popover-header-icon");
+    if (firstHeader && firstHeader !== pinHeader) {
+      firstHeader.prepend(this.pinEl);
+    }
+  }
+
+  onload() {
+    super.onload();
+    this.registerEvent(this.plugin.app.workspace.on("layout-change", this.placePin, this));
+  }
+
   toggleMinimized(value?: boolean) {
     let hoverEl = this.hoverEl;
 
@@ -77,6 +89,7 @@ export class HoverEditor extends HoverPopover {
     this.togglePin(this.plugin.settings.autoPin === "always" ? true : false);
     this.rootSplit.insertChild(0, leaf);
     this.hoverEl.prepend(this.rootSplit.containerEl);
+    this.placePin();
     return leaf;
   }
 
