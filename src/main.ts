@@ -1,10 +1,8 @@
 import { around } from "monkey-around";
 import {
   debounce,
-  HoverPopover,
   MarkdownView,
   Menu,
-  MenuItem,
   Notice,
   Plugin,
   PopoverState,
@@ -13,7 +11,6 @@ import {
   TFile,
   Workspace,
   WorkspaceLeaf,
-  WorkspaceSplit,
 } from "obsidian";
 import { HoverEditorParent, HoverLeaf } from "./leaf";
 import { onLinkHover } from "./onLinkHover";
@@ -77,6 +74,15 @@ export default class HoverEditorPlugin extends Plugin {
       iterateRootLeaves(old) {
         return function(callback: (leaf: WorkspaceLeaf) => any) {
           return old.call(this, callback) || HoverEditor.iteratePopoverLeaves(this, callback);
+        }
+      },
+      getDropLocation(old) {
+        return function getDropLocation(event: MouseEvent) {
+          for (const popover of HoverEditor.activePopovers()) {
+              const dropLoc = this.recursiveGetTarget(event, popover.rootSplit);
+              if (dropLoc) return {target: dropLoc, sidedock: false};
+          }
+          return old.call(this, event);
         }
       },
       createLeafBySplit(old: any) {
@@ -152,15 +158,6 @@ export default class HoverEditorPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf) => {
         if (source === "pane-more-options" && leaf instanceof HoverLeaf) {
-          // there's not a great way to remove native items from the context menu... so we hack it
-          menu.items
-            .filter((item: MenuItem) => {
-              if (item.iconEl.querySelector("svg.link")) {
-                menu.dom.removeChild(item.dom);
-                menu.items.remove(item)
-                return true;
-              }
-            });
           leaf.popover.activeMenu = menu;
           menu.hideCallback = function () {
             setTimeout(() => {

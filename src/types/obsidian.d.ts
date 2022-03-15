@@ -38,6 +38,8 @@ declare module "obsidian" {
   interface Workspace {
     recordHistory(leaf: WorkspaceLeaf, pushHistory: boolean): void;
     iterateLeaves(callback: (item: WorkspaceItem) => any, item: WorkspaceItem): boolean;
+    getDropLocation(event: MouseEvent): {target: WorkspaceItem, sidedock: boolean};
+    recursiveGetTarget(event: MouseEvent, parent: WorkspaceParent): WorkspaceItem;
   }
   interface Editor {
     getClickableTokenAt(pos: EditorPosition): {
