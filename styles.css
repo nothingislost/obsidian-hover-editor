@@ -95,6 +95,11 @@ body.is-dragging-popover .tooltip {
   transform: unset;
 }
 
+.popover.hover-popover .workspace-leaf-content[data-type="empty"] .view-header {
+  /* ensures that minimal theme doesn't hide the popover header */
+  display: flex;
+}
+
 .popover.hover-popover .view-header-icon {
   /* !important since a few themes are forcing display of this element */
   /* this can not re-enabled until HoverLeafs can be safely added/cloned into the native splits */

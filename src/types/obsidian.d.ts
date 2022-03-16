@@ -60,6 +60,7 @@ declare module "obsidian" {
     getMode(): string;
     headerEl: HTMLElement;
     contentEl: HTMLElement;
+    emptyTitleEl?: HTMLElement;
   }
   interface FileManager {
     createNewMarkdownFile(folder: TFolder, fileName: string): Promise<TFile>;
