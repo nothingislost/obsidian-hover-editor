@@ -300,21 +300,7 @@ export class HoverEditor extends HoverPopover {
       file = await this.plugin.app.fileManager.createNewMarkdownFile(folder, link.path);
     }
     if (!file) {
-      const leaf = this.attachLeaf();
-      leaf.view.actionListEl.empty();
-      let createEl = leaf.view.actionListEl.createEl("button", "empty-state-action");
-      createEl.textContent = `${linkText} is not yet created. Click to create.`;
-      setTimeout(() => {
-        createEl.focus();
-      }, 200);
-      createEl.addEventListener(
-        "click",
-        async () => {
-          this.togglePin(true);
-          await this.openLink(linkText, sourcePath, eState, true);
-        },
-        { once: true }
-      );
+      this.displayCreateFileAction(linkText, sourcePath, eState);
       return;
     }
     eState = Object.assign(this.buildEphemeralState(file, link), eState);
@@ -327,6 +313,27 @@ export class HoverEditor extends HoverPopover {
         leaf.view?.setEphemeralState(state.eState);
       }, 400);
     }
+  }
+
+  displayCreateFileAction(linkText: string, sourcePath: string, eState?: EphemeralState) {
+    const leaf = this.attachLeaf();
+      if (leaf?.view?.emptyTitleEl) {
+        leaf.view.emptyTitleEl?.hide();
+        leaf.view.actionListEl.empty();
+        let createEl = leaf.view.actionListEl.createEl("button", "empty-state-action");
+        createEl.textContent = `${linkText} is not yet created. Click to create.`;
+        setTimeout(() => {
+          createEl.focus();
+        }, 200);
+        createEl.addEventListener(
+          "click",
+          async () => {
+            this.togglePin(true);
+            await this.openLink(linkText, sourcePath, eState, true);
+          },
+          { once: true }
+        );
+      }
   }
 
   async openFile(file: TFile, openState?: OpenViewState) {
