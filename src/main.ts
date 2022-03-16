@@ -15,10 +15,13 @@ import {
 import { onLinkHover } from "./onLinkHover";
 import { HoverEditorParent, HoverEditor, isHoverLeaf } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
+import type {IHoverApi} from "./IHoverApi";
+import {HoverApi} from "./HoverAPI";
 
 export default class HoverEditorPlugin extends Plugin {
   settings: HoverEditorSettings;
   settingsTab: SettingTab;
+  public api: IHoverApi;
 
   async onload() {
     await this.loadSettings();
@@ -40,6 +43,9 @@ export default class HoverEditorPlugin extends Plugin {
       this.patchWorkspaceLeaf();
       this.patchSlidingPanes();
       this.patchLinkHover();
+
+      // Support Basic API
+      this.api = new HoverApi(this).make();
     });
   }
 
