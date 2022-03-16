@@ -21,6 +21,14 @@ export default class HoverEditorPlugin extends Plugin {
   settingsTab: SettingTab;
 
   async onload() {
+    this.registerActivePopoverHandler();
+    this.registerViewportResizeHandler();
+    this.registerContextMenuHandler();
+    this.registerCommands();
+    this.patchUnresolvedGraphNodeHover();
+    this.patchWorkspace();
+    this.patchWorkspaceLeaf();
+
     await this.loadSettings();
     this.registerSettingsTab();
 
@@ -31,13 +39,6 @@ export default class HoverEditorPlugin extends Plugin {
           30000
         );
       }
-      this.registerActivePopoverHandler();
-      this.registerViewportResizeHandler();
-      this.registerContextMenuHandler();
-      this.registerCommands();
-      this.patchUnresolvedGraphNodeHover();
-      this.patchWorkspace();
-      this.patchWorkspaceLeaf();
       this.patchSlidingPanes();
       this.patchLinkHover();
     });
