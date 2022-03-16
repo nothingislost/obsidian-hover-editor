@@ -41,7 +41,8 @@ export class HoverEditor extends HoverPopover {
   }
 
   static forLeaf(leaf: WorkspaceLeaf) {
-    return popovers.get(leaf.containerEl.matchParent(".hover-popover"));
+    // leaf can be null such as when right clicking on an internal link
+    return popovers.get(leaf?.containerEl.matchParent(".hover-popover"));
   }
 
   static iteratePopoverLeaves(ws: Workspace, cb: (leaf: WorkspaceLeaf) => any) {
