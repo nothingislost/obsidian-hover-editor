@@ -206,13 +206,17 @@ export class HoverEditor extends HoverPopover {
           move: function (event: ResizeEvent) {
             let { x, y } = event.target.dataset;
 
+            x = x ? x : event.target.style.left;
+            y = y ? y : event.target.style.top;
+
             x = String((parseFloat(x) || 0) + event.deltaRect.left);
             y = String((parseFloat(y) || 0) + event.deltaRect.top);
 
             Object.assign(event.target.style, {
               width: `${event.rect.width}px`,
               height: `${event.rect.height}px`,
-              transform: `translate(${x}px, ${y}px)`,
+              top: `${y}px`,
+              left: `${x}px`
             });
 
             Object.assign(event.target.dataset, { x, y });
@@ -385,10 +389,16 @@ export class HoverEditor extends HoverPopover {
 function dragMoveListener(event: InteractEvent) {
   let target = event.target as HTMLElement;
 
-  let x = (parseFloat(target.getAttribute("data-x")) || 0) + event.dx;
-  let y = (parseFloat(target.getAttribute("data-y")) || 0) + event.dy;
+  let { x, y } = target.dataset;
 
-  target.style.transform = "translate(" + x + "px, " + y + "px)";
+  x = x ? x : target.style.left;
+  y = y ? y : target.style.top;
+
+  x = String((parseFloat(x) || 0) + event.dx);
+  y = String((parseFloat(y) || 0) + event.dy);
+
+  target.style.top = y ? y + "px" : target.style.top;
+  target.style.left = x ? x + "px" : target.style.left;
 
   target.setAttribute("data-x", String(x));
   target.setAttribute("data-y", String(y));
@@ -397,9 +407,7 @@ function dragMoveListener(event: InteractEvent) {
 function expandContract(el: HTMLElement, expand: boolean) {
   let contentHeight = (el.querySelector(".view-content") as HTMLElement).offsetHeight;
   contentHeight = expand ? -contentHeight : contentHeight;
-  let x = parseFloat(el.getAttribute("data-x")) || 0;
   let y = (parseFloat(el.getAttribute("data-y")) || 0) + contentHeight;
-
-  el.style.transform = "translate(" + x + "px, " + y + "px)";
+  el.style.top = y + "px";
   el.setAttribute("data-y", String(y));
 }
