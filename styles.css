@@ -14,6 +14,8 @@
   min-height: 36px;
   max-height: unset;
   min-width: 41px;
+  /* touch action none fixes dragging and resizing on mobile */
+  touch-action: none;
 }
 
 .popover.hover-popover.is-active {
