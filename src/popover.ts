@@ -1,5 +1,6 @@
 import { Interactable, InteractEvent, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
+import { around } from "monkey-around";
 import { EphemeralState, HoverParent, HoverPopover, Menu, OpenViewState, parseLinktext, requireApiVersion, resolveSubpath, setIcon, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import HoverEditorPlugin from "./main";
 
@@ -347,6 +348,21 @@ export class HoverEditor extends HoverPopover {
     this.opening = true;
     try {
       await leaf.openFile(file, openState);
+      if (this.plugin.settings.autoFocus && !this.detaching) {
+        this.plugin.app.workspace.setActiveLeaf(leaf, false, true);
+        // Prevent file-open event for this leaf for the next 1ms
+        // (The event is triggered 0ms after setActiveLeaf, so we register
+        // afterward to ensure our uninstall happens after the trigger.)
+        setTimeout(around(Workspace.prototype, {
+          trigger(old) {
+            return function (event: string, ...args: any[]) {
+              if (event !== "file-open" || this.activeLeaf !== leaf) {
+                return old.call(this, event, ...args);
+              }
+            };
+          }
+        }), 1);
+      }
     } catch (e) {
       console.error(e)
     } finally {
@@ -360,7 +376,6 @@ export class HoverEditor extends HoverPopover {
     let defaultMode = this.plugin.settings.defaultMode;
     let mode = defaultMode === "match" ? parentMode : this.plugin.settings.defaultMode;
     return {
-      active: this.plugin.settings.autoFocus,
       state: { mode: mode },
       eState: eState,
     };
@@ -375,7 +390,6 @@ export class HoverEditor extends HoverPopover {
   ) {
     let subpath = resolveSubpath(this.plugin.app.metadataCache.getFileCache(file), link?.subpath);
     let eState: EphemeralState = { subpath: link?.subpath };
-    if (this.plugin.settings.autoFocus) eState.focus = true;
     if (subpath) {
       eState.line = subpath.start.line;
       eState.startLoc = subpath.start;

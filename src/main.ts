@@ -80,14 +80,6 @@ export default class HoverEditorPlugin extends Plugin {
           return old.call(this, leaf, pushHistory, ...args);
         };
       },
-      trigger(old: any) {
-        return function (event: string, ...args: any[]) {
-          if (event === "file-open" && isHoverLeaf(this.activeLeaf)) {
-            return;
-          }
-          return old.call(this, event, ...args);
-        };
-      },
       iterateAllLeaves(old) {
         return function(cb) {
           this.iterateRootLeaves(cb);
