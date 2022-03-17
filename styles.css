@@ -27,7 +27,8 @@
 }
 
 /* Drag/link overlay needs to overlay popups */
-.workspace-fake-target-overlay, .workspace-drop-overlay {
+.workspace-fake-target-overlay,
+.workspace-drop-overlay {
   z-index: calc(var(--layer-popover) + 3);
 }
 
@@ -44,21 +45,54 @@
 .popover.hover-popover .resize-handle.bottom-left {
   bottom: 0;
   left: 0;
+  z-index: 2;
+  margin-left: -4px;
+  margin-bottom: -4px;
+}
+
+.popover.hover-popover .resize-handle.left {
+  bottom: 0;
+  top: 0;
+  left: 0;
+  margin-left: -4px;
+}
+
+.popover.hover-popover .resize-handle.right {
+  bottom: 0;
+  top: 0;
+  right: 0;
+  margin-right: -4px;
+}
+
+.popover.hover-popover .resize-handle.bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin-bottom: -4px;
 }
 
 .popover.hover-popover .resize-handle.bottom-right {
   bottom: 0;
   right: 0;
+  z-index: 2;
+  margin-right: -4px;
+  margin-bottom: -4px;
 }
 
 .popover.hover-popover .resize-handle.top-left {
   top: 0;
   left: 0;
+  z-index: 2;
+  margin-left: -4px;
+  margin-top: -4px;
 }
 
 .popover.hover-popover .resize-handle.top-right {
   top: 0;
   right: 0;
+  z-index: 2;
+  margin-right: -4px;
+  margin-top: -4px;
 }
 
 .popover.hover-popover .drag-handle.top {
@@ -68,7 +102,7 @@
   right: 20px;
   padding-bottom: 15px;
   z-index: 0;
-  cursor: grab;
+  cursor: move;
 }
 
 body.is-dragging-popover .tooltip {
@@ -90,7 +124,17 @@ body.is-dragging-popover .tooltip {
 
 .mod-pin-popover.is-active {
   color: var(--text-accent);
-  transform: unset;
+  transform: rotate(0deg);
+  animation: scale 1s forwards;
+}
+
+@keyframes scale {
+  from {
+    transform: scale(1.8);
+  }
+  to {
+    transform: scale(1);
+  }
 }
 
 .mod-pin-popover.is-active > svg {
@@ -110,4 +154,8 @@ body.is-dragging-popover .tooltip {
 
 .popover.hover-popover .workspace-split > .workspace-leaf:last-child > .workspace-leaf-resize-handle {
   display: none;
+}
+
+.popover.hover-popover.is-dragging {
+  opacity: 0.8;
 }

@@ -65,6 +65,7 @@ export class HoverEditor extends HoverPopover {
     } else {
       setIcon(pinEl, "pin", 17);
     }
+    this.togglePin(this.isPinned);
     this.createResizeHandles();
   }
 
@@ -186,6 +187,14 @@ export class HoverEditor extends HoverPopover {
         listeners: {
           start(event: DragEvent) {
             self.togglePin(true);
+            if (event.target instanceof HTMLElement) {
+              event.target.addClass("is-dragging");
+            }
+          },
+          end(event: DragEvent) {
+            if (event.target instanceof HTMLElement) {
+              event.target.removeClass("is-dragging");
+            }
           },
           move: dragMoveListener,
         },
@@ -194,9 +203,9 @@ export class HoverEditor extends HoverPopover {
       .resizable({
         edges: {
           top: ".top-left, .top-right",
-          left: ".top-left, .bottom-left",
-          bottom: ".bottom-left, .bottom-right",
-          right: ".top-right, .bottom-right",
+          left: ".top-left, .bottom-left, .left",
+          bottom: ".bottom-left, .bottom-right, .bottom",
+          right: ".top-right, .bottom-right, .right",
         },
         listeners: {
           start(event: ResizeEvent) {
@@ -232,6 +241,9 @@ export class HoverEditor extends HoverPopover {
     this.hoverEl.createDiv("resize-handle bottom-right");
     this.hoverEl.createDiv("resize-handle top-left");
     this.hoverEl.createDiv("resize-handle top-right");
+    this.hoverEl.createDiv("resize-handle right");
+    this.hoverEl.createDiv("resize-handle left");
+    this.hoverEl.createDiv("resize-handle bottom");
     this.hoverEl.createDiv("drag-handle top");
   }
 
