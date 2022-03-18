@@ -17,7 +17,11 @@ declare module "obsidian" {
     };
     plugins: {
       manifests: Record<string, PluginManifest>;
-      plugins: Record<string, Plugin>;
+      plugins: Record<string, Plugin> & {
+        ["recent-files-obsidian"]: Plugin & {
+          shouldAddFile(file: TFile): boolean;
+        }
+      };
       getPlugin(id: string): Plugin;
     };
     dom: { appContainerEl: HTMLElement };
@@ -42,6 +46,7 @@ declare module "obsidian" {
     iterateLeaves(callback: (item: WorkspaceLeaf) => any, item: WorkspaceParent): boolean;
     getDropLocation(event: MouseEvent): {target: WorkspaceItem, sidedock: boolean};
     recursiveGetTarget(event: MouseEvent, parent: WorkspaceParent): WorkspaceItem;
+    recordMostRecentOpenedFile(file: TFile): void;
   }
   interface Editor {
     getClickableTokenAt(pos: EditorPosition): {
