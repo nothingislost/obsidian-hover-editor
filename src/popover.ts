@@ -368,15 +368,27 @@ export class HoverEditor extends HoverPopover {
       await leaf.openFile(file, openState);
       if (this.plugin.settings.autoFocus && !this.detaching) {
         this.plugin.app.workspace.setActiveLeaf(leaf, false, true);
-        // Prevent file-open event for this leaf for the next 1ms
-        // (The event is triggered 0ms after setActiveLeaf, so we register
-        // afterward to ensure our uninstall happens after the trigger.)
+        // Prevent this leaf's file from registering as a recent file
+        // (for the quick switcher or Recent Files plugin) for the next
+        // 1ms.  (They're both triggered by a file-open event that happens
+        // in a timeout 0ms after setActiveLeaf, so we register now and
+        // uninstall later to ensure our uninstalls happen after the event.)
         setTimeout(around(Workspace.prototype, {
-          trigger(old) {
-            return function (event: string, ...args: any[]) {
-              if (event !== "file-open" || this.activeLeaf !== leaf) {
-                return old.call(this, event, ...args);
+          recordMostRecentOpenedFile(old) {
+            return function (_file: TFile) {
+              // Don't update the quick switcher's recent list
+              if (_file !== file) {
+                return old.call(this, _file);
               }
+            };
+          }
+        }), 1);
+        const recentFiles = this.plugin.app.plugins.plugins["recent-files-obsidian"];
+        if (recentFiles) setTimeout(around(recentFiles, {
+          shouldAddFile(old) {
+            return function (_file: TFile) {
+              // Don't update the Recent Files plugin
+              return (_file !== file) && old.call(this, _file);
             };
           }
         }), 1);
