@@ -15,6 +15,7 @@
   max-height: unset;
   min-width: 41px;
   /* touch action none fixes dragging and resizing on mobile */
+  overflow: visible;
   touch-action: none;
 }
 
@@ -39,68 +40,67 @@
 
 .popover.hover-popover .resize-handle {
   position: absolute;
-  padding: 4px;
+  touch-action: none;
+  /* padding: 12px; */
 }
 
 .popover.hover-popover .resize-handle.bottom-left {
-  bottom: 0;
-  left: 0;
-  z-index: 2;
-  margin-left: -4px;
-  margin-bottom: -4px;
+  bottom: -9px;
+  height: 18px;
+  left: -9px;
+  width: 18px;
 }
 
 .popover.hover-popover .resize-handle.left {
-  bottom: 0;
-  top: 0;
-  left: 0;
-  margin-left: -4px;
+  height: calc(100% - 18px);
+  left: -9px;
+  top: 9px;
+  width: 12px;
 }
 
 .popover.hover-popover .resize-handle.right {
-  bottom: 0;
-  top: 0;
-  right: 0;
-  margin-right: -4px;
+  height: calc(100% - 18px);
+  right: -9px;
+  top: 9px;
+  width: 12px;
 }
 
 .popover.hover-popover .resize-handle.bottom {
-  bottom: 0;
-  left: 0;
-  right: 0;
-  margin-bottom: -4px;
+  bottom: -9px;
+  height: 12px;
+  left: 9px;
+  width: calc(100% - 18px);
 }
 
 .popover.hover-popover .resize-handle.bottom-right {
-  bottom: 0;
-  right: 0;
-  z-index: 2;
-  margin-right: -4px;
-  margin-bottom: -4px;
+  bottom: -9px;
+  height: 18px;
+  right: -9px;
+  width: 18px;
 }
 
 .popover.hover-popover .resize-handle.top-left {
-  top: 0;
-  left: 0;
-  z-index: 2;
-  margin-left: -4px;
-  margin-top: -4px;
+  top: -9px;
+  height: 18px;
+  left: -9px;
+  width: 18px;
 }
 
 .popover.hover-popover .resize-handle.top-right {
-  top: 0;
-  right: 0;
-  z-index: 2;
-  margin-right: -4px;
-  margin-top: -4px;
+  top: -9px;
+  height: 18px;
+  right: -9px;
+  width: 18px;
 }
 
 .popover.hover-popover .drag-handle.top {
   position: absolute;
-  top: 0;
-  left: 20px;
-  right: 20px;
-  padding-bottom: 15px;
+  width: calc(100% - 18px);
+  top: -9px;
+  /* left: 20px;
+  right: 20px; */
+  /* padding-bottom: 15px; */
+  height: 18px;
   z-index: 0;
   cursor: move;
 }
