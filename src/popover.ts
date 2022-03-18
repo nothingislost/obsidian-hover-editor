@@ -104,10 +104,16 @@ export class HoverEditor extends HoverPopover {
 
     if (!hoverEl.style.maxHeight) {
       this.plugin.settings.rollDown && expandContract(hoverEl, false);
+      hoverEl.setAttribute("data-restore-height", String(hoverEl.offsetHeight));
       hoverEl.style.minHeight = headerHeight + "px";
       hoverEl.style.maxHeight = headerHeight + "px";
       hoverEl.toggleClass("is-minimized", true);
     } else {
+      let restoreHeight = hoverEl.getAttribute("data-restore-height");
+      if (restoreHeight) {
+        hoverEl.removeAttribute("data-restore-height");
+        hoverEl.style.height = restoreHeight + "px";
+      }
       hoverEl.style.removeProperty("max-height");
       hoverEl.toggleClass("is-minimized", false);
       this.plugin.settings.rollDown && expandContract(hoverEl, true);
