@@ -5,11 +5,14 @@
   --he-resize-handle-side-size: 12px;
   --he-resize-handle-corner-size: 18px;
   --he-drag-handle-top-size: 18px;
-  /* calculated variables, do not modify */
-  --he-drag-handle-top-offset: calc((var(--he-drag-handle-top-size) - 8px) * -1);
-  --he-resize-handle-side-offset: calc((var(--he-resize-handle-side-size) - 3px) * -1);
-  --he-resize-handle-corner-offset: calc((var(--he-resize-handle-corner-size) / 2) * -1);
-  --he-resize-handle-side-length: calc(100% - var(--he-resize-handle-corner-size));
+}
+
+body {
+    /* calculated variables, do not modify */
+    --he-drag-handle-top-offset: calc((var(--he-drag-handle-top-size) - 8px) * -1);
+    --he-resize-handle-side-offset: calc((var(--he-resize-handle-side-size) - 3px) * -1);
+    --he-resize-handle-corner-offset: calc((var(--he-resize-handle-corner-size) / 2) * -1);
+    --he-resize-handle-side-length: calc(100% - var(--he-resize-handle-corner-size));
 }
 
 .popover.hover-popover .workspace-leaf,
