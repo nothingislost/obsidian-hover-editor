@@ -181,7 +181,7 @@ export class HoverEditor extends HoverPopover {
   }
 
   registerInteract() {
-    let { appContainerEl } = this.plugin.app.dom;
+    let viewPortBounds = this.plugin.settings.constrainToViewport ? this.plugin.app.dom.appContainerEl : null;
     let self = this;
     let i = interact(this.hoverEl)
       .preventDefault("always")
@@ -193,8 +193,7 @@ export class HoverEditor extends HoverPopover {
         // inertia: false,
         modifiers: [
           interact.modifiers.restrictRect({
-            restriction: appContainerEl,
-            endOnly: true,
+            restriction: viewPortBounds,
           }),
         ],
         allowFrom: ".top",
@@ -223,6 +222,9 @@ export class HoverEditor extends HoverPopover {
           right: ".top-right, .bottom-right, .right",
         },
         modifiers: [
+          interact.modifiers.restrictEdges({
+            outer: viewPortBounds
+          }),
           interact.modifiers.restrictSize({
             min: self.calculateMinHeightRestriction.bind(this)
           })
