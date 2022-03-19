@@ -96,11 +96,16 @@ export class HoverEditor extends HoverPopover {
     this.registerEvent(this.plugin.app.workspace.on("layout-change", this.updateLeaves, this));
   }
 
-  toggleMinimized() {
+  get headerHeight() {
     let hoverEl = this.hoverEl;
 
     let viewHeader = this.leaves()[0].view.headerEl;
-    let headerHeight = viewHeader.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
+    return viewHeader.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
+  }
+
+  toggleMinimized() {
+    let hoverEl = this.hoverEl;
+    let headerHeight = this.headerHeight;
 
     if (!hoverEl.style.maxHeight) {
       this.plugin.settings.rollDown && expandContract(hoverEl, false);
@@ -171,6 +176,10 @@ export class HoverEditor extends HoverPopover {
     return !this.detaching && (this.onTarget || this.onHover);
   }
 
+  calculateMinHeightRestriction() {
+    return { width: 40, height: this.headerHeight }
+  }
+
   registerInteract() {
     let { appContainerEl } = this.plugin.app.dom;
     let self = this;
@@ -213,9 +222,14 @@ export class HoverEditor extends HoverPopover {
           bottom: ".bottom-left, .bottom-right, .bottom",
           right: ".top-right, .bottom-right, .right",
         },
+        modifiers: [
+          interact.modifiers.restrictSize({
+            min: self.calculateMinHeightRestriction.bind(this)
+          })
+        ],
         listeners: {
           start(event: ResizeEvent) {
-            let viewEl = event.target.parentElement as HTMLElement;
+            let viewEl = event.target as HTMLElement;
             viewEl.style.removeProperty("max-height");
             self.togglePin(true);
           },
