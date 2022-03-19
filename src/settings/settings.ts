@@ -7,7 +7,6 @@ export interface HoverEditorSettings {
   triggerDelay: number;
   autoFocus: boolean;
   rollDown: boolean;
-  constrainToViewport: boolean;
 }
 
 export const DEFAULT_SETTINGS: HoverEditorSettings = {
@@ -16,7 +15,6 @@ export const DEFAULT_SETTINGS: HoverEditorSettings = {
   triggerDelay: 200,
   autoFocus: true,
   rollDown: false,
-  constrainToViewport: true,
 };
 
 export const modeOptions = {
@@ -79,17 +77,6 @@ export class SettingTab extends PluginSettingTab {
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.rollDown).onChange(value => {
           this.plugin.settings.rollDown = value;
-          this.plugin.saveSettings();
-        })
-      );
-
-    new Setting(containerEl)
-      .setName("Prevent dragging/resizing popovers beyond the current viewport")
-      .setDesc(`Disabling this will allow you to drag popovers outside of the visible viewport.
-      Warning: If disabled, popovers can be dragged outside of the viewport completely making them unreachable.`)
-      .addToggle(toggle =>
-        toggle.setValue(this.plugin.settings.constrainToViewport).onChange(value => {
-          this.plugin.settings.constrainToViewport = value;
           this.plugin.saveSettings();
         })
       );
