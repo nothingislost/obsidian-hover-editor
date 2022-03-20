@@ -1,5 +1,6 @@
 import type { EditorView } from "@codemirror/view";
 import { Plugin } from "obsidian";
+import { HoverEditorParent } from "src/popover";
 
 declare module "obsidian" {
   interface App {
@@ -99,12 +100,15 @@ declare module "obsidian" {
     active?: boolean;
   }
   interface HoverPopover {
+    parent: HoverEditorParent
     targetEl: HTMLElement;
     hoverEl: HTMLElement;
     position(pos?: Pos): void;
     hide(): void;
+    show(): void;
     shouldShowSelf(): boolean;
     timer: number;
+    waitTime: number;
   }
   interface Pos {
     x: number;

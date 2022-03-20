@@ -1,7 +1,7 @@
 import { Interactable, InteractEvent, ResizeEvent } from "@interactjs/types";
 import interact from "interactjs";
 import { around } from "monkey-around";
-import { EphemeralState, HoverParent, HoverPopover, Menu, OpenViewState, parseLinktext, requireApiVersion, resolveSubpath, setIcon, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
+import { EphemeralState, HoverPopover, Menu, OpenViewState, parseLinktext, requireApiVersion, resolveSubpath, setIcon, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import HoverEditorPlugin from "./main";
 
 const SNAP_DISTANCE = 10;
@@ -21,14 +21,12 @@ export interface HoverEditorParent {
 }
 
 export class HoverEditor extends HoverPopover {
-  explicitClose: boolean;
   onTarget: boolean;
   onHover: boolean;
   isPinned: boolean = this.plugin.settings.autoPin === "always" ? true : false;
   isDragging: boolean;
   isResizing: boolean;
   activeMenu: Menu;
-  parent: HoverEditorParent;
   interact: Interactable;
   lockedOut: boolean;
   abortController: AbortController;
@@ -39,6 +37,7 @@ export class HoverEditor extends HoverPopover {
     WorkspaceSplit as new(ws: Workspace, dir: string) => WorkspaceSplit
   )(this.plugin.app.workspace, "vertical");
   pinEl: HTMLElement;
+  oldPopover = this.parent.hoverPopover;
 
   static activePopovers() {
     return document.body.findAll(".hover-popover").map(el => popovers.get(el)).filter(he => he);
@@ -56,7 +55,7 @@ export class HoverEditor extends HoverPopover {
     return false;
   }
 
-  constructor(parent: HoverParent, targetEl: HTMLElement, public plugin: HoverEditorPlugin, waitTime?: number, public onShowCallback?: () => any) {
+  constructor(parent: HoverEditorParent, targetEl: HTMLElement, public plugin: HoverEditorPlugin, waitTime?: number, public onShowCallback?: () => any) {
     super(parent, targetEl, waitTime);
     popovers.set(this.hoverEl, this);
     const pinEl = this.pinEl = createDiv("popover-header-icon mod-pin-popover");
@@ -149,6 +148,13 @@ export class HoverEditor extends HoverPopover {
   }
 
   onShow() {
+    // Once we've been open for closeDelay, use the closeDelay as a hiding timeout
+    const {closeDelay} = this.plugin.settings;
+    setTimeout(() => this.waitTime = closeDelay, closeDelay);
+
+    this.oldPopover?.hide();
+    this.oldPopover = null;
+
     this.hoverEl.toggleClass("is-new", true);
     this.setInitialDimensions();
     document.body.addEventListener(
@@ -167,6 +173,7 @@ export class HoverEditor extends HoverPopover {
   }
 
   onHide() {
+    this.oldPopover = null;
     if (this.parent?.hoverPopover === this) {
       this.parent.hoverPopover = null;
     }
