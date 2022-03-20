@@ -4,6 +4,9 @@ import { around } from "monkey-around";
 import { EphemeralState, HoverParent, HoverPopover, Menu, OpenViewState, parseLinktext, requireApiVersion, resolveSubpath, setIcon, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import HoverEditorPlugin from "./main";
 
+const SNAP_DISTANCE = 10;
+const UNSNAP_THRESHOLD = 60;
+
 const popovers = new WeakMap<Element, HoverEditor>();
 
 export function isHoverLeaf(leaf: WorkspaceLeaf) {
@@ -182,6 +185,17 @@ export class HoverEditor extends HoverPopover {
 
   registerInteract() {
     let viewPortBounds = this.plugin.app.dom.appContainerEl;
+    let calculateBoundaryRestriction = function () {
+      let { top, right, bottom, left, x, y, width, height } = viewPortBounds.getBoundingClientRect();
+      let boundingRect = { top, right, bottom, left, x, y, width, height };
+      if (self.plugin.settings.snapToEdges) {
+        boundingRect.top = top - 30;
+        boundingRect.bottom = bottom - self.headerHeight;
+      } else {
+        boundingRect.bottom = bottom - self.headerHeight;
+      }
+      return boundingRect;
+    };
     let self = this;
     let i = interact(this.hoverEl)
       .preventDefault("always")
@@ -193,9 +207,10 @@ export class HoverEditor extends HoverPopover {
         // inertia: false,
         modifiers: [
           interact.modifiers.restrict({
-            restriction: viewPortBounds,
-            offset: { top: 0, left: 40, bottom: this.headerHeight, right: 40 },
+            restriction: calculateBoundaryRestriction,
+            offset: { top: 0, left: 40, bottom: 0, right: 40 },
             elementRect: { top: 0, left: 1, bottom: 0, right: 0 },
+            endOnly: false,
           }),
         ],
         allowFrom: ".top",
@@ -212,7 +227,7 @@ export class HoverEditor extends HoverPopover {
               event.target.removeClass("is-dragging");
             }
           },
-          move: dragMoveListener,
+          move: dragMoveListener.bind(self),
         },
       })
 
@@ -225,11 +240,11 @@ export class HoverEditor extends HoverPopover {
         },
         modifiers: [
           interact.modifiers.restrictEdges({
-            outer: viewPortBounds
+            outer: viewPortBounds,
           }),
           interact.modifiers.restrictSize({
-            min: self.calculateMinHeightRestriction.bind(this)
-          })
+            min: self.calculateMinHeightRestriction.bind(this),
+          }),
         ],
         listeners: {
           start(event: ResizeEvent) {
@@ -238,28 +253,34 @@ export class HoverEditor extends HoverPopover {
             self.togglePin(true);
           },
           move: function (event: ResizeEvent) {
-            let { x, y } = event.target.dataset;
+            let { target } = event;
+            let { x, y } = target.dataset;
 
-            x = x ? x : event.target.style.left;
-            y = y ? y : event.target.style.top;
+            x = x ? x : target.style.left;
+            y = y ? y : target.style.top;
 
             x = String((parseFloat(x) || 0) + event.deltaRect.left);
             y = String((parseFloat(y) || 0) + event.deltaRect.top);
 
-            Object.assign(event.target.style, {
+            if (target.hasClass("snap-to-left") || target.hasClass("snap-to-right")) {
+              y = String(parseFloat(target.style.top));
+              x = String(parseFloat(target.style.left));
+            }
+
+            Object.assign(target.style, {
               width: `${event.rect.width}px`,
               height: `${event.rect.height}px`,
               top: `${y}px`,
-              left: `${x}px`
+              left: x === "NaN" ? "unset" : `${x}px`,
             });
 
-            Object.assign(event.target.dataset, { x, y });
+            Object.assign(target.dataset, { x, y });
           },
           end: function (event: ResizeEvent) {
             if (event.rect.height > self.headerHeight) {
-              event.target.removeAttribute("data-restore-height")
+              event.target.removeAttribute("data-restore-height");
             }
-          }
+          },
         },
       });
     this.interact = i;
@@ -464,6 +485,54 @@ function dragMoveListener(event: InteractEvent) {
   x = String((parseFloat(x) || 0) + event.dx);
   y = String((parseFloat(y) || 0) + event.dy);
 
+  if (this.plugin.settings.snapToEdges) {
+    let offset: { top: number; left: number };
+
+    let insideLeftSnapTarget = event.client.x < SNAP_DISTANCE;
+    let insideRightSnapTarget = event.client.x > document.body.offsetWidth - SNAP_DISTANCE;
+    let insideTopSnapTarget = event.client.y < 30;
+
+    if (insideLeftSnapTarget || insideRightSnapTarget || insideTopSnapTarget) {
+      offset = calculateOffsets();
+      storeDimensions(target);
+    }
+
+    if (insideLeftSnapTarget) {
+      // if we're inside of a snap zone
+      snapToEdge(target, "left", offset);
+      return;
+    } else if (insideRightSnapTarget) {
+      snapToEdge(target, "right", offset);
+      return;
+    } else if (insideTopSnapTarget) {
+      snapToEdge(target, "viewport", offset);
+      return;
+    } else {
+      // if we're outside of a snap zone
+      if (target.hasClass("snap-to-viewport")) {
+        if (event.client.y < UNSNAP_THRESHOLD) return;
+        target.removeClass("snap-to-viewport");
+        restoreDimentions(target);
+        calculatePointerPosition(event);
+        return;
+      } else if (target.hasClass("snap-to-left")) {
+        if (event.client.y < UNSNAP_THRESHOLD) return;
+        target.removeClass("snap-to-left");
+        restoreDimentions(target);
+        calculatePointerPosition(event);
+        return;
+      } else if (target.hasClass("snap-to-right")) {
+        if (event.client.y < UNSNAP_THRESHOLD) return;
+        target.removeClass("snap-to-right");
+        restoreDimentions(target);
+        calculatePointerPosition(event);
+        return;
+      }
+    }
+  } 
+  
+  // if snapping disabled or if no snapping action has just occurred
+
   target.style.top = y ? y + "px" : target.style.top;
   target.style.left = x ? x + "px" : target.style.left;
 
@@ -477,4 +546,57 @@ function expandContract(el: HTMLElement, expand: boolean) {
   let y = (parseFloat(el.getAttribute("data-y")) || 0) + contentHeight;
   el.style.top = y + "px";
   el.setAttribute("data-y", String(y));
+}
+
+function getOrigDimensions(el: HTMLElement) {
+  let height = el.getAttribute("data-orig-height");
+  let width = el.getAttribute("data-orig-width");
+  return { height, width };
+}
+
+function restoreDimentions(el: HTMLElement) {
+  let { height, width } = getOrigDimensions(el);
+  el.removeAttribute("data-orig-width");
+  el.removeAttribute("data-orig-height");
+  width && (el.style.width = width + "px");
+  height && (el.style.height = height + "px");
+}
+
+function storeDimensions(el: HTMLElement) {
+  !el.hasAttribute("data-orig-width") && el.setAttribute("data-orig-width", String(el.offsetWidth));
+  !el.hasAttribute("data-orig-height") && el.setAttribute("data-orig-height", String(el.offsetHeight));
+}
+
+function calculatePointerPosition(event: InteractEvent) {
+  let target = event.target as HTMLElement;
+
+  let pointerOffset = event.client.x - event.rect.left;
+  let maximizedWidth = event.rect.width;
+
+  let pointerOffsetPercentage = pointerOffset / maximizedWidth;
+  let restoredWidth = target.offsetWidth;
+
+  let x = String(event.client.x - pointerOffsetPercentage * restoredWidth);
+  let y = String(event.client.y);
+
+  target.setAttribute("data-x", String(x));
+  target.setAttribute("data-y", String(y));
+}
+
+function calculateOffsets() {
+  let appContainerEl = document.body.querySelector(".app-container") as HTMLElement;
+  let leftRibbonEl = document.body.querySelector(".mod-left.workspace-ribbon") as HTMLElement;
+  let titlebarHeight = appContainerEl.offsetTop;
+  let ribbonWidth = leftRibbonEl.offsetWidth;
+  return { top: titlebarHeight, left: ribbonWidth };
+}
+
+function snapToEdge(el: HTMLElement, edge: string, offset: { top: number; left: number }) {
+  el.addClass(`snap-to-${edge}`);
+  el.style.top = offset.top + "px";
+  el.style.height = `calc(100vh - ${offset.top}px)`;
+  el.style.left = edge === "right" ? "unset" : offset.left + "px";
+  if (edge === "viewport") {
+    el.style.width = `calc(100vw - ${offset.left}px)`;
+  }
 }

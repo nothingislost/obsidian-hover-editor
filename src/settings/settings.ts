@@ -7,6 +7,7 @@ export interface HoverEditorSettings {
   triggerDelay: number;
   autoFocus: boolean;
   rollDown: boolean;
+  snapToEdges: boolean;
 }
 
 export const DEFAULT_SETTINGS: HoverEditorSettings = {
@@ -15,6 +16,7 @@ export const DEFAULT_SETTINGS: HoverEditorSettings = {
   triggerDelay: 200,
   autoFocus: true,
   rollDown: false,
+  snapToEdges: false,
 };
 
 export const modeOptions = {
@@ -77,6 +79,20 @@ export class SettingTab extends PluginSettingTab {
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.rollDown).onChange(value => {
           this.plugin.settings.rollDown = value;
+          this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName("Snap to edges")
+      .setDesc(
+        `Quickly arrange popovers by dragging them to the edges of the screen. The left and right edges 
+        will maximize the popover vertically. The top edge will maximize the popover to fill the entire 
+        screen. Dragging the popovers away from the edges will restore the popver to its original size.`
+      )
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.snapToEdges).onChange(value => {
+          this.plugin.settings.snapToEdges = value;
           this.plugin.saveSettings();
         })
       );
