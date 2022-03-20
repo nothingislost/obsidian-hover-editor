@@ -5,6 +5,7 @@ export interface HoverEditorSettings {
   defaultMode: string;
   autoPin: string;
   triggerDelay: number;
+  closeDelay: number;
   autoFocus: boolean;
   rollDown: boolean;
   snapToEdges: boolean;
@@ -13,7 +14,8 @@ export interface HoverEditorSettings {
 export const DEFAULT_SETTINGS: HoverEditorSettings = {
   defaultMode: "preview",
   autoPin: "onMove",
-  triggerDelay: 200,
+  triggerDelay: 300,
+  closeDelay: 600,
   autoFocus: true,
   rollDown: false,
   snapToEdges: false,
@@ -99,13 +101,26 @@ export class SettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Hover Trigger Delay (ms)")
-      .setDesc("How long to wait before triggering a Hover Editor when hovering over a link")
+      .setDesc("How long to wait before showing a Hover Editor when hovering over a link")
       .addText(textfield => {
-        textfield.setPlaceholder(String(200));
+        textfield.setPlaceholder(String(300));
         textfield.inputEl.type = "number";
         textfield.setValue(String(this.plugin.settings.triggerDelay));
         textfield.onChange(async value => {
           this.plugin.settings.triggerDelay = Number(value);
+          this.plugin.saveSettings();
+        });
+      });
+
+      new Setting(containerEl)
+      .setName("Hover Close Delay (ms)")
+      .setDesc("How long to wait before closing a Hover Editor once the mouse leaves")
+      .addText(textfield => {
+        textfield.setPlaceholder(String(600));
+        textfield.inputEl.type = "number";
+        textfield.setValue(String(this.plugin.settings.closeDelay));
+        textfield.onChange(async value => {
+          this.plugin.settings.closeDelay = Number(value);
           this.plugin.saveSettings();
         });
       });

@@ -22,7 +22,7 @@ export function onLinkHover(
       hoverPopover.targetEl === targetEl
     )
   ) {
-    hoverPopover = parent.hoverPopover = new HoverEditor(parent, targetEl, plugin, plugin.settings.triggerDelay + 200);
+    hoverPopover = parent.hoverPopover = new HoverEditor(parent, targetEl, plugin, plugin.settings.triggerDelay);
 
     const controller = (hoverPopover.abortController = new AbortController());
 
@@ -56,6 +56,6 @@ export function onLinkHover(
       // leaf.leafMemLeak = new Uint8Array(1024 * 1024 * 10);
       // // @ts-ignore
       // leaf.view.leafViewMemLeak = new Uint8Array(1024 * 1024 * 10);
-    }, plugin.settings.triggerDelay);
+    }, 100);
   }
 }
