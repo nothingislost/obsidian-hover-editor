@@ -107,7 +107,7 @@ export class HoverEditor extends HoverPopover {
     let hoverEl = this.hoverEl;
     let headerHeight = this.headerHeight;
 
-    if (!hoverEl.style.maxHeight) {
+    if (!hoverEl.hasAttribute("data-restore-height")) {
       this.plugin.settings.rollDown && expandContract(hoverEl, false);
       hoverEl.setAttribute("data-restore-height", String(hoverEl.offsetHeight));
       hoverEl.style.minHeight = headerHeight + "px";
@@ -255,6 +255,11 @@ export class HoverEditor extends HoverPopover {
 
             Object.assign(event.target.dataset, { x, y });
           },
+          end: function (event: ResizeEvent) {
+            if (event.rect.height > self.headerHeight) {
+              event.target.removeAttribute("data-restore-height")
+            }
+          }
         },
       });
     this.interact = i;
