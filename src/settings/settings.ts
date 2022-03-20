@@ -8,6 +8,8 @@ export interface HoverEditorSettings {
   autoFocus: boolean;
   rollDown: boolean;
   snapToEdges: boolean;
+  initialHeight: string;
+  initialWidth: string;
 }
 
 export const DEFAULT_SETTINGS: HoverEditorSettings = {
@@ -17,6 +19,8 @@ export const DEFAULT_SETTINGS: HoverEditorSettings = {
   autoFocus: true,
   rollDown: false,
   snapToEdges: false,
+  initialHeight: "340px",
+  initialWidth: "400px",
 };
 
 export const modeOptions = {
@@ -98,10 +102,40 @@ export class SettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName("Initial popover width")
+      .setDesc("Enter any valid CSS unit")
+      .addText(textfield => {
+        textfield.setPlaceholder(this.plugin.settings.initialWidth);
+        textfield.inputEl.type = "text";
+        textfield.setValue(this.plugin.settings.initialWidth);
+        textfield.onChange(async value => {
+          value = parseCssUnitValue(value);
+          if (!value) value = DEFAULT_SETTINGS.initialWidth;
+          this.plugin.settings.initialWidth = value;
+          this.plugin.saveSettings();
+        });
+      });
+
+    new Setting(containerEl)
+      .setName("Initial popover height")
+      .setDesc("Enter any valid CSS unit")
+      .addText(textfield => {
+        textfield.setPlaceholder(String(this.plugin.settings.initialHeight));
+        textfield.inputEl.type = "text";
+        textfield.setValue(String(this.plugin.settings.initialHeight));
+        textfield.onChange(async value => {
+          value = parseCssUnitValue(value);
+          if (!value) value = DEFAULT_SETTINGS.initialHeight;
+          this.plugin.settings.initialHeight = value;
+          this.plugin.saveSettings();
+        });
+      });
+
+    new Setting(containerEl)
       .setName("Hover Trigger Delay (ms)")
       .setDesc("How long to wait before triggering a Hover Editor when hovering over a link")
       .addText(textfield => {
-        textfield.setPlaceholder(String(200));
+        textfield.setPlaceholder(String(this.plugin.settings.triggerDelay));
         textfield.inputEl.type = "number";
         textfield.setValue(String(this.plugin.settings.triggerDelay));
         textfield.onChange(async value => {
@@ -109,5 +143,23 @@ export class SettingTab extends PluginSettingTab {
           this.plugin.saveSettings();
         });
       });
+  }
+}
+
+function parseCssUnitValue(value: string) {
+  var parseUnit = require("parse-unit");
+  let [num, unit] = parseUnit(value);
+  if (!num) {
+    return false;
+  }
+  if (!unit) {
+    unit = "px";
+  }
+  const unitTypes = ["em", "ex", "ch", "rem", "vw", "vh", "vmin", "vmax", "%", "cm", "mm", "in", "px", "pt", "pc"];
+
+  if (unitTypes.contains(unit)) {
+    return num + unit;
+  } else {
+    return undefined;
   }
 }

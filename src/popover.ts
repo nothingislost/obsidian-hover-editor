@@ -143,8 +143,14 @@ export class HoverEditor extends HoverPopover {
     return leaves;
   }
 
+  setInitialDimensions() {
+    this.hoverEl.style.height = this.plugin.settings.initialHeight;
+    this.hoverEl.style.width = this.plugin.settings.initialWidth;
+  }
+
   onShow() {
     this.hoverEl.toggleClass("is-new", true);
+    this.setInitialDimensions();
     document.body.addEventListener(
       "click",
       () => {
