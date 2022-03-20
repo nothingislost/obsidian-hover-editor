@@ -148,6 +148,8 @@ export class HoverEditor extends HoverPopover {
     setTimeout(() => this.waitTime = closeDelay, closeDelay);
 
     this.oldPopover?.hide();
+    this.oldPopover = null;
+
     this.hoverEl.toggleClass("is-new", true);
     document.body.addEventListener(
       "click",
@@ -165,6 +167,7 @@ export class HoverEditor extends HoverPopover {
   }
 
   onHide() {
+    this.oldPopover = null;
     if (this.parent?.hoverPopover === this) {
       this.parent.hoverPopover = null;
     }
