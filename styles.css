@@ -1,5 +1,4 @@
 :root {
-  --he-popover-default-height: 40vh;
   --he-popover-opacity-while-dragging: 0.8;
   /* customizable handle sizes */
   --he-resize-handle-side-size: 12px;
@@ -22,7 +21,6 @@ body {
 }
 
 .popover.hover-popover {
-  height: var(--he-popover-default-height);
   min-height: unset;
   max-height: unset;
   /* touch action none fixes dragging and resizing on mobile */
