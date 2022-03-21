@@ -4,6 +4,8 @@
   --he-resize-handle-side-size: 12px;
   --he-resize-handle-corner-size: 18px;
   --he-drag-handle-top-size: 18px;
+  /* title bar */
+  --he-title-bar-height: 28px;
 }
 
 body {
@@ -48,7 +50,7 @@ body {
   touch-action: none;
 }
 
-.popover.hover-popover .drag-handle.top {
+/* .popover.hover-popover .drag-handle.top {
   position: absolute;
   width: var(--he-resize-handle-side-length);
   top: var(--he-drag-handle-top-offset);
@@ -56,6 +58,13 @@ body {
   left: calc(var(--he-resize-handle-corner-offset) * -1);
   z-index: 0;
   cursor: move;
+} */
+
+.popover.hover-popover .resize-handle.top {
+  top: var(--he-resize-handle-side-offset);
+  height: var(--he-resize-handle-side-size);
+  left: calc(var(--he-resize-handle-corner-offset) * -1);
+  width: var(--he-resize-handle-side-length);
 }
 
 .popover.hover-popover .resize-handle.left {
@@ -112,12 +121,13 @@ body {
 } */
 
 .popover-header-icon {
-  padding: 5px 10px;
+  /* padding: 5px 10px; */
   color: var(--text-muted);
-  position: relative;
-  top: 2px;
-  z-index: 2;
+  /* position: relative; */
+  /* top: 2px; */
+  /* z-index: 2; */
   cursor: pointer;
+  width: fit-content;
 }
 
 .mod-pin-popover > svg {
@@ -151,7 +161,7 @@ body {
 .popover.hover-popover .view-header-icon {
   /* !important since a few themes are forcing display of this element */
   /* this can not re-enabled until HoverLeafs can be safely added/cloned into the native splits */
-  display: none !important;
+  /* display: none !important; */
 }
 
 .popover.hover-popover .workspace-split > .workspace-leaf:last-child > .workspace-leaf-resize-handle {
@@ -192,4 +202,38 @@ body {
 
 .snap-to-viewport {
   max-height: unset !important;
+}
+
+.popover.hover-popover .popover-titlebar {
+  display: flex;
+  height: var(--he-title-bar-height);
+  width: 100%;
+  background-color: var(--background-primary-alt);
+}
+
+.popover.hover-popover .popover-titlebar .popover-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.popover-action,
+.popover-header-icon {
+  margin: 0 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+  position: relative;
+  top: 3px;
+}
+
+.popover.hover-popover .popover-titlebar .popover-spacer {
+  display: block;
+  flex-grow: 1;
+}
+
+.popover.hover-popover > .workspace-split {
+  height: calc(100% - var(--he-title-bar-height));
+}
+
+.popover.hover-popover .view-header {
+  border-top: none;
 }

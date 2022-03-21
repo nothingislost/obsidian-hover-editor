@@ -37,6 +37,7 @@ export class HoverEditor extends HoverPopover {
     WorkspaceSplit as new(ws: Workspace, dir: string) => WorkspaceSplit
   )(this.plugin.app.workspace, "vertical");
   pinEl: HTMLElement;
+  titleEl: HTMLElement;
   oldPopover = this.parent.hoverPopover;
 
   static activePopovers() {
@@ -58,11 +59,13 @@ export class HoverEditor extends HoverPopover {
   constructor(parent: HoverEditorParent, targetEl: HTMLElement, public plugin: HoverEditorPlugin, waitTime?: number, public onShowCallback?: () => any) {
     super(parent, targetEl, waitTime);
     popovers.set(this.hoverEl, this);
-    const pinEl = this.pinEl = createDiv("popover-header-icon mod-pin-popover");
+    this.buildWindowControls();
+    this.setInitialDimensions();
+    const pinEl = this.pinEl = createEl("a", "popover-header-icon mod-pin-popover");
+    this.titleEl.prepend(this.pinEl);
     pinEl.onclick = () => {
       this.togglePin();
     };
-    this.setInitialDimensions();
     if (requireApiVersion && requireApiVersion("0.13.27")) {
       setIcon(pinEl, "lucide-pin", 17);
     } else {
@@ -90,7 +93,7 @@ export class HoverEditor extends HoverPopover {
     this.plugin.app.workspace.iterateLeaves(leaf => {
       const headerEl = leaf.view?.headerEl;
       if (!headerEl) return;
-      if (headerEl.firstElementChild !== this.pinEl) headerEl.prepend(this.pinEl);
+      // if (headerEl.firstElementChild !== this.pinEl) headerEl.prepend(this.pinEl);
       return true;
     }, this.rootSplit) || this.explicitHide(); // close if nowhere to put the pin
   }
@@ -132,7 +135,7 @@ export class HoverEditor extends HoverPopover {
 
   attachLeaf(): WorkspaceLeaf {
     this.rootSplit.getRoot = () => this.plugin.app.workspace.rootSplit;
-    this.hoverEl.prepend(this.rootSplit.containerEl);
+    this.titleEl.insertAdjacentElement("afterend", this.rootSplit.containerEl);
     const leaf = this.plugin.app.workspace.createLeafInParent(this.rootSplit, 0);
     this.updateLeaves();
     return leaf;
@@ -149,7 +152,21 @@ export class HoverEditor extends HoverPopover {
     this.hoverEl.style.width = this.plugin.settings.initialWidth;
   }
 
+  buildWindowControls() {
+    this.titleEl = createDiv("popover-titlebar");
+    let popoverSpacer = this.titleEl.createDiv("popover-spacer");
+    let popoverActions = this.titleEl.createDiv("popover-actions");
+    let minEl = popoverActions.createEl("a", "popover-action mod-minimize-popover");
+    setIcon(minEl, "minus");
+    let maxEl = popoverActions.createEl("a", "popover-action mod-maximize-popover");
+    setIcon(maxEl, "square");
+    let closeEl = popoverActions.createEl("a", "popover-action mod-close-popover");
+    setIcon(closeEl, "x");
+    this.hoverEl.prepend(this.titleEl);
+  }
+
   onShow() {
+    
     // Once we've been open for closeDelay, use the closeDelay as a hiding timeout
     const {closeDelay} = this.plugin.settings;
     setTimeout(() => this.waitTime = closeDelay, closeDelay);
@@ -227,7 +244,7 @@ export class HoverEditor extends HoverPopover {
             endOnly: false,
           }),
         ],
-        allowFrom: ".top",
+        allowFrom: ".popover-titlebar", 
 
         listeners: {
           start(event: DragEvent) {
@@ -247,7 +264,7 @@ export class HoverEditor extends HoverPopover {
 
       .resizable({
         edges: {
-          top: ".top-left, .top-right",
+          top: ".top-left, .top-right, .top",
           left: ".top-left, .bottom-left, .left",
           bottom: ".bottom-left, .bottom-right, .bottom",
           right: ".top-right, .bottom-right, .right",
@@ -308,11 +325,11 @@ export class HoverEditor extends HoverPopover {
     this.hoverEl.createDiv("resize-handle right");
     this.hoverEl.createDiv("resize-handle left");
     this.hoverEl.createDiv("resize-handle bottom");
-    this.hoverEl.createDiv("drag-handle top");
+    this.hoverEl.createDiv("resize-handle top");
   }
 
   onDoubleTap(event: InteractEvent) {
-    if (event.target.hasClass("drag-handle")) {
+    if (event.target.tagName === "DIV" && event.target.closest(".popover-titlebar")) {
       event.preventDefault();
       this.togglePin(true);
       this.toggleMinimized();
