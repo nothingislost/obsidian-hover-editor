@@ -76,6 +76,7 @@ export class HoverEditor extends HoverPopover {
       value = !this.isPinned;
     }
     if (value) this.abortController?.abort();
+    this.hoverEl.toggleClass("is-pinned", value);
     this.pinEl.toggleClass("is-active", value);
     this.isPinned = value;
   }
