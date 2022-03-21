@@ -62,6 +62,7 @@ export class HoverEditor extends HoverPopover {
     pinEl.onclick = () => {
       this.togglePin();
     };
+    this.setInitialDimensions();
     if (requireApiVersion && requireApiVersion("0.13.27")) {
       setIcon(pinEl, "lucide-pin", 17);
     } else {
@@ -157,7 +158,6 @@ export class HoverEditor extends HoverPopover {
     this.oldPopover = null;
 
     this.hoverEl.toggleClass("is-new", true);
-    this.setInitialDimensions();
     document.body.addEventListener(
       "click",
       () => {
