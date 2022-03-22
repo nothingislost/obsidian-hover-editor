@@ -186,7 +186,11 @@ export default class HoverEditorPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", leaf => {
         document.querySelector("body > .popover.hover-popover.is-active")?.removeClass("is-active");
-        HoverEditor.forLeaf(leaf)?.hoverEl.addClass("is-active");
+        let hoverLeaf = HoverEditor.forLeaf(leaf);
+        if (hoverLeaf) {
+          hoverLeaf.hoverEl.addClass("is-active");
+          hoverLeaf.hoverEl.querySelector(".popover-title").textContent = (leaf.view as any)?.file?.basename;
+        }
       })
     );
   }

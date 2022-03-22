@@ -38,6 +38,7 @@ export class HoverEditor extends HoverPopover {
   )(this.plugin.app.workspace, "vertical");
   pinEl: HTMLElement;
   titleEl: HTMLElement;
+  containerEl: HTMLElement;
   oldPopover = this.parent.hoverPopover;
 
   static activePopovers() {
@@ -59,6 +60,7 @@ export class HoverEditor extends HoverPopover {
   constructor(parent: HoverEditorParent, targetEl: HTMLElement, public plugin: HoverEditorPlugin, waitTime?: number, public onShowCallback?: () => any) {
     super(parent, targetEl, waitTime);
     popovers.set(this.hoverEl, this);
+    this.containerEl = this.hoverEl.createDiv("popover-content");
     this.buildWindowControls();
     this.setInitialDimensions();
     const pinEl = this.pinEl = createEl("a", "popover-header-icon mod-pin-popover");
@@ -106,11 +108,11 @@ export class HoverEditor extends HoverPopover {
   get headerHeight() {
     let hoverEl = this.hoverEl;
 
-    let viewHeader = this.leaves()[0].view.headerEl;
-    return viewHeader.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
+    // let viewHeader = this.leaves()[0].view.headerEl;
+    return this.titleEl.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
   }
 
-  toggleMinimized() {
+  toggleMinimized(value?: boolean) {
     let hoverEl = this.hoverEl;
     let headerHeight = this.headerHeight;
 
@@ -154,15 +156,46 @@ export class HoverEditor extends HoverPopover {
 
   buildWindowControls() {
     this.titleEl = createDiv("popover-titlebar");
-    let popoverSpacer = this.titleEl.createDiv("popover-spacer");
+    let popoverTitle = this.titleEl.createDiv("popover-title");
     let popoverActions = this.titleEl.createDiv("popover-actions");
-    let minEl = popoverActions.createEl("a", "popover-action mod-minimize-popover");
+    let hideNavBarEl = popoverActions.createEl("a", "popover-action mod-show-navbar");
+    setIcon(hideNavBarEl, "sidebar-open", 14);
+    hideNavBarEl.addEventListener("click", event => {
+      let value = this.hoverEl.hasClass("show-navbar");
+      hideNavBarEl.toggleClass("is-active", !value);
+      this.hoverEl.toggleClass("show-navbar", !value);
+      this.requestLeafMeasure();
+    });
+    let minEl = popoverActions.createEl("a", "popover-action mod-minimize");
     setIcon(minEl, "minus");
-    let maxEl = popoverActions.createEl("a", "popover-action mod-maximize-popover");
-    setIcon(maxEl, "square");
-    let closeEl = popoverActions.createEl("a", "popover-action mod-close-popover");
+    minEl.addEventListener("click", event => {
+      this.toggleMinimized();
+    });
+    let maxEl = popoverActions.createEl("a", "popover-action mod-maximize");
+    setIcon(maxEl, "square", 12);
+    maxEl.addEventListener("click", event => {
+      let offset = calculateOffsets();
+      storeDimensions(this.hoverEl);
+      snapToEdge(this.hoverEl, "viewport", offset);
+    });
+
+    let closeEl = popoverActions.createEl("a", "popover-action mod-close");
     setIcon(closeEl, "x");
-    this.hoverEl.prepend(this.titleEl);
+    closeEl.addEventListener("click", event => {
+      this.explicitHide();
+    });
+    this.containerEl.prepend(this.titleEl);
+  }
+
+  requestLeafMeasure() {
+    // address view height measurement issues triggered by css transitions
+    // we wait a bit for the transition to finish and remeasure
+    const leaves = this.leaves();
+    if (leaves.length) {
+      setTimeout(() => {
+        leaves.forEach(leaf => leaf.onResize());
+      }, 200);
+    }
   }
 
   onShow() {

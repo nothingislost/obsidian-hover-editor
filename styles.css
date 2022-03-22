@@ -29,6 +29,7 @@ body {
   touch-action: none;
   /* this is set to allow the drag/resize handles to overflow the popover frame */
   overflow: visible;
+  border: none;
 }
 
 .popover.hover-popover.is-active {
@@ -187,8 +188,19 @@ body {
 .is-dragging.snap-to-right,
 .is-dragging.snap-to-viewport {
   transition: width 0.3s, height 0.3s, top 0.3s, left 0.3s;
-  border: 3px solid var(--interactive-accent);
-  margin: -3px 3px -3px -3px;
+}
+
+.hover-popover.is-dragging.snap-to-left::after,
+.hover-popover.is-dragging.snap-to-right::after,
+.hover-popover.is-dragging.snap-to-viewport::after {
+  position: absolute;
+  content: "";
+  width: 100%;
+  height: 100%;
+  top: 0;
+  border-radius: 6px;
+  box-shadow: inset 0px 0px 0px 4px var(--interactive-accent);
+  pointer-events: none;
 }
 
 .snap-to-left {
@@ -208,6 +220,10 @@ body {
   display: flex;
   height: var(--he-title-bar-height);
   width: 100%;
+  background-color: var(--background-secondary);
+}
+
+.popover.hover-popover.is-active .popover-titlebar {
   background-color: var(--background-primary-alt);
 }
 
@@ -216,24 +232,68 @@ body {
   justify-content: flex-end;
 }
 
+.popover-content {
+  margin: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 100%;
+}
+
 .popover-action,
 .popover-header-icon {
   margin: 0 8px;
   cursor: pointer;
   color: var(--text-muted);
   position: relative;
-  top: 3px;
+  display: flex;
+  align-items: center;
 }
 
-.popover.hover-popover .popover-titlebar .popover-spacer {
+.popover-action.is-active {
+  color: var(--text-accent);
+}
+
+.popover.hover-popover .popover-titlebar .popover-title {
   display: block;
   flex-grow: 1;
+  transition: all 0.3s;
+  align-self: center;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: pre;
+  word-wrap: normal;
+  color: var(--text-muted);
 }
 
-.popover.hover-popover > .workspace-split {
+.popover.hover-popover.is-active .popover-title {
+  color: var(--text-normal);
+}
+
+.mod-show-navbar svg {
+  transform: rotate(90deg);
+}
+
+.popover.hover-popover > .popover-content > .workspace-split {
   height: calc(100% - var(--he-title-bar-height));
 }
 
 .popover.hover-popover .view-header {
   border-top: none;
+  transition: all 0.3s;
+}
+
+.popover.hover-popover.show-navbar .popover-title {
+  opacity: 0;
+}
+
+.popover.hover-popover:not(.show-navbar) .view-header {
+  height: 0px;
+  overflow: hidden;
+}
+.popover.hover-popover.show-navbar .view-header {
+  height: 36px;
+  overflow: unset;
+}
+.popover.hover-popover:not(.show-navbar) .view-content {
+  height: 100%;
 }
