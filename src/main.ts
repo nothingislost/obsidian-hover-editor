@@ -1,12 +1,12 @@
 import { around } from "monkey-around";
 import {
+  App,
   debounce,
   MarkdownView,
   Menu,
   Notice,
   Plugin,
   PopoverState,
-  SplitDirection,
   TAbstractFile,
   TFile,
   Workspace,
@@ -211,10 +211,11 @@ export default class HoverEditorPlugin extends Plugin {
   }
 
   patchUnresolvedGraphNodeHover() {
-    // @ts-ignore
-    let leaf = new WorkspaceLeaf(this.app);
-    // @ts-ignore
-    let GraphEngine = this.app.internalPlugins.plugins.graph.views.localgraph(leaf).engine.constructor;
+    let leaf = new (WorkspaceLeaf as new (app: App) => WorkspaceLeaf)(this.app);
+    let view: any = (this.app.internalPlugins.plugins.graph as any).views.localgraph(leaf)
+    let GraphEngine = view.engine.constructor;
+    leaf.detach(); // close the view
+    view.renderer?.worker?.terminate(); // ensure the worker is terminated
     let uninstall = around(GraphEngine.prototype, {
       // @ts-ignore
       onNodeHover(old: any) {
