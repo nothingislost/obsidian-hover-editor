@@ -39,6 +39,7 @@ export class HoverEditor extends HoverPopover {
   pinEl: HTMLElement;
   titleEl: HTMLElement;
   containerEl: HTMLElement;
+  hideNavBarEl: HTMLElement;
   oldPopover = this.parent.hoverPopover;
 
   static activePopovers() {
@@ -154,26 +155,40 @@ export class HoverEditor extends HoverPopover {
     this.hoverEl.style.width = this.plugin.settings.initialWidth;
   }
 
+  toggleViewHeader(value?: boolean) {
+    if (value === undefined) value = !this.hoverEl.hasClass("show-navbar");
+    this.hideNavBarEl?.toggleClass("is-active", value);
+    this.hoverEl.toggleClass("show-navbar", value);
+    this.requestLeafMeasure();
+  }
+
   buildWindowControls() {
     this.titleEl = createDiv("popover-titlebar");
     let popoverTitle = this.titleEl.createDiv("popover-title");
     let popoverActions = this.titleEl.createDiv("popover-actions");
-    let hideNavBarEl = popoverActions.createEl("a", "popover-action mod-show-navbar");
+    let hideNavBarEl = this.hideNavBarEl = popoverActions.createEl("a", "popover-action mod-show-navbar");
     setIcon(hideNavBarEl, "sidebar-open", 14);
     hideNavBarEl.addEventListener("click", event => {
-      let value = this.hoverEl.hasClass("show-navbar");
-      hideNavBarEl.toggleClass("is-active", !value);
-      this.hoverEl.toggleClass("show-navbar", !value);
-      this.requestLeafMeasure();
+      this.toggleViewHeader();
     });
+    if (this.plugin.settings.showViewHeader) {
+      this.toggleViewHeader(true);
+    };
     let minEl = popoverActions.createEl("a", "popover-action mod-minimize");
     setIcon(minEl, "minus");
     minEl.addEventListener("click", event => {
+      restorePopover(this.hoverEl);
       this.toggleMinimized();
     });
     let maxEl = popoverActions.createEl("a", "popover-action mod-maximize");
-    setIcon(maxEl, "square", 12);
+    setIcon(maxEl, "maximize", 14);
     maxEl.addEventListener("click", event => {
+      if (this.hoverEl.hasClass("snap-to-viewport")) {
+        setIcon(maxEl, "maximize", 14);
+        restorePopover(this.hoverEl);
+        return;
+      }
+      setIcon(maxEl, "minimize", 14);
       let offset = calculateOffsets();
       storeDimensions(this.hoverEl);
       snapToEdge(this.hoverEl, "viewport", offset);
@@ -604,6 +619,14 @@ function dragMoveListener(event: InteractEvent) {
   target.setAttribute("data-y", String(y));
 }
 
+function restorePopover(el: HTMLElement) {
+  if (el.hasClass("snap-to-viewport")) {
+    el.removeClass("snap-to-viewport");
+    restoreDimentions(el);
+    return;
+  }
+}
+
 function expandContract(el: HTMLElement, expand: boolean) {
   let contentHeight = (el.querySelector(".view-content") as HTMLElement).offsetHeight;
   contentHeight = expand ? -contentHeight : contentHeight;
@@ -615,20 +638,31 @@ function expandContract(el: HTMLElement, expand: boolean) {
 function getOrigDimensions(el: HTMLElement) {
   let height = el.getAttribute("data-orig-height");
   let width = el.getAttribute("data-orig-width");
-  return { height, width };
+  let left = parseFloat(el.getAttribute("data-orig-pos-left"));
+  let top = parseFloat(el.getAttribute("data-orig-pos-top"));
+  let titlebarHeight = calculateOffsets().top;
+  console.log(top, titlebarHeight)
+  if (top < titlebarHeight) top = titlebarHeight;
+  return { height, width, top, left };
 }
 
 function restoreDimentions(el: HTMLElement) {
-  let { height, width } = getOrigDimensions(el);
+  let { height, width, top, left } = getOrigDimensions(el);
   el.removeAttribute("data-orig-width");
   el.removeAttribute("data-orig-height");
+  el.removeAttribute("data-orig-pos-left");
+  el.removeAttribute("data-orig-pos-top");
   width && (el.style.width = width + "px");
   height && (el.style.height = height + "px");
+  top && (el.style.top = top + "px", el.setAttribute("data-y", String(top)));
+  left && (el.style.left = left + "px");
 }
 
 function storeDimensions(el: HTMLElement) {
   !el.hasAttribute("data-orig-width") && el.setAttribute("data-orig-width", String(el.offsetWidth));
   !el.hasAttribute("data-orig-height") && el.setAttribute("data-orig-height", String(el.offsetHeight));
+  !el.hasAttribute("data-orig-pos-left") && el.setAttribute("data-orig-pos-left", String(parseFloat(el.style.left)));
+  !el.hasAttribute("data-orig-pos-top") && el.setAttribute("data-orig-pos-top", String(parseFloat(el.style.top)));
 }
 
 function calculatePointerPosition(event: InteractEvent) {

@@ -282,7 +282,7 @@ body {
   transition: all 0.3s;
 }
 
-.popover.hover-popover.show-navbar .popover-title {
+.popover.hover-popover.show-navbar:not(.is-minimized) .popover-title {
   opacity: 0;
 }
 
