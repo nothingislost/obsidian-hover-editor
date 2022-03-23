@@ -60,6 +60,7 @@ declare module "obsidian" {
   interface View {
     iconEl: HTMLElement;
     actionListEl?: HTMLElement;
+    file: TFile;
     setMode(mode: MarkdownSubView): Promise<void>;
     followLinkUnderCursor(newLeaf: boolean): void;
     modes: Record<string, MarkdownSubView>;

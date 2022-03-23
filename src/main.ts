@@ -22,6 +22,7 @@ export default class HoverEditorPlugin extends Plugin {
 
   async onload() {
     this.registerActivePopoverHandler();
+    this.registerFileRenameHandler();
     this.registerViewportResizeHandler();
     this.registerContextMenuHandler();
     this.registerCommands();
@@ -193,6 +194,19 @@ export default class HoverEditorPlugin extends Plugin {
         }
       })
     );
+  }
+
+  registerFileRenameHandler() {
+    this.app.vault.on("rename", file => {
+      HoverEditor.iteratePopoverLeaves(this.app.workspace, (leaf) => {
+        if (file === leaf?.view?.file && leaf.view.file instanceof TFile) {
+          let hoverLeaf = HoverEditor.forLeaf(leaf);
+          if (hoverLeaf?.hoverEl) {
+            hoverLeaf.hoverEl.querySelector(".popover-title").textContent = leaf.view.file.basename;
+          }
+        }
+      })
+    })
   }
 
   debouncedPopoverReflow = debounce(
