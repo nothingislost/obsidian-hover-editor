@@ -1,3 +1,108 @@
+/* @settings
+
+name: Hover Editor
+id: hover-editor
+settings:
+    - 
+        id: titlebar-heading
+        title: Title bar
+        type: heading
+        level: 1
+        collapsed: true
+    - 
+        id: titlebar-heading
+        title: Title bar background/foreground
+        type: heading
+        level: 2
+        collapsed: true
+    - 
+        id: he-title-bar-active-bg
+        title: Active unpinned title bar background color
+        type: variable-themed-color
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    - 
+        id: he-title-bar-inactive-bg
+        title: Inactive unpinned title bar background color
+        type: variable-themed-color
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    - 
+        id: he-title-bar-active-pinned-bg
+        title: Active pinned title bar background color
+        type: variable-themed-color
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    - 
+        id: he-title-bar-inactive-pinned-bg
+        title: Inactive pinned title bar background color
+        type: variable-themed-color
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    - 
+        id: he-title-bar-active-fg
+        title: Active title bar foreground color
+        type: variable-themed-color
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    - 
+        id: he-title-bar-inactive-fg
+        title: Inactive title bar foreground color
+        type: variable-themed-color
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    - 
+        id: titlebar-action-heading
+        title: Title bar icons
+        type: heading
+        level: 2
+        collapsed: true
+    - 
+        id: he-title-bar-inactive-action
+        title: Title bar inactive icon color
+        type: variable-themed-color
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    - 
+        id: he-title-bar-active-action
+        title: Titlebar active icon color
+        type: variable-themed-color
+        format: hex
+        default-light: '#'
+        default-dark: '#'
+    - 
+        id: titlebar-text-heading
+        title: Title bar text
+        type: heading
+        level: 2
+        collapsed: true
+    - 
+        id: he-title-bar-font-size
+        title: Title bar Font size
+        type: variable-text
+        description: Accepts any CSS font-size value
+        default: 15px
+    - 
+        id: titlebar-height-heading
+        title: Title bar height
+        type: heading
+        level: 2
+        collapsed: true
+    - 
+        id: he-title-bar-height
+        title: Title bar height
+        type: variable-text
+        description: Accepts any CSS font-size value
+        default: 28px
+*/
+
 :root {
   /* general styling */
   --he-popover-opacity-while-dragging: 0.8;
@@ -22,10 +127,14 @@ body {
   --he-resize-handle-corner-offset: calc((var(--he-resize-handle-corner-size) / 2) * -1);
   --he-resize-handle-side-length: calc(100% - var(--he-resize-handle-corner-size));
   /* title bar colors */
-  --he-title-bar-active-bg: var(--interactive-accent); /* --background-primary-alt */
-  --he-title-bar-inactive-bg: var(--interactive-accent); /* --background-secondary */
-  --he-title-bar-active-fg: var(--he-text-on-accent-active); /* --text-normal */
-  --he-title-bar-inactive-fg: var(--he-text-on-accent-inactive); /* var(--text-muted)  */
+  --he-title-bar-active-bg: var(--interactive-accent);
+  --he-title-bar-inactive-bg: var(--interactive-accent);
+  --he-title-bar-inactive-pinned-bg: var(--interactive-accent);
+  --he-title-bar-active-pinned-bg: var(--interactive-accent);
+
+  --he-title-bar-active-fg: var(--he-text-on-accent-active);
+  --he-title-bar-inactive-fg: var(--he-text-on-accent-inactive);
+  /* title bar action/icon colors */
   --he-title-bar-inactive-action: var(--he-text-on-accent-inactive);
   --he-title-bar-active-action: var(--he-text-on-accent-active);
   /* titlebar sizing */
@@ -240,6 +349,14 @@ body {
   background-color: var(--he-title-bar-active-bg);
 }
 
+.popover.hover-popover.is-pinned.is-pinned .popover-titlebar {
+  background-color: var(--he-title-bar-inactive-pinned-bg);
+}
+
+.popover.hover-popover.is-pinned.is-pinned.is-active .popover-titlebar {
+  background-color: var(--he-title-bar-active-pinned-bg);
+}
+
 .popover.hover-popover .popover-titlebar .popover-actions {
   display: flex;
   justify-content: flex-end;
@@ -272,6 +389,14 @@ body {
 
 .hover-popover.is-active .popover-title:after {
   background: linear-gradient(to right, transparent, var(--he-title-bar-active-bg));
+}
+
+.hover-popover.is-pinned.is-pinned.is-active .popover-title:after {
+  background: linear-gradient(to right, transparent, var(--he-title-bar-active-pinned-bg));
+}
+
+.hover-popover.is-pinned.is-pinned .popover-title:after {
+  background: linear-gradient(to right, transparent, var(--he-title-bar-inactive-pinned-bg));
 }
 
 .hover-popover .popover-title:after {
