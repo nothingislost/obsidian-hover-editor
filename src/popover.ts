@@ -92,24 +92,12 @@ export class HoverEditor extends HoverPopover {
     return this.parent?.view?.getMode ? this.parent.view.getMode() : "preview";
   }
 
-  updateLeaves() {
-    this.plugin.app.workspace.iterateLeaves(leaf => {
-      const headerEl = leaf.view?.headerEl;
-      if (!headerEl) return;
-      // if (headerEl.firstElementChild !== this.pinEl) headerEl.prepend(this.pinEl);
-      return true;
-    }, this.rootSplit) || this.explicitHide(); // close if nowhere to put the pin
-  }
-
   onload() {
     super.onload();
-    this.registerEvent(this.plugin.app.workspace.on("layout-change", this.updateLeaves, this));
   }
 
   get headerHeight() {
     let hoverEl = this.hoverEl;
-
-    // let viewHeader = this.leaves()[0].view.headerEl;
     return this.titleEl.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
   }
 
@@ -140,7 +128,6 @@ export class HoverEditor extends HoverPopover {
     this.rootSplit.getRoot = () => this.plugin.app.workspace.rootSplit;
     this.titleEl.insertAdjacentElement("afterend", this.rootSplit.containerEl);
     const leaf = this.plugin.app.workspace.createLeafInParent(this.rootSplit, 0);
-    this.updateLeaves();
     return leaf;
   }
 
@@ -410,7 +397,7 @@ export class HoverEditor extends HoverPopover {
       const leaves = this.leaves();
       if (leaves.length) {
         // Detach all leaves before we unload the popover and remove it from the DOM.
-        // Each leaf.detach() will trigger layout-changed, and our updateLeaves()
+        // Each leaf.detach() will trigger layout-changed
         // method will then call hide() again when the last one is gone.
         leaves.forEach(leaf => leaf.detach());
       } else {
@@ -515,6 +502,10 @@ export class HoverEditor extends HoverPopover {
             };
           }
         }), 1);
+      } else if (!this.plugin.settings.autoFocus && !this.detaching) {
+        let titleEl = this.hoverEl.querySelector(".popover-title");
+        titleEl.textContent = leaf.view?.getDisplayText();
+        titleEl.setAttribute("data-path", leaf.view?.file?.path);
       }
     } catch (e) {
       console.error(e)
