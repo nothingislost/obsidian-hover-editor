@@ -42,6 +42,10 @@ export default class HoverEditorPlugin extends Plugin {
       }
       this.patchSlidingPanes();
       this.patchLinkHover();
+      setTimeout(() => {
+        // workaround to ensure our plugin shows up properly within Style Settings
+        this.app.workspace.trigger("css-change");
+      }, 2000);
     });
   }
 
