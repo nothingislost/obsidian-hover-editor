@@ -128,8 +128,8 @@ body {
   --he-resize-handle-side-length: calc(100% - var(--he-resize-handle-corner-size));
   /* title bar colors */
   --he-title-bar-active-bg: var(--interactive-accent);
-  --he-title-bar-inactive-bg: var(--interactive-accent);
-  --he-title-bar-inactive-pinned-bg: var(--interactive-accent);
+  --he-title-bar-inactive-bg: #777777;
+  --he-title-bar-inactive-pinned-bg: #777777;
   --he-title-bar-active-pinned-bg: var(--interactive-accent);
 
   --he-title-bar-active-fg: var(--he-text-on-accent-active);
@@ -375,7 +375,7 @@ body {
   transition: all 0.3s;
   align-self: center;
   font-size: var(--he-title-bar-font-size);
-  font-weight: 600;
+  font-weight: 500;
   white-space: pre;
   word-wrap: normal;
   color: var(--he-title-bar-inactive-fg);
