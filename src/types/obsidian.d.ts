@@ -48,6 +48,7 @@ declare module "obsidian" {
     getDropLocation(event: MouseEvent): {target: WorkspaceItem, sidedock: boolean};
     recursiveGetTarget(event: MouseEvent, parent: WorkspaceParent): WorkspaceItem;
     recordMostRecentOpenedFile(file: TFile): void;
+    onDragLeaf(event: MouseEvent, leaf: WorkspaceLeaf): void;
   }
   interface Editor {
     getClickableTokenAt(pos: EditorPosition): {

@@ -102,6 +102,13 @@ export default class HoverEditorPlugin extends Plugin {
           return old.call(this, event);
         }
       },
+      onDragLeaf(old) {
+        return function(event: MouseEvent, leaf: WorkspaceLeaf) {
+          let hoverPopover = HoverEditor.forLeaf(leaf);
+          hoverPopover?.togglePin(true);
+          return old.call(this, event, leaf);
+        }
+      }
     });
     this.register(uninstaller);
   }
