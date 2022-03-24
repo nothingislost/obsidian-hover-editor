@@ -1,19 +1,36 @@
 :root {
+  /* general styling */
   --he-popover-opacity-while-dragging: 0.8;
-  /* customizable handle sizes */
+  --he-popover-border-radius: 6px;
+  --he-popover-header-transition-speed: 0.3s;
+  --he-popover-snap-to-edge-transition-speed: 0.3s;
+  /* resize handle sizing */
   --he-resize-handle-side-size: 12px;
   --he-resize-handle-corner-size: 18px;
-  --he-drag-handle-top-size: 18px;
-  /* title bar */
-  --he-title-bar-height: 28px;
 }
 
 body {
+  --he-text-on-accent-inactive: var(--text-on-accent); /* couldn't find a good variable that worked across themes */
+  --he-text-on-accent-active: #fff;
+  /* z-index layer settings, probably not a good idea to mess with these */
+  --he-popover-layer-inactive: var(--layer-popover);
+  --he-popover-layer-active: calc(var(--he-popover-layer-inactive) + 1);
+  --he-popover-layer-new: calc(var(--he-popover-layer-inactive) + 2);
+  --he-leaf-drag-overlay: calc(var(--he-popover-layer-inactive) + 3);
   /* calculated variables, do not modify */
-  --he-drag-handle-top-offset: calc((var(--he-drag-handle-top-size) - 8px) * -1);
   --he-resize-handle-side-offset: calc((var(--he-resize-handle-side-size) - 3px) * -1);
   --he-resize-handle-corner-offset: calc((var(--he-resize-handle-corner-size) / 2) * -1);
   --he-resize-handle-side-length: calc(100% - var(--he-resize-handle-corner-size));
+  /* title bar colors */
+  --he-title-bar-active-bg: var(--interactive-accent); /* --background-primary-alt */
+  --he-title-bar-inactive-bg: var(--interactive-accent); /* --background-secondary */
+  --he-title-bar-active-fg: var(--he-text-on-accent-active); /* --text-normal */
+  --he-title-bar-inactive-fg: var(--he-text-on-accent-inactive); /* var(--text-muted)  */
+  --he-title-bar-inactive-action: var(--he-text-on-accent-inactive);
+  --he-title-bar-active-action: var(--he-text-on-accent-active);
+  /* titlebar sizing */
+  --he-title-bar-height: 28px;
+  --he-title-bar-font-size: 15px;
 }
 
 .popover.hover-popover .workspace-leaf,
@@ -30,36 +47,29 @@ body {
   /* this is set to allow the drag/resize handles to overflow the popover frame */
   overflow: visible;
   border: none;
+  padding: 0;
+  z-index: var(--he-popover-layer-inactive);
+  border-radius: var(--he-popover-border-radius);
 }
 
 .popover.hover-popover.is-active {
-  z-index: calc(var(--layer-popover) + 1);
+  z-index: var(--he-popover-layer-active);
 }
 
 .popover.hover-popover.is-new {
-  z-index: calc(var(--layer-popover) + 2);
+  z-index: var(--he-popover-layer-new);
 }
 
 /* Drag/link overlay needs to overlay popups */
 .workspace-fake-target-overlay,
 .workspace-drop-overlay {
-  z-index: calc(var(--layer-popover) + 3);
+  z-index: var(--he-leaf-drag-overlay);
 }
 
 .popover.hover-popover .resize-handle {
   position: absolute;
   touch-action: none;
 }
-
-/* .popover.hover-popover .drag-handle.top {
-  position: absolute;
-  width: var(--he-resize-handle-side-length);
-  top: var(--he-drag-handle-top-offset);
-  height: var(--he-drag-handle-top-size);
-  left: calc(var(--he-resize-handle-corner-offset) * -1);
-  z-index: 0;
-  cursor: move;
-} */
 
 .popover.hover-popover .resize-handle.top {
   top: var(--he-resize-handle-side-offset);
@@ -122,12 +132,6 @@ body {
 } */
 
 .popover-header-icon {
-  /* padding: 5px 10px; */
-  color: var(--text-muted);
-  /* position: relative; */
-  /* top: 2px; */
-  /* z-index: 2; */
-  cursor: pointer;
   width: fit-content;
 }
 
@@ -135,19 +139,32 @@ body {
   transform: rotate(45deg);
 }
 
-.mod-pin-popover.is-active {
-  color: var(--text-accent);
+.mod-pin-popover.is-active > svg {
   transform: rotate(0deg);
-  animation: scale 1s forwards;
 }
 
-@keyframes scale {
-  from {
-    transform: scale(1.8);
-  }
-  to {
-    transform: scale(1);
-  }
+.popover-action,
+.popover-header-icon {
+  margin: 0 8px;
+  cursor: pointer;
+  color: var(--he-title-bar-inactive-action);
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.popover-action.is-active,
+.mod-pin-popover.is-active {
+  color: var(--he-title-bar-active-action);
+}
+
+.popover-action:hover,
+.popover-header-icon:hover {
+  color: var(--he-title-bar-active-action);
+}
+
+.popover-action.is-active svg,
+.mod-pin-popover.is-active svg {
 }
 
 .mod-pin-popover.is-active > svg {
@@ -157,12 +174,6 @@ body {
 .popover.hover-popover .workspace-leaf-content[data-type="empty"] .view-header {
   /* ensures that minimal theme doesn't hide the popover header */
   display: flex;
-}
-
-.popover.hover-popover .view-header-icon {
-  /* !important since a few themes are forcing display of this element */
-  /* this can not re-enabled until HoverLeafs can be safely added/cloned into the native splits */
-  /* display: none !important; */
 }
 
 .popover.hover-popover .workspace-split > .workspace-leaf:last-child > .workspace-leaf-resize-handle {
@@ -187,7 +198,9 @@ body {
 .is-dragging.snap-to-left,
 .is-dragging.snap-to-right,
 .is-dragging.snap-to-viewport {
-  transition: width 0.3s, height 0.3s, top 0.3s, left 0.3s;
+  transition: width var(--he-popover-snap-to-edge-transition-speed),
+    height var(--he-popover-snap-to-edge-transition-speed), top var(--he-popover-snap-to-edge-transition-speed),
+    left var(--he-popover-snap-to-edge-transition-speed);
 }
 
 .hover-popover.is-dragging.snap-to-left::after,
@@ -198,7 +211,7 @@ body {
   width: 100%;
   height: 100%;
   top: 0;
-  border-radius: 6px;
+  border-radius: var(--he-popover-border-radius);
   box-shadow: inset 0px 0px 0px 4px var(--interactive-accent);
   pointer-events: none;
 }
@@ -220,11 +233,11 @@ body {
   display: flex;
   height: var(--he-title-bar-height);
   width: 100%;
-  background-color: var(--background-secondary);
+  background-color: var(--he-title-bar-inactive-bg);
 }
 
 .popover.hover-popover.is-active .popover-titlebar {
-  background-color: var(--background-primary-alt);
+  background-color: var(--he-title-bar-active-bg);
 }
 
 .popover.hover-popover .popover-titlebar .popover-actions {
@@ -234,23 +247,9 @@ body {
 
 .popover-content {
   margin: 0;
-  border-radius: 6px;
+  border-radius: var(--he-popover-border-radius);
   overflow: hidden;
   height: 100%;
-}
-
-.popover-action,
-.popover-header-icon {
-  margin: 0 8px;
-  cursor: pointer;
-  color: var(--text-muted);
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.popover-action.is-active {
-  color: var(--text-accent);
 }
 
 .popover.hover-popover .popover-titlebar .popover-title {
@@ -258,16 +257,21 @@ body {
   flex-grow: 1;
   transition: all 0.3s;
   align-self: center;
-  font-size: 16px;
+  font-size: var(--he-title-bar-font-size);
   font-weight: 600;
   white-space: pre;
   word-wrap: normal;
-  color: var(--text-muted);
+  color: var(--he-title-bar-inactive-fg);
   overflow: hidden;
+  position: relative;
+}
+
+.popover.hover-popover.is-active .popover-title {
+  color: var(--he-title-bar-active-fg);
 }
 
 .hover-popover.is-active .popover-title:after {
-  background: linear-gradient(to right, transparent, var(--background-secondary));
+  background: linear-gradient(to right, transparent, var(--he-title-bar-active-bg));
 }
 
 .hover-popover .popover-title:after {
@@ -277,11 +281,7 @@ body {
   right: 0;
   width: 30px;
   height: 100%;
-  background: linear-gradient(to right, transparent, var(--background-secondary));
-}
-
-.popover.hover-popover.is-active .popover-title {
-  color: var(--text-normal);
+  background: linear-gradient(to right, transparent, var(--he-title-bar-inactive-bg));
 }
 
 .mod-show-navbar svg {
@@ -294,7 +294,7 @@ body {
 
 .popover.hover-popover .view-header {
   border-top: none;
-  transition: all 0.3s;
+  transition: height var(--he-popover-header-transition-speed);
 }
 
 .popover.hover-popover.show-navbar:not(.is-minimized) .popover-title {
