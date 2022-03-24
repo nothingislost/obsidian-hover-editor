@@ -28,18 +28,26 @@ I will attempt to keep this plugin working across Obsidian updates but my goal i
 
 ### Demo
 
-https://user-images.githubusercontent.com/89109712/157270975-4d647b8c-2257-437a-8b93-d7a3f8bdc6db.mp4
+https://user-images.githubusercontent.com/89109712/160023366-7a1ca044-5725-4d30-a0a7-f7e0664281da.mp4
 
-### Acknowledgments
+### Installing
 
-Thanks to murf, liam, obadiahcruz, and javalent for the early testing and feedback
+Hover Editor can be found and installed via the Obsidian Community Plugins browser
 
 ### Installing via BRAT
 
-This plugin is not yet in the official Obsidian Plugin Browser but if you want to participate in early testing you can install it using BRAT.
+If you want to participate in early testing you can install the plugin using BRAT.
 
 Install the BRAT plugin via the Obsidian Plugin Browser and then add the beta repository "nothingislost/obsidian-hover-editor"
 
 ### Manually installing the plugin
 
 - Copy over `main.js`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-hover-editor/`.
+
+### Acknowledgments
+
+Thanks to pjeby for contributing a ton of core functionality related to making Hover Editors interop properly with native Obsidian components
+
+Thanks to boninall for contributing the "open in new popover" functionality
+
+Thanks to murf, liam, obadiahcruz, and javalent for the early testing and feedback
