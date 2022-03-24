@@ -641,7 +641,6 @@ function getOrigDimensions(el: HTMLElement) {
   let left = parseFloat(el.getAttribute("data-orig-pos-left"));
   let top = parseFloat(el.getAttribute("data-orig-pos-top"));
   let titlebarHeight = calculateOffsets().top;
-  console.log(top, titlebarHeight)
   if (top < titlebarHeight) top = titlebarHeight;
   return { height, width, top, left };
 }

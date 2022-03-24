@@ -198,7 +198,7 @@ export default class HoverEditorPlugin extends Plugin {
         if (hoverEditor) {
           hoverEditor.hoverEl.addClass("is-active");
           let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
-          titleEl.textContent = leaf.view?.file?.basename;
+          titleEl.textContent = leaf.view?.getDisplayText();
           titleEl.setAttribute("data-path", leaf.view?.file?.path);
         }
       })
@@ -208,13 +208,14 @@ export default class HoverEditorPlugin extends Plugin {
   registerFileRenameHandler() {
     this.app.vault.on("rename", (file, oldPath) => {
       HoverEditor.iteratePopoverLeaves(this.app.workspace, leaf => {
-        if (file === leaf?.view?.file && leaf.view.file instanceof TFile) {
+        if (file === leaf?.view?.file && file instanceof TFile) {
           let hoverEditor = HoverEditor.forLeaf(leaf);
           if (hoverEditor?.hoverEl) {
             let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
             let filePath = titleEl.getAttribute("data-path");
             if (oldPath === filePath) {
-              titleEl.textContent = leaf.view.file.basename;
+              titleEl.textContent = leaf.view?.getDisplayText();
+              titleEl.setAttribute("data-path", file.path);
             }
           }
         }
