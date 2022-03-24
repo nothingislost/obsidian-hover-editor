@@ -263,6 +263,21 @@ body {
   white-space: pre;
   word-wrap: normal;
   color: var(--text-muted);
+  overflow: hidden;
+}
+
+.hover-popover.is-active .popover-title:after {
+  background: linear-gradient(to right, transparent, var(--background-secondary));
+}
+
+.hover-popover .popover-title:after {
+  content: " ";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 100%;
+  background: linear-gradient(to right, transparent, var(--background-secondary));
 }
 
 .popover.hover-popover.is-active .popover-title {
