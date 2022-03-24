@@ -92,8 +92,15 @@ export class HoverEditor extends HoverPopover {
     return this.parent?.view?.getMode ? this.parent.view.getMode() : "preview";
   }
 
+  updateLeaves() {
+    this.plugin.app.workspace.iterateLeaves(() => {
+      return true;
+    }, this.rootSplit) || this.explicitHide(); // close if we have no leaves
+  }
+
   onload() {
     super.onload();
+    this.registerEvent(this.plugin.app.workspace.on("layout-change", this.updateLeaves, this));
   }
 
   get headerHeight() {
@@ -128,6 +135,7 @@ export class HoverEditor extends HoverPopover {
     this.rootSplit.getRoot = () => this.plugin.app.workspace.rootSplit;
     this.titleEl.insertAdjacentElement("afterend", this.rootSplit.containerEl);
     const leaf = this.plugin.app.workspace.createLeafInParent(this.rootSplit, 0);
+    this.updateLeaves();
     return leaf;
   }
 
