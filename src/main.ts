@@ -187,26 +187,32 @@ export default class HoverEditorPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", leaf => {
         document.querySelector("body > .popover.hover-popover.is-active")?.removeClass("is-active");
-        let hoverLeaf = HoverEditor.forLeaf(leaf);
-        if (hoverLeaf) {
-          hoverLeaf.hoverEl.addClass("is-active");
-          hoverLeaf.hoverEl.querySelector(".popover-title").textContent = (leaf.view as any)?.file?.basename;
+        let hoverEditor = HoverEditor.forLeaf(leaf);
+        if (hoverEditor) {
+          hoverEditor.hoverEl.addClass("is-active");
+          let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
+          titleEl.textContent = leaf.view?.file?.basename;
+          titleEl.setAttribute("data-path", leaf.view?.file?.path);
         }
       })
     );
   }
 
   registerFileRenameHandler() {
-    this.app.vault.on("rename", file => {
-      HoverEditor.iteratePopoverLeaves(this.app.workspace, (leaf) => {
+    this.app.vault.on("rename", (file, oldPath) => {
+      HoverEditor.iteratePopoverLeaves(this.app.workspace, leaf => {
         if (file === leaf?.view?.file && leaf.view.file instanceof TFile) {
-          let hoverLeaf = HoverEditor.forLeaf(leaf);
-          if (hoverLeaf?.hoverEl) {
-            hoverLeaf.hoverEl.querySelector(".popover-title").textContent = leaf.view.file.basename;
+          let hoverEditor = HoverEditor.forLeaf(leaf);
+          if (hoverEditor?.hoverEl) {
+            let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
+            let filePath = titleEl.getAttribute("data-path");
+            if (oldPath === filePath) {
+              titleEl.textContent = leaf.view.file.basename;
+            }
           }
         }
-      })
-    })
+      });
+    });
   }
 
   debouncedPopoverReflow = debounce(
