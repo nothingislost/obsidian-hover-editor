@@ -9,6 +9,7 @@ import {
   PopoverState,
   TAbstractFile,
   TFile,
+  ViewState,
   Workspace,
   WorkspaceLeaf,
 } from "obsidian";
@@ -22,6 +23,7 @@ export default class HoverEditorPlugin extends Plugin {
 
   async onload() {
     this.registerActivePopoverHandler();
+    this.registerFileRenameHandler();
     this.registerViewportResizeHandler();
     this.registerContextMenuHandler();
     this.registerCommands();
@@ -41,6 +43,10 @@ export default class HoverEditorPlugin extends Plugin {
       }
       this.patchSlidingPanes();
       this.patchLinkHover();
+      setTimeout(() => {
+        // workaround to ensure our plugin shows up properly within Style Settings
+        this.app.workspace.trigger("css-change");
+      }, 2000);
     });
   }
 
@@ -55,9 +61,22 @@ export default class HoverEditorPlugin extends Plugin {
         return (top.getRoot === this.getRoot) ? top : top.getRoot();
       }},
       onResize(old) { return function() { this.view?.onResize(); } },
-      updateHeader(old) { return function() {
-        old.call(this); HoverEditor.forLeaf(this)?.updateLeaves();
-      }},
+      setViewState(old) {
+        return async function (viewState: ViewState, eState?: any) {
+          let result = await old.call(this, viewState, eState);
+          // try and catch files that are opened from outside of the
+          // HoverEditor class so that we can update the popover title bar
+          try {
+            let he = HoverEditor.forLeaf(this);
+            if (he) {
+              let titleEl = he.hoverEl.querySelector(".popover-title");
+              titleEl.textContent = this.view?.getDisplayText();
+              titleEl.setAttribute("data-path", this.view?.file?.path);
+            }
+          } catch {}
+          return result;
+        };
+      },
       setEphemeralState(old) {
         return function (state: any) {
           old.call(this, state);
@@ -101,6 +120,13 @@ export default class HoverEditorPlugin extends Plugin {
           return old.call(this, event);
         }
       },
+      onDragLeaf(old) {
+        return function(event: MouseEvent, leaf: WorkspaceLeaf) {
+          let hoverPopover = HoverEditor.forLeaf(leaf);
+          hoverPopover?.togglePin(true);
+          return old.call(this, event, leaf);
+        }
+      }
     });
     this.register(uninstaller);
   }
@@ -186,9 +212,33 @@ export default class HoverEditorPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", leaf => {
         document.querySelector("body > .popover.hover-popover.is-active")?.removeClass("is-active");
-        HoverEditor.forLeaf(leaf)?.hoverEl.addClass("is-active");
+        let hoverEditor = HoverEditor.forLeaf(leaf);
+        if (hoverEditor) {
+          hoverEditor.hoverEl.addClass("is-active");
+          let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
+          titleEl.textContent = leaf.view?.getDisplayText();
+          titleEl.setAttribute("data-path", leaf.view?.file?.path);
+        }
       })
     );
+  }
+
+  registerFileRenameHandler() {
+    this.app.vault.on("rename", (file, oldPath) => {
+      HoverEditor.iteratePopoverLeaves(this.app.workspace, leaf => {
+        if (file === leaf?.view?.file && file instanceof TFile) {
+          let hoverEditor = HoverEditor.forLeaf(leaf);
+          if (hoverEditor?.hoverEl) {
+            let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
+            let filePath = titleEl.getAttribute("data-path");
+            if (oldPath === filePath) {
+              titleEl.textContent = leaf.view?.getDisplayText();
+              titleEl.setAttribute("data-path", file.path);
+            }
+          }
+        }
+      });
+    });
   }
 
   debouncedPopoverReflow = debounce(

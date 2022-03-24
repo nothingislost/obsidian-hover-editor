@@ -48,6 +48,7 @@ declare module "obsidian" {
     getDropLocation(event: MouseEvent): {target: WorkspaceItem, sidedock: boolean};
     recursiveGetTarget(event: MouseEvent, parent: WorkspaceParent): WorkspaceItem;
     recordMostRecentOpenedFile(file: TFile): void;
+    onDragLeaf(event: MouseEvent, leaf: WorkspaceLeaf): void;
   }
   interface Editor {
     getClickableTokenAt(pos: EditorPosition): {
@@ -60,6 +61,7 @@ declare module "obsidian" {
   interface View {
     iconEl: HTMLElement;
     actionListEl?: HTMLElement;
+    file: TFile;
     setMode(mode: MarkdownSubView): Promise<void>;
     followLinkUnderCursor(newLeaf: boolean): void;
     modes: Record<string, MarkdownSubView>;

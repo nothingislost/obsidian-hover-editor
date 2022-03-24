@@ -11,6 +11,7 @@ export interface HoverEditorSettings {
   snapToEdges: boolean;
   initialHeight: string;
   initialWidth: string;
+  showViewHeader: boolean;
 }
 
 export const DEFAULT_SETTINGS: HoverEditorSettings = {
@@ -23,6 +24,7 @@ export const DEFAULT_SETTINGS: HoverEditorSettings = {
   snapToEdges: false,
   initialHeight: "340px",
   initialWidth: "400px",
+  showViewHeader: false,
 };
 
 export const modeOptions = {
@@ -104,6 +106,19 @@ export class SettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName("Show view header by default")
+      .setDesc(
+        `Show the view header by default when triggering a hover editor.
+         When disabled, view headers will only show if you click the view header icon to the left of the minimize button.`
+      )
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.showViewHeader).onChange(value => {
+          this.plugin.settings.showViewHeader = value;
+          this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
       .setName("Initial popover width")
       .setDesc("Enter any valid CSS unit")
       .addText(textfield => {
@@ -146,7 +161,7 @@ export class SettingTab extends PluginSettingTab {
         });
       });
 
-      new Setting(containerEl)
+    new Setting(containerEl)
       .setName("Hover Close Delay (ms)")
       .setDesc("How long to wait before closing a Hover Editor once the mouse leaves")
       .addText(textfield => {

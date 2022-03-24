@@ -37,6 +37,9 @@ export class HoverEditor extends HoverPopover {
     WorkspaceSplit as new(ws: Workspace, dir: string) => WorkspaceSplit
   )(this.plugin.app.workspace, "vertical");
   pinEl: HTMLElement;
+  titleEl: HTMLElement;
+  containerEl: HTMLElement;
+  hideNavBarEl: HTMLElement;
   oldPopover = this.parent.hoverPopover;
 
   static activePopovers() {
@@ -58,11 +61,14 @@ export class HoverEditor extends HoverPopover {
   constructor(parent: HoverEditorParent, targetEl: HTMLElement, public plugin: HoverEditorPlugin, waitTime?: number, public onShowCallback?: () => any) {
     super(parent, targetEl, waitTime);
     popovers.set(this.hoverEl, this);
-    const pinEl = this.pinEl = createDiv("popover-header-icon mod-pin-popover");
+    this.containerEl = this.hoverEl.createDiv("popover-content");
+    this.buildWindowControls();
+    this.setInitialDimensions();
+    const pinEl = this.pinEl = createEl("a", "popover-header-icon mod-pin-popover");
+    this.titleEl.prepend(this.pinEl);
     pinEl.onclick = () => {
       this.togglePin();
     };
-    this.setInitialDimensions();
     if (requireApiVersion && requireApiVersion("0.13.27")) {
       setIcon(pinEl, "lucide-pin", 17);
     } else {
@@ -87,12 +93,9 @@ export class HoverEditor extends HoverPopover {
   }
 
   updateLeaves() {
-    this.plugin.app.workspace.iterateLeaves(leaf => {
-      const headerEl = leaf.view?.headerEl;
-      if (!headerEl) return;
-      if (headerEl.firstElementChild !== this.pinEl) headerEl.prepend(this.pinEl);
+    this.plugin.app.workspace.iterateLeaves(() => {
       return true;
-    }, this.rootSplit) || this.explicitHide(); // close if nowhere to put the pin
+    }, this.rootSplit) || this.explicitHide(); // close if we have no leaves
   }
 
   onload() {
@@ -102,12 +105,10 @@ export class HoverEditor extends HoverPopover {
 
   get headerHeight() {
     let hoverEl = this.hoverEl;
-
-    let viewHeader = this.leaves()[0].view.headerEl;
-    return viewHeader.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
+    return this.titleEl.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
   }
 
-  toggleMinimized() {
+  toggleMinimized(value?: boolean) {
     let hoverEl = this.hoverEl;
     let headerHeight = this.headerHeight;
 
@@ -132,7 +133,7 @@ export class HoverEditor extends HoverPopover {
 
   attachLeaf(): WorkspaceLeaf {
     this.rootSplit.getRoot = () => this.plugin.app.workspace.rootSplit;
-    this.hoverEl.prepend(this.rootSplit.containerEl);
+    this.titleEl.insertAdjacentElement("afterend", this.rootSplit.containerEl);
     const leaf = this.plugin.app.workspace.createLeafInParent(this.rootSplit, 0);
     this.updateLeaves();
     return leaf;
@@ -149,7 +150,66 @@ export class HoverEditor extends HoverPopover {
     this.hoverEl.style.width = this.plugin.settings.initialWidth;
   }
 
+  toggleViewHeader(value?: boolean) {
+    if (value === undefined) value = !this.hoverEl.hasClass("show-navbar");
+    this.hideNavBarEl?.toggleClass("is-active", value);
+    this.hoverEl.toggleClass("show-navbar", value);
+    this.requestLeafMeasure();
+  }
+
+  buildWindowControls() {
+    this.titleEl = createDiv("popover-titlebar");
+    let popoverTitle = this.titleEl.createDiv("popover-title");
+    let popoverActions = this.titleEl.createDiv("popover-actions");
+    let hideNavBarEl = this.hideNavBarEl = popoverActions.createEl("a", "popover-action mod-show-navbar");
+    setIcon(hideNavBarEl, "sidebar-open", 14);
+    hideNavBarEl.addEventListener("click", event => {
+      this.toggleViewHeader();
+    });
+    if (this.plugin.settings.showViewHeader) {
+      this.toggleViewHeader(true);
+    };
+    let minEl = popoverActions.createEl("a", "popover-action mod-minimize");
+    setIcon(minEl, "minus");
+    minEl.addEventListener("click", event => {
+      restorePopover(this.hoverEl);
+      this.toggleMinimized();
+    });
+    let maxEl = popoverActions.createEl("a", "popover-action mod-maximize");
+    setIcon(maxEl, "maximize", 14);
+    maxEl.addEventListener("click", event => {
+      if (this.hoverEl.hasClass("snap-to-viewport")) {
+        setIcon(maxEl, "maximize", 14);
+        restorePopover(this.hoverEl);
+        return;
+      }
+      setIcon(maxEl, "minimize", 14);
+      let offset = calculateOffsets();
+      storeDimensions(this.hoverEl);
+      snapToEdge(this.hoverEl, "viewport", offset);
+    });
+
+    let closeEl = popoverActions.createEl("a", "popover-action mod-close");
+    setIcon(closeEl, "x");
+    closeEl.addEventListener("click", event => {
+      this.explicitHide();
+    });
+    this.containerEl.prepend(this.titleEl);
+  }
+
+  requestLeafMeasure() {
+    // address view height measurement issues triggered by css transitions
+    // we wait a bit for the transition to finish and remeasure
+    const leaves = this.leaves();
+    if (leaves.length) {
+      setTimeout(() => {
+        leaves.forEach(leaf => leaf.onResize());
+      }, 200);
+    }
+  }
+
   onShow() {
+    
     // Once we've been open for closeDelay, use the closeDelay as a hiding timeout
     const {closeDelay} = this.plugin.settings;
     setTimeout(() => this.waitTime = closeDelay, closeDelay);
@@ -227,7 +287,7 @@ export class HoverEditor extends HoverPopover {
             endOnly: false,
           }),
         ],
-        allowFrom: ".top",
+        allowFrom: ".popover-titlebar", 
 
         listeners: {
           start(event: DragEvent) {
@@ -247,7 +307,7 @@ export class HoverEditor extends HoverPopover {
 
       .resizable({
         edges: {
-          top: ".top-left, .top-right",
+          top: ".top-left, .top-right, .top",
           left: ".top-left, .bottom-left, .left",
           bottom: ".bottom-left, .bottom-right, .bottom",
           right: ".top-right, .bottom-right, .right",
@@ -308,11 +368,11 @@ export class HoverEditor extends HoverPopover {
     this.hoverEl.createDiv("resize-handle right");
     this.hoverEl.createDiv("resize-handle left");
     this.hoverEl.createDiv("resize-handle bottom");
-    this.hoverEl.createDiv("drag-handle top");
+    this.hoverEl.createDiv("resize-handle top");
   }
 
   onDoubleTap(event: InteractEvent) {
-    if (event.target.hasClass("drag-handle")) {
+    if (event.target.tagName === "DIV" && event.target.closest(".popover-titlebar")) {
       event.preventDefault();
       this.togglePin(true);
       this.toggleMinimized();
@@ -345,7 +405,7 @@ export class HoverEditor extends HoverPopover {
       const leaves = this.leaves();
       if (leaves.length) {
         // Detach all leaves before we unload the popover and remove it from the DOM.
-        // Each leaf.detach() will trigger layout-changed, and our updateLeaves()
+        // Each leaf.detach() will trigger layout-changed
         // method will then call hide() again when the last one is gone.
         leaves.forEach(leaf => leaf.detach());
       } else {
@@ -450,6 +510,10 @@ export class HoverEditor extends HoverPopover {
             };
           }
         }), 1);
+      } else if (!this.plugin.settings.autoFocus && !this.detaching) {
+        let titleEl = this.hoverEl.querySelector(".popover-title");
+        titleEl.textContent = leaf.view?.getDisplayText();
+        titleEl.setAttribute("data-path", leaf.view?.file?.path);
       }
     } catch (e) {
       console.error(e)
@@ -554,6 +618,14 @@ function dragMoveListener(event: InteractEvent) {
   target.setAttribute("data-y", String(y));
 }
 
+function restorePopover(el: HTMLElement) {
+  if (el.hasClass("snap-to-viewport")) {
+    el.removeClass("snap-to-viewport");
+    restoreDimentions(el);
+    return;
+  }
+}
+
 function expandContract(el: HTMLElement, expand: boolean) {
   let contentHeight = (el.querySelector(".view-content") as HTMLElement).offsetHeight;
   contentHeight = expand ? -contentHeight : contentHeight;
@@ -565,20 +637,30 @@ function expandContract(el: HTMLElement, expand: boolean) {
 function getOrigDimensions(el: HTMLElement) {
   let height = el.getAttribute("data-orig-height");
   let width = el.getAttribute("data-orig-width");
-  return { height, width };
+  let left = parseFloat(el.getAttribute("data-orig-pos-left"));
+  let top = parseFloat(el.getAttribute("data-orig-pos-top"));
+  let titlebarHeight = calculateOffsets().top;
+  if (top < titlebarHeight) top = titlebarHeight;
+  return { height, width, top, left };
 }
 
 function restoreDimentions(el: HTMLElement) {
-  let { height, width } = getOrigDimensions(el);
+  let { height, width, top, left } = getOrigDimensions(el);
   el.removeAttribute("data-orig-width");
   el.removeAttribute("data-orig-height");
+  el.removeAttribute("data-orig-pos-left");
+  el.removeAttribute("data-orig-pos-top");
   width && (el.style.width = width + "px");
   height && (el.style.height = height + "px");
+  top && (el.style.top = top + "px", el.setAttribute("data-y", String(top)));
+  left && (el.style.left = left + "px");
 }
 
 function storeDimensions(el: HTMLElement) {
   !el.hasAttribute("data-orig-width") && el.setAttribute("data-orig-width", String(el.offsetWidth));
   !el.hasAttribute("data-orig-height") && el.setAttribute("data-orig-height", String(el.offsetHeight));
+  !el.hasAttribute("data-orig-pos-left") && el.setAttribute("data-orig-pos-left", String(parseFloat(el.style.left)));
+  !el.hasAttribute("data-orig-pos-top") && el.setAttribute("data-orig-pos-top", String(parseFloat(el.style.top)));
 }
 
 function calculatePointerPosition(event: InteractEvent) {
