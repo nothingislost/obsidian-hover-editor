@@ -6,9 +6,9 @@ import {
   Notice,
   Plugin,
   PopoverState,
-  SplitDirection,
   TAbstractFile,
   TFile,
+  ViewState,
   Workspace,
   WorkspaceLeaf,
 } from "obsidian";
@@ -60,9 +60,22 @@ export default class HoverEditorPlugin extends Plugin {
         return (top.getRoot === this.getRoot) ? top : top.getRoot();
       }},
       onResize(old) { return function() { this.view?.onResize(); } },
-      updateHeader(old) { return function() {
-        old.call(this); HoverEditor.forLeaf(this)?.updateLeaves();
-      }},
+      setViewState(old) {
+        return async function (viewState: ViewState, eState?: any) {
+          let result = await old.call(this, viewState, eState);
+          // try and catch files that are opened from outside of the
+          // HoverEditor class so that we can update the popover title bar
+          try {
+            let he = HoverEditor.forLeaf(this);
+            if (he) {
+              let titleEl = he.hoverEl.querySelector(".popover-title");
+              titleEl.textContent = this.view?.getDisplayText();
+              titleEl.setAttribute("data-path", this.view?.file?.path);
+            }
+          } catch {}
+          return result;
+        };
+      },
       setEphemeralState(old) {
         return function (state: any) {
           old.call(this, state);
