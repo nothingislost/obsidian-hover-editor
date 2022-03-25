@@ -71,7 +71,11 @@ export default class HoverEditorPlugin extends Plugin {
             if (he) {
               let titleEl = he.hoverEl.querySelector(".popover-title");
               titleEl.textContent = this.view?.getDisplayText();
-              titleEl.setAttribute("data-path", this.view?.file?.path);
+              if (this.view?.file?.path) {
+                titleEl.setAttribute("data-path", this.view.file.path);
+              } else {
+                titleEl.removeAttribute("data-path");
+              }
             }
           } catch {}
           return result;
@@ -217,7 +221,11 @@ export default class HoverEditorPlugin extends Plugin {
           hoverEditor.hoverEl.addClass("is-active");
           let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
           titleEl.textContent = leaf.view?.getDisplayText();
-          titleEl.setAttribute("data-path", leaf.view?.file?.path);
+          if (leaf.view?.file?.path) {
+            titleEl.setAttribute("data-path", leaf.view.file.path);
+          } else {
+            titleEl.removeAttribute("data-path");
+          }
         }
       })
     );
