@@ -337,7 +337,8 @@ export default class HoverEditorPlugin extends Plugin {
           if (!checking) {
             let token = activeView.editor.getClickableTokenAt(activeView.editor.getCursor());
             if (token?.type === "internal-link") {
-              this.spawnPopover().openLinkText(token.text, activeView.file.path, {active: true, eState: {focus: true}});
+              let newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
+              newLeaf.openLinkText(token.text, activeView.file.path);
             }
           }
           return true;
@@ -352,7 +353,8 @@ export default class HoverEditorPlugin extends Plugin {
         let activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (!!activeView) {
           if (!checking) {
-            this.spawnPopover().openFile(activeView.file, { active: true, eState: { focus: true } });
+            let newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
+            newLeaf.openFile(activeView.file);
           }
           return true;
         }
