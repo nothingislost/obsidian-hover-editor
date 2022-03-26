@@ -1,7 +1,7 @@
 {
   "name": "obsidian-hover-editor",
-  "version": "0.1.0",
-  "description": "Transform the Page Preview hover into a working editor instance",
+  "version": "0.6.0",
+  "description": "Transform the Page Preview hover popover into a fully working editor instance",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
@@ -22,8 +22,9 @@
     "interactjs": "^1.10.11",
     "monkey-around": "^2.2.0",
     "obsidian": "^0.13.26",
+    "parse-unit": "^1.0.1",
     "tslib": "2.3.1",
     "typescript": "4.4.4",
-    "parse-unit": "^1.0.1"
+    "esbuild-plugin-copy": "^1.2.1"
   }
 }
