@@ -18,3 +18,8 @@ main.js
 
 # obsidian
 data.json
+dist
+
+# yarn
+yarn.lock
+yarn-error.log
