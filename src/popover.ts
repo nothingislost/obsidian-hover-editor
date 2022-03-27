@@ -82,7 +82,7 @@ export class HoverEditor extends HoverPopover {
     // the calendar view currently bugs out when it is a hover parent and auto focus is enabled, so we need to prevent it
     // calendar regenerates all calender DOM elements on active leaf change which causes the targetEl we received to be invalid
     let CalendarView = this.plugin.app.plugins.getPlugin("calendar")?.view.constructor;
-    if (this.parent instanceof CalendarView) return false;
+    if (CalendarView && this.parent instanceof CalendarView) return false;
     return true;
   }
 
