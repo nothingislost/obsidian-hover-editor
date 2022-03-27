@@ -108,7 +108,6 @@ export class HoverEditor extends HoverPopover {
 
   onload() {
     super.onload();
-    this.registerEvent(this.plugin.app.workspace.on("layout-change", this.updateLeaves, this));
   }
 
   get headerHeight() {
@@ -144,6 +143,7 @@ export class HoverEditor extends HoverPopover {
     this.titleEl.insertAdjacentElement("afterend", this.rootSplit.containerEl);
     const leaf = this.plugin.app.workspace.createLeafInParent(this.rootSplit, 0);
     this.updateLeaves();
+    this.registerEvent(this.plugin.app.workspace.on("layout-change", this.updateLeaves, this));
     return leaf;
   }
 
