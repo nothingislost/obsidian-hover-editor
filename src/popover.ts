@@ -225,6 +225,14 @@ export class HoverEditor extends HoverPopover {
     this.oldPopover?.hide();
     this.oldPopover = null;
 
+    if (this.hoverEl.dataset.imgHeight && this.hoverEl.dataset.imgWidth) {
+      // let headerHeight = leaf.view.contentEl.offsetTop;
+      // let titlebarHeight = leaf.parentSplit.containerEl.offsetTop;
+      console.log(this.titleEl.offsetHeight)
+      this.hoverEl.style.height = parseFloat(this.hoverEl.dataset.imgHeight) + this.titleEl.offsetHeight + "px";
+      this.hoverEl.style.width = parseFloat(this.hoverEl.dataset.imgWidth) + "px";
+    }
+
     this.hoverEl.toggleClass("is-new", true);
     document.body.addEventListener(
       "click",
@@ -237,6 +245,7 @@ export class HoverEditor extends HoverPopover {
       this.parent.hoverPopover = this;
     }
     this.registerInteract();
+    this.interact.reflow({ name: "resize", edges: { right: true, bottom: true } });
     this.onShowCallback?.();
     this.onShowCallback = undefined; // only call it once
   }
@@ -263,6 +272,10 @@ export class HoverEditor extends HoverPopover {
 
   calculateMinHeightRestriction() {
     return { width: 40, height: this.headerHeight }
+  }
+
+  calculateMaxHeightRestriction() {
+    return { width: document.body.offsetWidth / 2, height: document.body.offsetHeight / 2 }
   }
 
   registerInteract() {
@@ -326,7 +339,11 @@ export class HoverEditor extends HoverPopover {
           }),
           interact.modifiers.restrictSize({
             min: self.calculateMinHeightRestriction.bind(this),
+            max: self.calculateMaxHeightRestriction.bind(this),
           }),
+          interact.modifiers.aspectRatio({
+            ratio: 'preserve',
+          })
         ],
         listeners: {
           start(event: ResizeEvent) {
@@ -341,8 +358,8 @@ export class HoverEditor extends HoverPopover {
             x = x ? x : target.style.left;
             y = y ? y : target.style.top;
 
-            x = String((parseFloat(x) || 0) + event.deltaRect.left);
-            y = String((parseFloat(y) || 0) + event.deltaRect.top);
+            x = String((parseFloat(x) || 0) + event.deltaRect?.left);
+            y = String((parseFloat(y) || 0) + event.deltaRect?.top);
 
             if (target.hasClass("snap-to-left") || target.hasClass("snap-to-right")) {
               y = String(parseFloat(target.style.top));
@@ -362,6 +379,7 @@ export class HoverEditor extends HoverPopover {
             if (event.rect.height > self.headerHeight) {
               event.target.removeAttribute("data-restore-height");
             }
+            i.reflow({ name: "drag", axis: "xy" });
           },
         },
       });
@@ -444,6 +462,12 @@ export class HoverEditor extends HoverPopover {
   async openLink(linkText: string, sourcePath: string, eState?: EphemeralState, autoCreate?: boolean) {
     // if (eState && eState.scroll) eState.line = eState.scroll;
     let file = this.resolveLink(linkText, sourcePath);
+    // let viewType = this.plugin.app.viewRegistry.typeByExtension[file.extension];
+    // if (viewType === "image") {
+    //   console.log(file);
+    //   this.hoverEl.style.height = "600px";
+    //   this.hoverEl.style.width = "800px";
+    // }
     let link = parseLinktext(linkText);
     if (!file && autoCreate) {
       let folder = this.plugin.app.fileManager.getNewFileParent(sourcePath);
@@ -457,6 +481,12 @@ export class HoverEditor extends HoverPopover {
     let parentMode = this.getDefaultMode();
     let state = this.buildState(parentMode, eState);
     const leaf = await this.openFile(file, state);
+    let leafViewType = leaf.view.getViewType();
+    if (leafViewType === "image") {
+        let img = leaf.view.contentEl.querySelector("img");
+        this.hoverEl.dataset.imgHeight = String(img.naturalHeight);
+        this.hoverEl.dataset.imgWidth = String(img.naturalWidth);
+    }
     if (state.state?.mode === "source") {
       setTimeout(() => {
         if (this.detaching) return;
