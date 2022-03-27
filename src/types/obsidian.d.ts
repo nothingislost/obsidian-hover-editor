@@ -24,8 +24,12 @@ declare module "obsidian" {
         }
       };
       getPlugin(id: string): Plugin;
+      getPlugin(id: "calendar"): CalendarPlugin;
     };
     dom: { appContainerEl: HTMLElement };
+  }
+  interface CalendarPlugin {
+    view: View;
   }
   interface WorkspaceSplit {
     insertChild(index: number, leaf: WorkspaceLeaf, resize?: boolean): void;
