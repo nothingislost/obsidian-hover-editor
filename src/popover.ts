@@ -78,6 +78,14 @@ export class HoverEditor extends HoverPopover {
     this.createResizeHandles();
   }
 
+  get parentAllowsAutoFocus() {
+    // the calendar view currently bugs out when it is a hover parent and auto focus is enabled, so we need to prevent it
+    // calendar regenerates all calender DOM elements on active leaf change which causes the targetEl we received to be invalid
+    let CalendarView = this.plugin.app.plugins.getPlugin("calendar")?.view.constructor;
+    if (this.parent instanceof CalendarView) return false;
+    return true;
+  }
+
   togglePin(value?: boolean) {
     if (value === undefined) {
       value = !this.isPinned;
@@ -484,8 +492,12 @@ export class HoverEditor extends HoverPopover {
     this.opening = true;
     try {
       await leaf.openFile(file, openState);
-      if (this.plugin.settings.autoFocus && !this.detaching) {
-        this.plugin.app.workspace.setActiveLeaf(leaf, false, true);
+      if (this.plugin.settings.autoFocus && !this.detaching && this.parentAllowsAutoFocus) {
+        let existingCallback = this.onShowCallback;
+        this.onShowCallback = () => {
+          this.plugin.app.workspace.setActiveLeaf(leaf, false, true);
+          existingCallback instanceof Function && existingCallback();
+        };
         // Prevent this leaf's file from registering as a recent file
         // (for the quick switcher or Recent Files plugin) for the next
         // 1ms.  (They're both triggered by a file-open event that happens
