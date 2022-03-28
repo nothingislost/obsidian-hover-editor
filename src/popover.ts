@@ -250,6 +250,18 @@ export class HoverEditor extends HoverPopover {
     this.onShowCallback = undefined; // only call it once
   }
 
+  position(pos?: Pos): void {
+    super.position(pos);
+    if (pos) {
+      setTimeout(() => {
+        let left = parseFloat(this.hoverEl.style.left);
+        let top = parseFloat(this.hoverEl.style.top);
+        this.hoverEl.setAttribute("data-x", String(left));
+        this.hoverEl.setAttribute("data-y", String(top));
+      }, 0);
+    }
+  }
+
   onHide() {
     this.oldPopover = null;
     if (this.parent?.hoverPopover === this) {
