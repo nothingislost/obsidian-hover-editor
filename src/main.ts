@@ -69,6 +69,7 @@ export default class HoverEditorPlugin extends Plugin {
           try {
             let he = HoverEditor.forLeaf(this);
             if (he) {
+              viewState.type && he.hoverEl.setAttribute("data-type", viewState.type);
               let titleEl = he.hoverEl.querySelector(".popover-title");
               titleEl.textContent = this.view?.getDisplayText();
               if (this.view?.file?.path) {
