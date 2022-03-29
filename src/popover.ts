@@ -1,5 +1,4 @@
-import { Interactable, InteractEvent, ResizeEvent } from "@interactjs/types";
-import interact from "interactjs";
+import interact from "@nothingislost/interactjs";
 import { around } from "monkey-around";
 import { EphemeralState, HoverPopover, Menu, OpenViewState, parseLinktext, requireApiVersion, resolveSubpath, setIcon, TFile, View, Workspace, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import HoverEditorPlugin from "./main";
