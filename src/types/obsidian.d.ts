@@ -38,6 +38,9 @@ declare module "obsidian" {
   interface MarkdownView {
     editMode: { cm: EditorView };
   }
+  interface MarkdownEditView {
+    editorEl: HTMLElement;
+  }
   interface WorkspaceLeaf {
     openLinkText(linkText: string, path: string, state?: any): Promise<void>;
     updateHeader(): void;

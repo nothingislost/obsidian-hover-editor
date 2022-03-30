@@ -69,7 +69,7 @@ export default class HoverEditorPlugin extends Plugin {
           try {
             let he = HoverEditor.forLeaf(this);
             if (he) {
-              viewState.type && he.hoverEl.setAttribute("data-type", viewState.type);
+              viewState.type && he.hoverEl.setAttribute("data-active-view-type", viewState.type);
               let titleEl = he.hoverEl.querySelector(".popover-title");
               titleEl.textContent = this.view?.getDisplayText();
               if (this.view?.file?.path) {
@@ -222,6 +222,7 @@ export default class HoverEditorPlugin extends Plugin {
           hoverEditor.hoverEl.addClass("is-active");
           let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
           titleEl.textContent = leaf.view?.getDisplayText();
+          leaf.view?.getViewType() && hoverEditor.hoverEl.setAttribute("data-active-view-type", leaf.view.getViewType());
           if (leaf.view?.file?.path) {
             titleEl.setAttribute("data-path", leaf.view.file.path);
           } else {

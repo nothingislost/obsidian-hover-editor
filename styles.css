@@ -112,6 +112,8 @@ settings:
   /* resize handle sizing */
   --he-resize-handle-side-size: 12px;
   --he-resize-handle-corner-size: 18px;
+  /* view header height */
+  --he-view-header-height: 36px;
 }
 
 body {
@@ -419,7 +421,7 @@ body {
 
 .popover.hover-popover .view-header {
   border-top: none;
-  transition: height var(--he-popover-header-transition-speed);
+  transition: all var(--he-popover-header-transition-speed);
 }
 
 .popover.hover-popover.show-navbar:not(.is-minimized) .popover-title {
@@ -430,10 +432,14 @@ body {
   height: 0px;
   overflow: hidden;
 }
+
 .popover.hover-popover.show-navbar .view-header {
-  height: 36px;
+  /* theme devs: if you want to change the header height, you must do so by setting the --he-view-header-height variable */
+  /* if you don't use the variable, you will break internal measurement logic */
+  height: var(--he-view-header-height);
   overflow: unset;
 }
+
 .popover.hover-popover:not(.show-navbar) .view-content {
   height: 100%;
 }
@@ -449,4 +455,12 @@ body {
   position: relative;
   height: 100%;
   width: 100%;
+  max-width: unset;
+  border-radius: 0;
+}
+
+body .popover.hover-popover .view-content {
+  /* theme devs: if you want to change the header height, you must do so by setting the --he-view-header-height variable */
+  /* if you don't use the variable, you will break internal measurement logic */
+  height: calc(100% - var(--he-view-header-height))
 }
