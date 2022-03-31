@@ -118,6 +118,8 @@ declare module "obsidian" {
     shouldShowSelf(): boolean;
     timer: number;
     waitTime: number;
+    shouldShow(): boolean;
+    transition(): void;
   }
   interface Pos {
     x: number;

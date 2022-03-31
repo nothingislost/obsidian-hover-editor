@@ -10,6 +10,7 @@ import {
   Menu,
   OpenViewState,
   parseLinktext,
+  PopoverState,
   Pos,
   requireApiVersion,
   resolveSubpath,
@@ -98,7 +99,6 @@ export class HoverEditor extends HoverPopover {
     } else {
       setIcon(pinEl, "pin", 17);
     }
-    this.togglePin(this.isPinned);
     this.createResizeHandles();
   }
 
@@ -286,9 +286,18 @@ export class HoverEditor extends HoverPopover {
       this.parent.hoverPopover = this;
     }
 
+    this.togglePin(this.isPinned);
+
     this.onShowCallback?.();
     this.onShowCallback = undefined; // only call it once
   }
+
+   transition() {
+     super.transition();
+     if (!this.shouldShow() && this.state === PopoverState.Showing) {
+       this.explicitHide();
+     }
+  };
 
   position(pos?: Pos): void {
     // without this adjustment, the x dimension keeps sliding over to the left as you progressively mouse over files
