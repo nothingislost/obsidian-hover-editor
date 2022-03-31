@@ -306,9 +306,9 @@ body {
   display: block;
 }
 
-.is-dragging.snap-to-left,
-.is-dragging.snap-to-right,
-.is-dragging.snap-to-viewport {
+.popover.hover-editor.is-dragging.snap-to-left,
+.popover.hover-editor.is-dragging.snap-to-right,
+.popover.hover-editor.is-dragging.snap-to-viewport {
   transition: width var(--he-popover-snap-to-edge-transition-speed),
     height var(--he-popover-snap-to-edge-transition-speed), top var(--he-popover-snap-to-edge-transition-speed),
     left var(--he-popover-snap-to-edge-transition-speed);
@@ -327,16 +327,16 @@ body {
   pointer-events: none;
 }
 
-.snap-to-left {
+.popover.hover-editor.snap-to-left {
   max-height: unset !important;
 }
 
-.snap-to-right {
+.popover.hover-editor.snap-to-right {
   right: 0 !important;
   max-height: unset !important;
 }
 
-.snap-to-viewport {
+.popover.hover-editor.snap-to-viewport {
   max-height: unset !important;
 }
 
@@ -364,7 +364,7 @@ body {
   justify-content: flex-end;
 }
 
-.popover-content {
+.popover.hover-editor .popover-content {
   margin: 0;
   border-radius: var(--he-popover-border-radius);
   overflow: hidden;
@@ -389,19 +389,19 @@ body {
   color: var(--he-title-bar-active-fg);
 }
 
-.hover-popover.is-active .popover-title:after {
+.popover.hover-editor.is-active .popover-title:after {
   background: linear-gradient(to right, transparent, var(--he-title-bar-active-bg));
 }
 
-.hover-popover.is-pinned.is-pinned.is-active .popover-title:after {
+.popover.hover-editor.is-pinned.is-pinned.is-active .popover-title:after {
   background: linear-gradient(to right, transparent, var(--he-title-bar-active-pinned-bg));
 }
 
-.hover-popover.is-pinned.is-pinned .popover-title:after {
+.popover.hover-editor.is-pinned.is-pinned .popover-title:after {
   background: linear-gradient(to right, transparent, var(--he-title-bar-inactive-pinned-bg));
 }
 
-.hover-popover .popover-title:after {
+.popover.hover-editor .popover-title:after {
   content: " ";
   position: absolute;
   top: 0;
@@ -411,7 +411,7 @@ body {
   background: linear-gradient(to right, transparent, var(--he-title-bar-inactive-bg));
 }
 
-.mod-show-navbar svg {
+.popover.hover-editor .mod-show-navbar svg {
   transform: rotate(90deg);
 }
 
