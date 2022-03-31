@@ -140,6 +140,13 @@ export default class HoverEditorPlugin extends Plugin {
     let SlidingPanesPlugin = this.app.plugins.plugins["sliding-panes-obsidian"]?.constructor;
     if (SlidingPanesPlugin) {
       let uninstaller = around(SlidingPanesPlugin.prototype, {
+        handleFileOpen(old: any) {
+          return function (...args: any[]) {
+            // sliding panes needs to ignore popover open events or else it freaks out
+            if (isHoverLeaf(this.app.workspace.activeLeaf)) return;
+            return old.call(this, ...args);
+          }
+        },
         focusActiveLeaf(old: any) {
           return function (...args: any[]) {
             // sliding panes will try and make popovers part of the sliding area if we don't exclude them
