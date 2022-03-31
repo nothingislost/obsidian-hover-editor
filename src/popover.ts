@@ -715,7 +715,7 @@ export class HoverEditor extends HoverPopover {
                 };
               },
             }),
-            1
+            1000
           );
       } else if (!this.plugin.settings.autoFocus && !this.detaching) {
         let titleEl = this.hoverEl.querySelector(".popover-title");
