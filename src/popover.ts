@@ -202,6 +202,7 @@ export class HoverEditor extends HoverPopover {
     this.hideNavBarEl?.toggleClass("is-active", value);
     this.hoverEl.toggleClass("show-navbar", value);
     let viewHeaderEl = this.hoverEl.querySelector(".view-header");
+    if (!viewHeaderEl) return;
     let calculatedViewHeaderHeight = parseFloat(
       getComputedStyle(viewHeaderEl).getPropertyValue("--he-view-header-height")
     );
@@ -297,13 +298,14 @@ export class HoverEditor extends HoverPopover {
     this.onShowCallback = undefined; // only call it once
   }
 
-    
   startBounce() {
     this.bounce = setTimeout(() => {
-        this.hoverEl.style.left = (parseFloat(this.hoverEl.style.left) + this.xspeed) + "px";
-        this.hoverEl.style.top = (parseFloat(this.hoverEl.style.top) + this.yspeed) + "px";
-        this.checkHitBox();
-        this.startBounce();
+      this.hoverEl.style.left =
+        parseFloat(this.hoverEl.style.left) + this.xspeed + "px";
+      this.hoverEl.style.top =
+        parseFloat(this.hoverEl.style.top) + this.yspeed + "px";
+      this.checkHitBox();
+      this.startBounce();
     }, 20);
   }
 
@@ -318,32 +320,31 @@ export class HoverEditor extends HoverPopover {
     } else {
       this.startBounce();
     }
-  }  
+  }
 
-  //Check for border collision
-  checkHitBox(){
+  checkHitBox() {
     let x = parseFloat(this.hoverEl.style.left);
     let y = parseFloat(this.hoverEl.style.top);
     let width = parseFloat(this.hoverEl.style.width);
     let height = parseFloat(this.hoverEl.style.height);
-    if(x <= 0 || x + width >= document.body.offsetWidth ){
-        this.xspeed *= -1;
-        this.pickColor();
+    if (x <= 0 || x + width >= document.body.offsetWidth) {
+      this.xspeed *= -1;
+      this.pickColor();
     }
-        
-    if(y <= 0 || y+height >= document.body.offsetHeight){
-        this.yspeed *= -1;
-        this.pickColor();
-    }    
+
+    if (y <= 0 || y + height >= document.body.offsetHeight) {
+      this.yspeed *= -1;
+      this.pickColor();
+    }
   }
 
-  pickColor(){
+  pickColor() {
     let r = Math.random() * (254 - 0) + 0;
     let g = Math.random() * (254 - 0) + 0;
     let b = Math.random() * (254 - 0) + 0;
     let el = this.hoverEl.querySelector(".view-content") as HTMLElement;
     if (el?.style) {
-      el.style.backgroundColor = 'rgb('+r+','+g+', '+b+')';
+      el.style.backgroundColor = "rgb(" + r + "," + g + ", " + b + ")";
     }
   }
 
