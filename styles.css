@@ -112,6 +112,8 @@ settings:
   /* resize handle sizing */
   --he-resize-handle-side-size: 12px;
   --he-resize-handle-corner-size: 18px;
+  /* view header height */
+  --he-view-header-height: 36px;
 }
 
 body {
@@ -142,13 +144,13 @@ body {
   --he-title-bar-font-size: 15px;
 }
 
-.popover.hover-popover .workspace-leaf,
-.popover.hover-popover .workspace-split {
+.popover.hover-editor .workspace-leaf,
+.popover.hover-editor .workspace-split {
   height: 100%;
   width: 100%;
 }
 
-.popover.hover-popover {
+.popover.hover-editor {
   min-height: unset;
   max-height: unset;
   /* touch action none fixes dragging and resizing on mobile */
@@ -161,11 +163,11 @@ body {
   border-radius: var(--he-popover-border-radius);
 }
 
-.popover.hover-popover.is-active {
+.popover.hover-editor.is-active {
   z-index: var(--he-popover-layer-active);
 }
 
-.popover.hover-popover.is-new {
+.popover.hover-editor.is-new {
   z-index: var(--he-popover-layer-new);
 }
 
@@ -175,61 +177,61 @@ body {
   z-index: var(--he-leaf-drag-overlay);
 }
 
-.popover.hover-popover .resize-handle {
+.popover.hover-editor .resize-handle {
   position: absolute;
   touch-action: none;
 }
 
-.popover.hover-popover .resize-handle.top {
+.popover.hover-editor .resize-handle.top {
   top: var(--he-resize-handle-side-offset);
   height: var(--he-resize-handle-side-size);
   left: calc(var(--he-resize-handle-corner-offset) * -1);
   width: var(--he-resize-handle-side-length);
 }
 
-.popover.hover-popover .resize-handle.left {
+.popover.hover-editor .resize-handle.left {
   height: var(--he-resize-handle-side-length);
   left: var(--he-resize-handle-side-offset);
   top: calc(var(--he-resize-handle-corner-offset) * -1);
   width: var(--he-resize-handle-side-size);
 }
 
-.popover.hover-popover .resize-handle.right {
+.popover.hover-editor .resize-handle.right {
   height: var(--he-resize-handle-side-length);
   right: var(--he-resize-handle-side-offset);
   top: calc(var(--he-resize-handle-corner-offset) * -1);
   width: var(--he-resize-handle-side-size);
 }
 
-.popover.hover-popover .resize-handle.bottom {
+.popover.hover-editor .resize-handle.bottom {
   bottom: var(--he-resize-handle-side-offset);
   height: var(--he-resize-handle-side-size);
   left: calc(var(--he-resize-handle-corner-offset) * -1);
   width: var(--he-resize-handle-side-length);
 }
 
-.popover.hover-popover .resize-handle.bottom-left {
+.popover.hover-editor .resize-handle.bottom-left {
   bottom: var(--he-resize-handle-corner-offset);
   height: var(--he-resize-handle-corner-size);
   left: var(--he-resize-handle-corner-offset);
   width: var(--he-resize-handle-corner-size);
 }
 
-.popover.hover-popover .resize-handle.bottom-right {
+.popover.hover-editor .resize-handle.bottom-right {
   bottom: var(--he-resize-handle-corner-offset);
   height: var(--he-resize-handle-corner-size);
   right: var(--he-resize-handle-corner-offset);
   width: var(--he-resize-handle-corner-size);
 }
 
-.popover.hover-popover .resize-handle.top-left {
+.popover.hover-editor .resize-handle.top-left {
   top: var(--he-resize-handle-corner-offset);
   height: var(--he-resize-handle-corner-size);
   left: var(--he-resize-handle-corner-offset);
   width: var(--he-resize-handle-corner-size);
 }
 
-.popover.hover-popover .resize-handle.top-right {
+.popover.hover-editor .resize-handle.top-right {
   top: var(--he-resize-handle-corner-offset);
   height: var(--he-resize-handle-corner-size);
   right: var(--he-resize-handle-corner-offset);
@@ -280,33 +282,33 @@ body {
   transform: unset;
 }
 
-.popover.hover-popover .workspace-leaf-content[data-type="empty"] .view-header {
+.popover.hover-editor .workspace-leaf-content[data-type="empty"] .view-header {
   /* ensures that minimal theme doesn't hide the popover header */
   display: flex;
 }
 
-.popover.hover-popover .workspace-split > .workspace-leaf:last-child > .workspace-leaf-resize-handle {
+.popover.hover-editor .workspace-split > .workspace-leaf:last-child > .workspace-leaf-resize-handle {
   /* this hides the leaf resize handles that touch the edge of the popover */
   /* without this the leaf resize handles conflict with the popover resize handles */
   display: none;
 }
 
-.popover.hover-popover.is-dragging {
+.popover.hover-editor.is-dragging {
   opacity: var(--he-popover-opacity-while-dragging);
 }
 
-.popover.hover-popover:is(.snap-to-viewport, .snap-to-left, .snap-to-right) .resize-handle {
+.popover.hover-editor:is(.snap-to-viewport, .snap-to-left, .snap-to-right) .resize-handle {
   display: none;
 }
 
-.popover.hover-popover.snap-to-right .resize-handle.left,
-.popover.hover-popover.snap-to-left .resize-handle.right {
+.popover.hover-editor.snap-to-right .resize-handle.left,
+.popover.hover-editor.snap-to-left .resize-handle.right {
   display: block;
 }
 
-.is-dragging.snap-to-left,
-.is-dragging.snap-to-right,
-.is-dragging.snap-to-viewport {
+.popover.hover-editor.is-dragging.snap-to-left,
+.popover.hover-editor.is-dragging.snap-to-right,
+.popover.hover-editor.is-dragging.snap-to-viewport {
   transition: width var(--he-popover-snap-to-edge-transition-speed),
     height var(--he-popover-snap-to-edge-transition-speed), top var(--he-popover-snap-to-edge-transition-speed),
     left var(--he-popover-snap-to-edge-transition-speed);
@@ -325,51 +327,51 @@ body {
   pointer-events: none;
 }
 
-.snap-to-left {
+.popover.hover-editor.snap-to-left {
   max-height: unset !important;
 }
 
-.snap-to-right {
+.popover.hover-editor.snap-to-right {
   right: 0 !important;
   max-height: unset !important;
 }
 
-.snap-to-viewport {
+.popover.hover-editor.snap-to-viewport {
   max-height: unset !important;
 }
 
-.popover.hover-popover .popover-titlebar {
+.popover.hover-editor .popover-titlebar {
   display: flex;
   height: var(--he-title-bar-height);
   width: 100%;
   background-color: var(--he-title-bar-inactive-bg);
 }
 
-.popover.hover-popover.is-active .popover-titlebar {
+.popover.hover-editor.is-active .popover-titlebar {
   background-color: var(--he-title-bar-active-bg);
 }
 
-.popover.hover-popover.is-pinned.is-pinned .popover-titlebar {
+.popover.hover-editor.is-pinned.is-pinned .popover-titlebar {
   background-color: var(--he-title-bar-inactive-pinned-bg);
 }
 
-.popover.hover-popover.is-pinned.is-pinned.is-active .popover-titlebar {
+.popover.hover-editor.is-pinned.is-pinned.is-active .popover-titlebar {
   background-color: var(--he-title-bar-active-pinned-bg);
 }
 
-.popover.hover-popover .popover-titlebar .popover-actions {
+.popover.hover-editor .popover-titlebar .popover-actions {
   display: flex;
   justify-content: flex-end;
 }
 
-.popover-content {
+.popover.hover-editor .popover-content {
   margin: 0;
   border-radius: var(--he-popover-border-radius);
   overflow: hidden;
   height: 100%;
 }
 
-.popover.hover-popover .popover-titlebar .popover-title {
+.popover.hover-editor .popover-titlebar .popover-title {
   display: block;
   flex-grow: 1;
   transition: all 0.3s;
@@ -383,23 +385,23 @@ body {
   position: relative;
 }
 
-.popover.hover-popover.is-active .popover-title {
+.popover.hover-editor.is-active .popover-title {
   color: var(--he-title-bar-active-fg);
 }
 
-.hover-popover.is-active .popover-title:after {
+.popover.hover-editor.is-active .popover-title:after {
   background: linear-gradient(to right, transparent, var(--he-title-bar-active-bg));
 }
 
-.hover-popover.is-pinned.is-pinned.is-active .popover-title:after {
+.popover.hover-editor.is-pinned.is-pinned.is-active .popover-title:after {
   background: linear-gradient(to right, transparent, var(--he-title-bar-active-pinned-bg));
 }
 
-.hover-popover.is-pinned.is-pinned .popover-title:after {
+.popover.hover-editor.is-pinned.is-pinned .popover-title:after {
   background: linear-gradient(to right, transparent, var(--he-title-bar-inactive-pinned-bg));
 }
 
-.hover-popover .popover-title:after {
+.popover.hover-editor .popover-title:after {
   content: " ";
   position: absolute;
   top: 0;
@@ -409,31 +411,56 @@ body {
   background: linear-gradient(to right, transparent, var(--he-title-bar-inactive-bg));
 }
 
-.mod-show-navbar svg {
+.popover.hover-editor .mod-show-navbar svg {
   transform: rotate(90deg);
 }
 
-.popover.hover-popover > .popover-content > .workspace-split {
+.popover.hover-editor > .popover-content > .workspace-split {
   height: calc(100% - var(--he-title-bar-height));
 }
 
-.popover.hover-popover .view-header {
+.popover.hover-editor .view-header {
   border-top: none;
-  transition: height var(--he-popover-header-transition-speed);
+  transition: all var(--he-popover-header-transition-speed);
 }
 
-.popover.hover-popover.show-navbar:not(.is-minimized) .popover-title {
+.popover.hover-editor.show-navbar:not(.is-minimized) .popover-title {
   opacity: 0;
 }
 
-.popover.hover-popover:not(.show-navbar) .view-header {
+.popover.hover-editor:not(.show-navbar) .view-header {
   height: 0px;
   overflow: hidden;
 }
-.popover.hover-popover.show-navbar .view-header {
-  height: 36px;
+
+.popover.hover-editor.show-navbar .view-header {
+  /* theme devs: if you want to change the header height, you must do so by setting the --he-view-header-height variable */
+  /* if you don't use the variable, you will break internal measurement logic */
+  height: var(--he-view-header-height);
   overflow: unset;
 }
-.popover.hover-popover:not(.show-navbar) .view-content {
+
+.popover.hover-editor:not(.show-navbar) .view-content {
   height: 100%;
+}
+
+.popover.hover-editor .workspace-leaf-content[data-type="image"] .view-content {
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.popover.hover-editor .workspace-leaf-content[data-type="image"] img {
+  display: block;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  max-width: unset;
+  border-radius: 0;
+}
+
+body .popover.hover-editor .view-content {
+  /* theme devs: if you want to change the header height, you must do so by setting the --he-view-header-height variable */
+  /* if you don't use the variable, you will break internal measurement logic */
+  height: calc(100% - var(--he-view-header-height))
 }

@@ -69,6 +69,7 @@ export default class HoverEditorPlugin extends Plugin {
           try {
             let he = HoverEditor.forLeaf(this);
             if (he) {
+              viewState.type && he.hoverEl.setAttribute("data-active-view-type", viewState.type);
               let titleEl = he.hoverEl.querySelector(".popover-title");
               titleEl.textContent = this.view?.getDisplayText();
               if (this.view?.file?.path) {
@@ -139,6 +140,13 @@ export default class HoverEditorPlugin extends Plugin {
     let SlidingPanesPlugin = this.app.plugins.plugins["sliding-panes-obsidian"]?.constructor;
     if (SlidingPanesPlugin) {
       let uninstaller = around(SlidingPanesPlugin.prototype, {
+        handleFileOpen(old: any) {
+          return function (...args: any[]) {
+            // sliding panes needs to ignore popover open events or else it freaks out
+            if (isHoverLeaf(this.app.workspace.activeLeaf)) return;
+            return old.call(this, ...args);
+          }
+        },
         focusActiveLeaf(old: any) {
           return function (...args: any[]) {
             // sliding panes will try and make popovers part of the sliding area if we don't exclude them
@@ -221,6 +229,7 @@ export default class HoverEditorPlugin extends Plugin {
           hoverEditor.hoverEl.addClass("is-active");
           let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
           titleEl.textContent = leaf.view?.getDisplayText();
+          leaf.view?.getViewType() && hoverEditor.hoverEl.setAttribute("data-active-view-type", leaf.view.getViewType());
           if (leaf.view?.file?.path) {
             titleEl.setAttribute("data-path", leaf.view.file.path);
           } else {
@@ -320,6 +329,13 @@ export default class HoverEditorPlugin extends Plugin {
   }
 
   registerCommands() {
+    this.addCommand({
+      id: "bounce-popovers",
+      name: "Toggle bouncing popovers",
+      callback: () => {
+        this.activePopovers.forEach(popover => { popover.toggleBounce(); });
+      },
+    });
     this.addCommand({
       id: "open-new-popover",
       name: "Open new popover",

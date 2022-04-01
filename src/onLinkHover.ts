@@ -31,9 +31,9 @@ export function onLinkHover(
     };
 
     let onMouseDown = function (event: MouseEvent) {
-      if (event.target instanceof HTMLElement && !event.target.closest(".popover")) {
+      if (event.target instanceof HTMLElement && !event.target.closest(".hover-editor")) {
         hoverPopover.state = PopoverState.Hidden;
-        hoverPopover.hide();
+        hoverPopover.explicitHide();
         hoverPopover.lockedOut = true;
         setTimeout(unlock, 1000);
       }
