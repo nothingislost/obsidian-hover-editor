@@ -62,6 +62,9 @@ export class HoverEditor extends HoverPopover {
   constrainAspectRatio: boolean;
   resizeModifiers: Modifier[];
   dragElementRect: { top: number; left: number; bottom: number; right: number };
+  xspeed: number;
+  yspeed: number;
+  bounce: NodeJS.Timeout;
 
   static activePopovers() {
     return document.body
@@ -100,6 +103,8 @@ export class HoverEditor extends HoverPopover {
       setIcon(pinEl, "pin", 17);
     }
     this.createResizeHandles();
+    this.xspeed = 7;
+    this.yspeed = 7;
   }
 
   get parentAllowsAutoFocus() {
@@ -292,7 +297,57 @@ export class HoverEditor extends HoverPopover {
     this.onShowCallback = undefined; // only call it once
   }
 
-   transition() {
+    
+  startBounce() {
+    this.bounce = setTimeout(() => {
+        this.hoverEl.style.left = (parseFloat(this.hoverEl.style.left) + this.xspeed) + "px";
+        this.hoverEl.style.top = (parseFloat(this.hoverEl.style.top) + this.yspeed) + "px";
+        this.checkHitBox();
+        this.startBounce();
+    }, 20);
+  }
+
+  toggleBounce() {
+    if (this.bounce) {
+      clearTimeout(this.bounce);
+      this.bounce = undefined;
+      let el = this.hoverEl.querySelector(".view-content") as HTMLElement;
+      if (el?.style) {
+        el.style.backgroundColor = null;
+      }
+    } else {
+      this.startBounce();
+    }
+  }  
+
+  //Check for border collision
+  checkHitBox(){
+    let x = parseFloat(this.hoverEl.style.left);
+    let y = parseFloat(this.hoverEl.style.top);
+    let width = parseFloat(this.hoverEl.style.width);
+    let height = parseFloat(this.hoverEl.style.height);
+    if(x <= 0 || x + width >= document.body.offsetWidth ){
+        this.xspeed *= -1;
+        this.pickColor();
+    }
+        
+    if(y <= 0 || y+height >= document.body.offsetHeight){
+        this.yspeed *= -1;
+        this.pickColor();
+    }    
+  }
+
+  pickColor(){
+    let r = Math.random() * (254 - 0) + 0;
+    let g = Math.random() * (254 - 0) + 0;
+    let b = Math.random() * (254 - 0) + 0;
+    let el = this.hoverEl.querySelector(".view-content") as HTMLElement;
+    if (el?.style) {
+      el.style.backgroundColor = 'rgb('+r+','+g+', '+b+')';
+    }
+  }
+
+  transition() {
      super.transition();
      if (!this.shouldShow() && this.state === PopoverState.Showing) {
        this.explicitHide();

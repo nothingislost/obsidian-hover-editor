@@ -330,6 +330,13 @@ export default class HoverEditorPlugin extends Plugin {
 
   registerCommands() {
     this.addCommand({
+      id: "bounce-popovers",
+      name: "Toggle bouncing popovers",
+      callback: () => {
+        this.activePopovers.forEach(popover => { popover.toggleBounce(); });
+      },
+    });
+    this.addCommand({
       id: "open-new-popover",
       name: "Open new popover",
       callback: () => {
