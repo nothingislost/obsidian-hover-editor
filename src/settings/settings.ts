@@ -12,6 +12,7 @@ export interface HoverEditorSettings {
   initialHeight: string;
   initialWidth: string;
   showViewHeader: boolean;
+  imageZoom: boolean;
 }
 
 export const DEFAULT_SETTINGS: HoverEditorSettings = {
@@ -25,6 +26,7 @@ export const DEFAULT_SETTINGS: HoverEditorSettings = {
   initialHeight: "340px",
   initialWidth: "400px",
   showViewHeader: false,
+  imageZoom: true,
 };
 
 export const modeOptions = {
@@ -114,6 +116,19 @@ export class SettingTab extends PluginSettingTab {
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.showViewHeader).onChange(value => {
           this.plugin.settings.showViewHeader = value;
+          this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName("Click to zoom image")
+      .setDesc(
+        `Click and hold an image within a hover editor to temporarily maximize the popover and image to fill the entire viewport. 
+        On mouse up, the hover editor will restore to its original size.`
+      )
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.imageZoom).onChange(value => {
+          this.plugin.settings.imageZoom = value;
           this.plugin.saveSettings();
         })
       );

@@ -65,6 +65,7 @@ export class HoverEditor extends HoverPopover {
   xspeed: number;
   yspeed: number;
   bounce: NodeJS.Timeout;
+  boundOnZoomOut: () => void;
 
   static activePopovers() {
     return document.body
@@ -103,8 +104,38 @@ export class HoverEditor extends HoverPopover {
       setIcon(pinEl, "pin", 17);
     }
     this.createResizeHandles();
-    this.xspeed = 7;
-    this.yspeed = 7;
+    this.plugin.settings.imageZoom && this.registerZoomImageHandlers();    
+  }
+
+  onZoomOut() {
+    document.body.removeEventListener("mouseup", this.boundOnZoomOut );
+    document.body.removeEventListener("dragend", this.boundOnZoomOut );
+    if (this.hoverEl.hasClass("do-not-restore")) {
+      this.hoverEl.removeClass("do-not-restore");
+    } else {
+      restorePopover(this.hoverEl);
+    }
+  }
+
+  onZoomIn(event: MouseEvent)  {
+    if (event.button !== 0) {
+      return;
+    }
+    if (this.hoverEl.hasClass("snap-to-viewport")) {
+      this.hoverEl.addClass("do-not-restore");
+    }
+    document.body.addEventListener("mouseup", this.boundOnZoomOut, {once: true} );
+    document.body.addEventListener("dragend", this.boundOnZoomOut, {once: true} );
+    let offset = calculateOffsets();
+    storeDimensions(this.hoverEl);
+    snapToEdge(this.hoverEl, "viewport", offset);
+    return false;
+  }
+
+  registerZoomImageHandlers() {
+    this.hoverEl.addClass("image-zoom");
+    this.boundOnZoomOut = this.onZoomOut.bind(this);
+    this.hoverEl.on("mousedown", "img", this.onZoomIn.bind(this));
   }
 
   get parentAllowsAutoFocus() {
@@ -310,6 +341,8 @@ export class HoverEditor extends HoverPopover {
   }
 
   toggleBounce() {
+    this.xspeed = 7;
+    this.yspeed = 7;
     if (this.bounce) {
       clearTimeout(this.bounce);
       this.bounce = undefined;
