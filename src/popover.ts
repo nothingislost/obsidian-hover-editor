@@ -750,39 +750,43 @@ export class HoverEditor extends HoverPopover {
         let existingCallback = this.onShowCallback;
         this.onShowCallback = () => {
           this.plugin.app.workspace.setActiveLeaf(leaf, false, true);
-          existingCallback instanceof Function && existingCallback();
-        };
-        // Prevent this leaf's file from registering as a recent file
-        // (for the quick switcher or Recent Files plugin) for the next
-        // 1ms.  (They're both triggered by a file-open event that happens
-        // in a timeout 0ms after setActiveLeaf, so we register now and
-        // uninstall later to ensure our uninstalls happen after the event.)
-        setTimeout(
-          around(Workspace.prototype, {
-            recordMostRecentOpenedFile(old) {
-              return function (_file: TFile) {
-                // Don't update the quick switcher's recent list
-                if (_file !== file) {
-                  return old.call(this, _file);
-                }
-              };
-            },
-          }),
-          1
-        );
-        const recentFiles = this.plugin.app.plugins.plugins["recent-files-obsidian"];
-        if (recentFiles)
+          // Prevent this leaf's file from registering as a recent file
+          // (for the quick switcher or Recent Files plugin) for the next
+          // 1ms.  (They're both triggered by a file-open event that happens
+          // in a timeout 0ms after setActiveLeaf, so we register now and
+          // uninstall later to ensure our uninstalls happen after the event.)
           setTimeout(
-            around(recentFiles, {
-              shouldAddFile(old) {
+            around(Workspace.prototype, {
+              recordMostRecentOpenedFile(old) {
                 return function (_file: TFile) {
-                  // Don't update the Recent Files plugin
-                  return _file !== file && old.call(this, _file);
+                  // Don't update the quick switcher's recent list
+                  if (_file !== file) {
+                    return old.call(this, _file);
+                  }
                 };
               },
             }),
-            1000
+            1
           );
+          const recentFiles = this.plugin.app.plugins.plugins["recent-files-obsidian"];
+          if (recentFiles)
+            setTimeout(
+              around(recentFiles, {
+                shouldAddFile(old) {
+                  return function (_file: TFile) {
+                    // Don't update the Recent Files plugin
+                    return _file !== file && old.call(this, _file);
+                  };
+                },
+              }),
+              1
+            );
+          existingCallback instanceof Function && existingCallback();
+        };
+        if (this.state === PopoverState.Shown) {
+          this.onShowCallback();
+          this.onShowCallback = undefined;
+        }
       } else if (!this.plugin.settings.autoFocus && !this.detaching) {
         let titleEl = this.hoverEl.querySelector(".popover-title");
         titleEl.textContent = leaf.view?.getDisplayText();
