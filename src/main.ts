@@ -5,6 +5,7 @@ import {
   MarkdownView,
   Menu,
   Notice,
+  Platform,
   Plugin,
   PopoverState,
   TAbstractFile,
@@ -29,6 +30,7 @@ export default class HoverEditorPlugin extends Plugin {
     this.registerCommands();
     this.patchUnresolvedGraphNodeHover();
     this.patchWorkspace();
+    this.patchQuickSwitcher();
     this.patchWorkspaceLeaf();
 
     await this.loadSettings();
@@ -93,6 +95,35 @@ export default class HoverEditorPlugin extends Plugin {
         }
       }
     }));
+  }
+
+  patchQuickSwitcher() {
+    let plugin = this;
+    let { QuickSwitcherModal } = this.app.internalPlugins.plugins["switcher"]?.instance;
+    if (!QuickSwitcherModal) return;
+    let uninstaller = around(QuickSwitcherModal.prototype, {
+      open(old: any) {
+        return function () {
+          let result = old.call(this);
+          this.setInstructions([
+            {
+              command: Platform.isMacOS ? "cmd p" : "ctrl p",
+              purpose: "to open in new popover",
+            },
+          ]);
+          this.scope.register(["Mod"], "p", (event: KeyboardEvent) => {
+            this.close();
+            let item = this.chooser.values[this.chooser.selectedItem];
+            if (!item?.file) return;
+            let newLeaf = plugin.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
+            newLeaf.openFile(item.file);
+            return false;
+          });
+          return result;
+        };
+      },
+    });
+    this.register(uninstaller);
   }
 
   patchWorkspace() {
@@ -279,7 +310,7 @@ export default class HoverEditorPlugin extends Plugin {
 
   patchUnresolvedGraphNodeHover() {
     let leaf = new (WorkspaceLeaf as new (app: App) => WorkspaceLeaf)(this.app);
-    let view: any = (this.app.internalPlugins.plugins.graph as any).views.localgraph(leaf)
+    let view = this.app.internalPlugins.plugins.graph.views.localgraph(leaf)
     let GraphEngine = view.engine.constructor;
     leaf.detach(); // close the view
     view.renderer?.worker?.terminate(); // ensure the worker is terminated

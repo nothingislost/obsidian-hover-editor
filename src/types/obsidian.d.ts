@@ -1,27 +1,48 @@
 import type { EditorView } from "@codemirror/view";
-import { Plugin } from "obsidian";
+import { Plugin, SuggestModal, TFile, View, ViewCreator, WorkspaceLeaf } from "obsidian";
 import { HoverEditorParent } from "src/popover";
+
+interface InternalPlugins {
+  switcher: QuickSwitcherPlugin;
+  "page-preview": InternalPlugin;
+  graph: GraphPlugin;
+}
+declare class QuickSwitcherModal extends SuggestModal<TFile> {
+  getSuggestions(query: string): TFile[] | Promise<TFile[]>;
+  renderSuggestion(value: TFile, el: HTMLElement): any;
+  onChooseSuggestion(item: TFile, evt: MouseEvent | KeyboardEvent): any;
+}
+interface InternalPlugin {
+  disable(): void;
+  enable(): void;
+  _loaded: boolean;
+  _events: Function[];
+  instance: { name: string; id: string };
+}
+interface GraphPlugin extends InternalPlugin {
+  views: { localgraph: (leaf: WorkspaceLeaf) => GraphView };
+}
+
+interface GraphView extends View {
+  engine: typeof Object;
+  renderer: { worker: { terminate(): void } };
+}
+interface QuickSwitcherPlugin extends InternalPlugin {
+  instance: { name: string; id: string; QuickSwitcherModal?: typeof QuickSwitcherModal };
+}
 
 declare module "obsidian" {
   interface App {
     internalPlugins: {
-      plugins: Record<
-        string,
-        {
-          _loaded: boolean;
-          disable(): void;
-          enable(): void;
-          _events: Function[];
-          instance: { name: string; id: string };
-        }
-      >;
+      plugins: InternalPlugins;
+      getPluginById<T extends keyof InternalPlugins>(id: T): InternalPlugins[T];
     };
     plugins: {
       manifests: Record<string, PluginManifest>;
       plugins: Record<string, Plugin> & {
         ["recent-files-obsidian"]: Plugin & {
           shouldAddFile(file: TFile): boolean;
-        }
+        };
       };
       getPlugin(id: string): Plugin;
       getPlugin(id: "calendar"): CalendarPlugin;
@@ -52,7 +73,7 @@ declare module "obsidian" {
   interface Workspace {
     recordHistory(leaf: WorkspaceLeaf, pushHistory: boolean): void;
     iterateLeaves(callback: (item: WorkspaceLeaf) => any, item: WorkspaceParent): boolean;
-    getDropLocation(event: MouseEvent): {target: WorkspaceItem, sidedock: boolean};
+    getDropLocation(event: MouseEvent): { target: WorkspaceItem; sidedock: boolean };
     recursiveGetTarget(event: MouseEvent, parent: WorkspaceParent): WorkspaceItem;
     recordMostRecentOpenedFile(file: TFile): void;
     onDragLeaf(event: MouseEvent, leaf: WorkspaceLeaf): void;
@@ -109,7 +130,7 @@ declare module "obsidian" {
     active?: boolean;
   }
   interface HoverPopover {
-    parent: HoverEditorParent
+    parent: HoverEditorParent;
     targetEl: HTMLElement;
     hoverEl: HTMLElement;
     position(pos?: Pos): void;
