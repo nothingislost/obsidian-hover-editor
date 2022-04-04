@@ -130,7 +130,7 @@ declare module "obsidian" {
     active?: boolean;
   }
   interface HoverPopover {
-    parent: HoverEditorParent;
+    parent: HoverEditorParent | null;
     targetEl: HTMLElement;
     hoverEl: HTMLElement;
     position(pos?: Pos): void;

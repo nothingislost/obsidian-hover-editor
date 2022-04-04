@@ -52,7 +52,7 @@ export default class HoverEditorPlugin extends Plugin {
     });
   }
 
-  get activePopovers(): HoverEditor[] {
+  get activePopovers(): (HoverEditor | undefined)[] {
     return HoverEditor.activePopovers();
   }
 
@@ -73,11 +73,13 @@ export default class HoverEditorPlugin extends Plugin {
             if (he) {
               viewState.type && he.hoverEl.setAttribute("data-active-view-type", viewState.type);
               let titleEl = he.hoverEl.querySelector(".popover-title");
-              titleEl.textContent = this.view?.getDisplayText();
-              if (this.view?.file?.path) {
-                titleEl.setAttribute("data-path", this.view.file.path);
-              } else {
-                titleEl.removeAttribute("data-path");
+              if (titleEl) {
+                titleEl.textContent = this.view?.getDisplayText();
+                if (this.view?.file?.path) {
+                  titleEl.setAttribute("data-path", this.view.file.path);
+                } else {
+                  titleEl.removeAttribute("data-path");
+                }
               }
             }
           } catch {}
@@ -150,7 +152,7 @@ export default class HoverEditorPlugin extends Plugin {
       getDropLocation(old) {
         return function getDropLocation(event: MouseEvent) {
           for (const popover of HoverEditor.activePopovers()) {
-              const dropLoc = this.recursiveGetTarget(event, popover.rootSplit);
+              const dropLoc = this.recursiveGetTarget(event, popover!.rootSplit);
               if (dropLoc) return {target: dropLoc, sidedock: false};
           }
           return old.call(this, event);
@@ -222,12 +224,12 @@ export default class HoverEditorPlugin extends Plugin {
   registerContextMenuHandler() {
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf) => {
-        const popover = HoverEditor.forLeaf(leaf);
+        const popover = leaf ? HoverEditor.forLeaf(leaf) : undefined;
         if (source === "pane-more-options" && popover) {
           popover.activeMenu = menu;
           menu.hideCallback = function () {
             setTimeout(() => {
-              if (popover?.activeMenu === menu) popover.activeMenu = null;
+              if (popover?.activeMenu === menu) popover.activeMenu = undefined;
             }, 1000);
           };
         }
@@ -255,12 +257,13 @@ export default class HoverEditorPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", leaf => {
         document.querySelector("body > .popover.hover-popover.is-active")?.removeClass("is-active");
-        let hoverEditor = HoverEditor.forLeaf(leaf);
-        if (hoverEditor) {
+        let hoverEditor = leaf ? HoverEditor.forLeaf(leaf) : undefined;
+        if (hoverEditor && leaf) {
           hoverEditor.hoverEl.addClass("is-active");
           let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
+          if (!titleEl) return;
           titleEl.textContent = leaf.view?.getDisplayText();
-          leaf.view?.getViewType() && hoverEditor.hoverEl.setAttribute("data-active-view-type", leaf.view.getViewType());
+          leaf?.view?.getViewType() && hoverEditor.hoverEl.setAttribute("data-active-view-type", leaf.view.getViewType());
           if (leaf.view?.file?.path) {
             titleEl.setAttribute("data-path", leaf.view.file.path);
           } else {
@@ -278,6 +281,7 @@ export default class HoverEditorPlugin extends Plugin {
           let hoverEditor = HoverEditor.forLeaf(leaf);
           if (hoverEditor?.hoverEl) {
             let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
+            if (!titleEl) return;
             let filePath = titleEl.getAttribute("data-path");
             if (oldPath === filePath) {
               titleEl.textContent = leaf.view?.getDisplayText();
@@ -292,7 +296,7 @@ export default class HoverEditorPlugin extends Plugin {
   debouncedPopoverReflow = debounce(
     () => {
       HoverEditor.activePopovers().forEach(popover => {
-        popover.interact.reflow({ name: "drag", axis: "xy" });
+        popover?.interact?.reflow({ name: "drag", axis: "xy" });
       });
     },
     100,
@@ -348,7 +352,7 @@ export default class HoverEditorPlugin extends Plugin {
   }
 
   onunload(): void {
-    HoverEditor.activePopovers().forEach(popover => popover.explicitHide());
+    HoverEditor.activePopovers().forEach(popover => popover?.explicitHide());
   }
 
   async loadSettings() {
@@ -364,7 +368,7 @@ export default class HoverEditorPlugin extends Plugin {
       id: "bounce-popovers",
       name: "Toggle bouncing popovers",
       callback: () => {
-        this.activePopovers.forEach(popover => { popover.toggleBounce(); });
+        this.activePopovers.forEach(popover => { popover?.toggleBounce(); });
       },
     });
     this.addCommand({
@@ -413,7 +417,7 @@ export default class HoverEditorPlugin extends Plugin {
   spawnPopover(initiatingEl?: HTMLElement, onShowCallback?: () => any): WorkspaceLeaf {
     let parent = this.app.workspace.activeLeaf as unknown as HoverEditorParent;
     if (!initiatingEl) initiatingEl = parent.containerEl;
-    let hoverPopover = new HoverEditor(parent, initiatingEl, this, undefined, onShowCallback);
+    let hoverPopover = new HoverEditor(parent, initiatingEl!, this, undefined, onShowCallback);
     hoverPopover.togglePin(true);
     return hoverPopover.attachLeaf();
   }
