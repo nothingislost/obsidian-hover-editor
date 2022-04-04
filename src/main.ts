@@ -2,6 +2,7 @@ import { around } from "monkey-around";
 import {
   App,
   debounce,
+  EphemeralState,
   MarkdownView,
   Menu,
   Notice,
@@ -202,7 +203,7 @@ export default class HoverEditorPlugin extends Plugin {
           targetEl: HTMLElement,
           linkText: string,
           path: string,
-          state: unknown,
+          state: EphemeralState,
           ...args: any[]
         ) {
           onLinkHover(plugin, old, parent, targetEl, linkText, path, state, ...args);
