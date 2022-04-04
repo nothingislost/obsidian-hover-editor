@@ -5,7 +5,9 @@
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
-    "build": "node esbuild.config.mjs production"
+    "build": "node esbuild.config.mjs production",
+    "prettier": "prettier --write 'src/**/*.+(ts|tsx|json|html|css)' 'styles.css'",
+    "eslint": "eslint . --ext .ts,.tsx --fix"
   },
   "keywords": [],
   "author": "",
@@ -13,18 +15,23 @@
   "devDependencies": {
     "@codemirror/view": "^0.19.47",
     "@interactjs/types": "^1.10.11",
-    "@popperjs/core": "^2.11.2",
+    "@nothingislost/interactjs": "^1.10.11",
     "@types/node": "^16.11.6",
     "@typescript-eslint/eslint-plugin": "^5.2.0",
-    "@typescript-eslint/parser": "^5.2.0",
+    "@typescript-eslint/parser": "^5.18.0",
     "builtin-modules": "^3.2.0",
     "esbuild": "0.13.12",
     "esbuild-plugin-copy": "^1.2.1",
+    "eslint": "^8.12.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-prefer-arrow": "^1.2.3",
+    "eslint-plugin-prettier": "^4.0.0",
     "monkey-around": "^2.2.0",
-    "obsidian": "^0.13.26",
+    "obsidian": "^0.14.4",
     "parse-unit": "^1.0.1",
+    "prettier": "^2.6.2",
     "tslib": "2.3.1",
-    "typescript": "4.4.4",
-    "@nothingislost/interactjs": "^1.10.11"
+    "typescript": "4.4.4"
   }
 }

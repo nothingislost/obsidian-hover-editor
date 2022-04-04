@@ -1,5 +1,5 @@
 import type { EditorView } from "@codemirror/view";
-import { Plugin, SuggestModal, TFile, View, ViewCreator, WorkspaceLeaf } from "obsidian";
+import { Plugin, SuggestModal, TFile, View, WorkspaceLeaf } from "obsidian";
 import { HoverEditorParent } from "src/popover";
 
 interface InternalPlugins {
@@ -9,14 +9,14 @@ interface InternalPlugins {
 }
 declare class QuickSwitcherModal extends SuggestModal<TFile> {
   getSuggestions(query: string): TFile[] | Promise<TFile[]>;
-  renderSuggestion(value: TFile, el: HTMLElement): any;
-  onChooseSuggestion(item: TFile, evt: MouseEvent | KeyboardEvent): any;
+  renderSuggestion(value: TFile, el: HTMLElement): unknown;
+  onChooseSuggestion(item: TFile, evt: MouseEvent | KeyboardEvent): unknown;
 }
 interface InternalPlugin {
   disable(): void;
   enable(): void;
+  enabled: boolean;
   _loaded: boolean;
-  _events: Function[];
   instance: { name: string; id: string };
 }
 interface GraphPlugin extends InternalPlugin {
@@ -28,7 +28,11 @@ interface GraphView extends View {
   renderer: { worker: { terminate(): void } };
 }
 interface QuickSwitcherPlugin extends InternalPlugin {
-  instance: { name: string; id: string; QuickSwitcherModal?: typeof QuickSwitcherModal };
+  instance: {
+    name: string;
+    id: string;
+    QuickSwitcherModal: typeof QuickSwitcherModal;
+  };
 }
 
 declare module "obsidian" {
@@ -63,7 +67,7 @@ declare module "obsidian" {
     editorEl: HTMLElement;
   }
   interface WorkspaceLeaf {
-    openLinkText(linkText: string, path: string, state?: any): Promise<void>;
+    openLinkText(linkText: string, path: string, state?: unknown): Promise<void>;
     updateHeader(): void;
     containerEl: HTMLElement;
     working: boolean;
@@ -72,8 +76,11 @@ declare module "obsidian" {
   }
   interface Workspace {
     recordHistory(leaf: WorkspaceLeaf, pushHistory: boolean): void;
-    iterateLeaves(callback: (item: WorkspaceLeaf) => any, item: WorkspaceParent): boolean;
-    getDropLocation(event: MouseEvent): { target: WorkspaceItem; sidedock: boolean };
+    iterateLeaves(callback: (item: WorkspaceLeaf) => unknown, item: WorkspaceParent): boolean;
+    getDropLocation(event: MouseEvent): {
+      target: WorkspaceItem;
+      sidedock: boolean;
+    };
     recursiveGetTarget(event: MouseEvent, parent: WorkspaceParent): WorkspaceItem;
     recordMostRecentOpenedFile(file: TFile): void;
     onDragLeaf(event: MouseEvent, leaf: WorkspaceLeaf): void;
@@ -110,14 +117,14 @@ declare module "obsidian" {
   interface Menu {
     items: MenuItem[];
     dom: HTMLElement;
-    hideCallback: () => any;
+    hideCallback: () => unknown;
   }
   interface MenuItem {
     iconEl: HTMLElement;
     dom: HTMLElement;
   }
   interface EphemeralState {
-    focus?: Boolean;
+    focus?: boolean;
     subpath?: string;
     line?: number;
     startLoc?: Loc;

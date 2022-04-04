@@ -1,5 +1,7 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
+
 import HoverEditorPlugin from "../main";
+import { parseCssUnitValue } from "../utils/misc";
 
 export interface HoverEditorSettings {
   defaultMode: string;
@@ -80,7 +82,7 @@ export class SettingTab extends PluginSettingTab {
         toggle.setValue(this.plugin.settings.autoFocus).onChange(value => {
           this.plugin.settings.autoFocus = value;
           this.plugin.saveSettings();
-        })
+        }),
       );
 
     new Setting(containerEl)
@@ -90,7 +92,7 @@ export class SettingTab extends PluginSettingTab {
         toggle.setValue(this.plugin.settings.rollDown).onChange(value => {
           this.plugin.settings.rollDown = value;
           this.plugin.saveSettings();
-        })
+        }),
       );
 
     new Setting(containerEl)
@@ -98,39 +100,39 @@ export class SettingTab extends PluginSettingTab {
       .setDesc(
         `Quickly arrange popovers by dragging them to the edges of the screen. The left and right edges 
         will maximize the popover vertically. The top edge will maximize the popover to fill the entire 
-        screen. Dragging the popovers away from the edges will restore the popver to its original size.`
+        screen. Dragging the popovers away from the edges will restore the popver to its original size.`,
       )
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.snapToEdges).onChange(value => {
           this.plugin.settings.snapToEdges = value;
           this.plugin.saveSettings();
-        })
+        }),
       );
 
     new Setting(containerEl)
       .setName("Show view header by default")
       .setDesc(
         `Show the view header by default when triggering a hover editor.
-         When disabled, view headers will only show if you click the view header icon to the left of the minimize button.`
+         When disabled, view headers will only show if you click the view header icon to the left of the minimize button.`,
       )
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.showViewHeader).onChange(value => {
           this.plugin.settings.showViewHeader = value;
           this.plugin.saveSettings();
-        })
+        }),
       );
 
     new Setting(containerEl)
       .setName("Click to zoom image")
       .setDesc(
         `Click and hold an image within a hover editor to temporarily maximize the popover and image to fill the entire viewport. 
-        On mouse up, the hover editor will restore to its original size.`
+        On mouse up, the hover editor will restore to its original size.`,
       )
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.imageZoom).onChange(value => {
           this.plugin.settings.imageZoom = value;
           this.plugin.saveSettings();
-        })
+        }),
       );
 
     new Setting(containerEl)
@@ -188,23 +190,5 @@ export class SettingTab extends PluginSettingTab {
           this.plugin.saveSettings();
         });
       });
-  }
-}
-
-function parseCssUnitValue(value: string) {
-  var parseUnit = require("parse-unit");
-  let [num, unit] = parseUnit(value);
-  if (!num) {
-    return false;
-  }
-  if (!unit) {
-    unit = "px";
-  }
-  const unitTypes = ["em", "ex", "ch", "rem", "vw", "vh", "vmin", "vmax", "%", "cm", "mm", "in", "px", "pt", "pc"];
-
-  if (unitTypes.contains(unit)) {
-    return num + unit;
-  } else {
-    return undefined;
   }
 }

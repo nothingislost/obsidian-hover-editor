@@ -1,62 +1,55 @@
 import { EphemeralState, PopoverState } from "obsidian";
-import { HoverEditorParent, HoverEditor } from "./popover";
+
 import HoverEditorPlugin from "./main";
+import { HoverEditorParent, HoverEditor } from "./popover";
 
 export function onLinkHover(
   plugin: HoverEditorPlugin,
-  old: Function,
   parent: HoverEditorParent,
   targetEl: HTMLElement,
   linkText: string,
   path: string,
   oldState: EphemeralState,
-  ...args: any[]
+  ...args: unknown[]
 ) {
-  let hoverPopover = parent.hoverPopover;
-  if (hoverPopover?.lockedOut) return;
-  if (
-    !(
-      hoverPopover &&
-      hoverPopover.state !== PopoverState.Hidden &&
-      hoverPopover.targetEl !== null &&
-      hoverPopover.targetEl === targetEl
-    )
-  ) {
-    hoverPopover = parent.hoverPopover = new HoverEditor(parent, targetEl, plugin, plugin.settings.triggerDelay);
-    const controller = (hoverPopover.abortController = new AbortController());
+  const prevPopover = parent.hoverPopover;
+  if (prevPopover?.lockedOut) return;
+  const parentHasExistingPopover =
+    prevPopover &&
+    prevPopover.state !== PopoverState.Hidden &&
+    prevPopover.targetEl !== null &&
+    prevPopover.targetEl === targetEl;
 
-    let unlock = function () {
-      if (!hoverPopover) return;
-      hoverPopover.lockedOut = false;
+  if (!parentHasExistingPopover) {
+    const editor = new HoverEditor(parent, targetEl, plugin, plugin.settings.triggerDelay);
+    parent.hoverPopover = editor;
+    const controller = (editor.abortController = new AbortController());
+
+    const unlock = function () {
+      if (!editor) return;
+      editor.lockedOut = false;
     };
 
-    let onMouseDown = function (event: MouseEvent) {
-      if (!hoverPopover) return;
+    const onMouseDown = function (event: MouseEvent) {
+      if (!editor) return;
       if (event.target instanceof HTMLElement && !event.target.closest(".hover-editor")) {
-        hoverPopover.state = PopoverState.Hidden;
-        hoverPopover.explicitHide();
-        hoverPopover.lockedOut = true;
+        editor.state = PopoverState.Hidden;
+        editor.explicitHide();
+        editor.lockedOut = true;
         setTimeout(unlock, 1000);
       }
     };
 
-    document.body.addEventListener("mousedown", onMouseDown, { capture: true, signal: controller.signal });
+    document.body.addEventListener("mousedown", onMouseDown, {
+      capture: true,
+      signal: controller.signal,
+    });
 
     setTimeout(() => {
-      if (hoverPopover?.state == PopoverState.Hidden) {
+      if (editor?.state == PopoverState.Hidden) {
         return;
       }
-      hoverPopover?.openLink(linkText, path, oldState);
-
-      // enable this and take heap dumps to check for leaks
-      // // @ts-ignore
-      // hoverPopover.hoverEl.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
-      // // @ts-ignore
-      // hoverPopover.popoverMemLeak = new Uint8Array(1024 * 1024 * 10);
-      // // @ts-ignore
-      // leaf.leafMemLeak = new Uint8Array(1024 * 1024 * 10);
-      // // @ts-ignore
-      // leaf.view.leafViewMemLeak = new Uint8Array(1024 * 1024 * 10);
+      editor?.openLink(linkText, path, oldState);
     }, 100);
   }
 }
