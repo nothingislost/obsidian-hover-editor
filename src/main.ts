@@ -185,6 +185,13 @@ export default class HoverEditorPlugin extends Plugin {
             return old.call(this, ...args);
           };
         },
+        handleLayoutChange(old: Function) {
+          return function (...args: unknown[]) {
+            // sliding panes needs to ignore popovers or else it activates the wrong pane
+            if (isHoverLeaf(this.app.workspace.activeLeaf)) return;
+            return old.call(this, ...args);
+          };
+        },
         focusActiveLeaf(old: Function) {
           return function (...args: unknown[]) {
             // sliding panes tries to add popovers to the root split if we don't exclude them
