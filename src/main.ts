@@ -5,7 +5,6 @@ import {
   EphemeralState,
   MarkdownView,
   Menu,
-  Notice,
   Platform,
   Plugin,
   PopoverState,
@@ -15,12 +14,14 @@ import {
   Workspace,
   WorkspaceLeaf,
 } from "obsidian";
+
 import { onLinkHover } from "./onLinkHover";
 import { HoverEditorParent, HoverEditor, isHoverLeaf } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
 
 export default class HoverEditorPlugin extends Plugin {
   settings: HoverEditorSettings;
+
   settingsTab: SettingTab;
 
   async onload() {
@@ -38,12 +39,6 @@ export default class HoverEditorPlugin extends Plugin {
     this.registerSettingsTab();
 
     this.app.workspace.onLayoutReady(() => {
-      if (!this.app.internalPlugins.plugins["page-preview"]._loaded) {
-        new Notice(
-          "The Hover Editor plugin requires that 'Page preview' be enabled. You can enable 'Page preview' under 'Settings -> Core plugins'.",
-          30000
-        );
-      }
       this.patchSlidingPanes();
       this.patchLinkHover();
       setTimeout(() => {
@@ -53,61 +48,68 @@ export default class HoverEditorPlugin extends Plugin {
     });
   }
 
-  get activePopovers(): (HoverEditor | undefined)[] {
+  get activePopovers(): HoverEditor[] {
     return HoverEditor.activePopovers();
   }
 
   patchWorkspaceLeaf() {
-    this.register(around(WorkspaceLeaf.prototype, {
-      getRoot(old) { return function() {
-        const top = old.call(this);
-        return (top.getRoot === this.getRoot) ? top : top.getRoot();
-      }},
-      onResize(old) { return function() { this.view?.onResize(); } },
-      setViewState(old) {
-        return async function (viewState: ViewState, eState?: any) {
-          let result = await old.call(this, viewState, eState);
-          // try and catch files that are opened from outside of the
-          // HoverEditor class so that we can update the popover title bar
-          try {
-            let he = HoverEditor.forLeaf(this);
-            if (he) {
-              viewState.type && he.hoverEl.setAttribute("data-active-view-type", viewState.type);
-              let titleEl = he.hoverEl.querySelector(".popover-title");
-              if (titleEl) {
-                titleEl.textContent = this.view?.getDisplayText();
-                if (this.view?.file?.path) {
-                  titleEl.setAttribute("data-path", this.view.file.path);
-                } else {
-                  titleEl.removeAttribute("data-path");
+    this.register(
+      around(WorkspaceLeaf.prototype, {
+        getRoot(old) {
+          return function () {
+            const top = old.call(this);
+            return top.getRoot === this.getRoot ? top : top.getRoot();
+          };
+        },
+        onResize(old) {
+          return function () {
+            this.view?.onResize();
+          };
+        },
+        setViewState(old) {
+          return async function (viewState: ViewState, eState?: unknown) {
+            const result = await old.call(this, viewState, eState);
+            // try and catch files that are opened from outside of the
+            // HoverEditor class so that we can update the popover title bar
+            try {
+              const he = HoverEditor.forLeaf(this);
+              if (he) {
+                if (viewState.type) he.hoverEl.setAttribute("data-active-view-type", viewState.type);
+                const titleEl = he.hoverEl.querySelector(".popover-title");
+                if (titleEl) {
+                  titleEl.textContent = this.view?.getDisplayText();
+                  if (this.view?.file?.path) {
+                    titleEl.setAttribute("data-path", this.view.file.path);
+                  } else {
+                    titleEl.removeAttribute("data-path");
+                  }
                 }
               }
+            } catch {}
+            return result;
+          };
+        },
+        setEphemeralState(old) {
+          return function (state: EphemeralState) {
+            old.call(this, state);
+            if (state.focus && this.view?.getViewType() === "empty") {
+              // Force empty (no-file) view to have focus so dialogs don't reset active pane
+              this.view.contentEl.tabIndex = -1;
+              this.view.contentEl.focus();
             }
-          } catch {}
-          return result;
-        };
-      },
-      setEphemeralState(old) {
-        return function (state: any) {
-          old.call(this, state);
-          if (state.focus && this.view?.getViewType() === "empty") {
-            // Force empty (no-file) view to have focus so dialogs don't reset active pane
-            this.view.contentEl.tabIndex = -1;
-            this.view.contentEl.focus();
-          }
-        }
-      }
-    }));
+          };
+        },
+      }),
+    );
   }
 
   patchQuickSwitcher() {
-    let plugin = this;
-    let { QuickSwitcherModal } = this.app.internalPlugins.plugins["switcher"]?.instance;
-    if (!QuickSwitcherModal) return;
-    let uninstaller = around(QuickSwitcherModal.prototype, {
-      open(old: any) {
+    const plugin = this;
+    const { QuickSwitcherModal } = this.app.internalPlugins.plugins.switcher.instance;
+    const uninstaller = around(QuickSwitcherModal.prototype, {
+      open(old) {
         return function () {
-          let result = old.call(this);
+          const result = old.call(this);
           this.setInstructions([
             {
               command: Platform.isMacOS ? "cmd p" : "ctrl p",
@@ -116,9 +118,11 @@ export default class HoverEditorPlugin extends Plugin {
           ]);
           this.scope.register(["Mod"], "p", (event: KeyboardEvent) => {
             this.close();
-            let item = this.chooser.values[this.chooser.selectedItem];
+            const item = this.chooser.values[this.chooser.selectedItem];
             if (!item?.file) return;
-            let newLeaf = plugin.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
+            const newLeaf = plugin.spawnPopover(undefined, () =>
+              this.app.workspace.setActiveLeaf(newLeaf, false, true),
+            );
             newLeaf.openFile(item.file);
             return false;
           });
@@ -130,60 +134,60 @@ export default class HoverEditorPlugin extends Plugin {
   }
 
   patchWorkspace() {
-    let uninstaller = around(Workspace.prototype, {
-      recordHistory(old: any) {
-        return function (leaf: WorkspaceLeaf, pushHistory: boolean, ...args: any[]) {
-          let paneReliefLoaded = this.app.plugins.plugins["pane-relief"]?._loaded;
+    const uninstaller = around(Workspace.prototype, {
+      recordHistory(old) {
+        return function (leaf: WorkspaceLeaf, pushHistory: boolean, ...args: unknown[]) {
+          const paneReliefLoaded = this.app.plugins.plugins["pane-relief"]?._loaded;
           if (!paneReliefLoaded && isHoverLeaf(leaf)) return;
           return old.call(this, leaf, pushHistory, ...args);
         };
       },
       iterateAllLeaves(old) {
-        return function(cb) {
+        return function (cb) {
           this.iterateRootLeaves(cb);
           this.iterateLeaves(cb, this.leftSplit);
           this.iterateLeaves(cb, this.rightSplit);
-        }
+        };
       },
       iterateRootLeaves(old) {
-        return function(callback: (leaf: WorkspaceLeaf) => any) {
+        return function (callback: (leaf: WorkspaceLeaf) => unknown) {
           return old.call(this, callback) || HoverEditor.iteratePopoverLeaves(this, callback);
-        }
+        };
       },
       getDropLocation(old) {
         return function getDropLocation(event: MouseEvent) {
           for (const popover of HoverEditor.activePopovers()) {
-              const dropLoc = this.recursiveGetTarget(event, popover!.rootSplit);
-              if (dropLoc) return {target: dropLoc, sidedock: false};
+            const dropLoc = this.recursiveGetTarget(event, popover.rootSplit);
+            if (dropLoc) return { target: dropLoc, sidedock: false };
           }
           return old.call(this, event);
-        }
+        };
       },
       onDragLeaf(old) {
-        return function(event: MouseEvent, leaf: WorkspaceLeaf) {
-          let hoverPopover = HoverEditor.forLeaf(leaf);
+        return function (event: MouseEvent, leaf: WorkspaceLeaf) {
+          const hoverPopover = HoverEditor.forLeaf(leaf);
           hoverPopover?.togglePin(true);
           return old.call(this, event, leaf);
-        }
-      }
+        };
+      },
     });
     this.register(uninstaller);
   }
 
   patchSlidingPanes() {
-    let SlidingPanesPlugin = this.app.plugins.plugins["sliding-panes-obsidian"]?.constructor;
+    const SlidingPanesPlugin = this.app.plugins.plugins["sliding-panes-obsidian"]?.constructor;
     if (SlidingPanesPlugin) {
-      let uninstaller = around(SlidingPanesPlugin.prototype, {
-        handleFileOpen(old: any) {
-          return function (...args: any[]) {
+      const uninstaller = around(SlidingPanesPlugin.prototype, {
+        handleFileOpen(old: Function) {
+          return function (...args: unknown[]) {
             // sliding panes needs to ignore popover open events or else it freaks out
             if (isHoverLeaf(this.app.workspace.activeLeaf)) return;
             return old.call(this, ...args);
-          }
+          };
         },
-        focusActiveLeaf(old: any) {
-          return function (...args: any[]) {
-            // sliding panes will try and make popovers part of the sliding area if we don't exclude them
+        focusActiveLeaf(old: Function) {
+          return function (...args: unknown[]) {
+            // sliding panes tries to add popovers to the root split if we don't exclude them
             if (isHoverLeaf(this.app.workspace.activeLeaf)) return;
             return old.call(this, ...args);
           };
@@ -194,31 +198,33 @@ export default class HoverEditorPlugin extends Plugin {
   }
 
   patchLinkHover() {
-    let plugin = this;
-    let InternalPlugins = this.app.internalPlugins.plugins["page-preview"].instance.constructor;
-    let uninstaller = around(InternalPlugins.prototype, {
-      onLinkHover(old: any) {
+    const plugin = this;
+    const pagePreviewPlugin = this.app.internalPlugins.plugins["page-preview"];
+    if (!pagePreviewPlugin.enabled) return;
+    const uninstaller = around(pagePreviewPlugin.instance.constructor.prototype, {
+      onLinkHover(old: Function) {
         return function (
           parent: HoverEditorParent,
           targetEl: HTMLElement,
           linkText: string,
           path: string,
           state: EphemeralState,
-          ...args: any[]
+          ...args: unknown[]
         ) {
-          onLinkHover(plugin, old, parent, targetEl, linkText, path, state, ...args);
+          onLinkHover(plugin, parent, targetEl, linkText, path, state, ...args);
         };
       },
     });
     this.register(uninstaller);
 
     // This will recycle the event handlers so that they pick up the patched onLinkHover method
-    this.app.internalPlugins.plugins["page-preview"].disable();
-    this.app.internalPlugins.plugins["page-preview"].enable();
+    pagePreviewPlugin.disable();
+    pagePreviewPlugin.enable();
 
     plugin.register(function () {
-      plugin.app.internalPlugins.plugins["page-preview"].disable();
-      plugin.app.internalPlugins.plugins["page-preview"].enable();
+      if (!pagePreviewPlugin.enabled) return;
+      pagePreviewPlugin.disable();
+      pagePreviewPlugin.enable();
     });
   }
 
@@ -235,22 +241,20 @@ export default class HoverEditorPlugin extends Plugin {
           };
         }
         if (file instanceof TFile && !popover) {
-          // Use this way to hover panel, so that we can hover backlink panel now.
           menu.addItem(item => {
             item
               .setIcon("popup-open")
               .setTitle("Open in new popover")
               .onClick(() => {
-                let newLeaf = this.spawnPopover();
+                const newLeaf = this.spawnPopover();
                 if (!leaf) {
                   newLeaf.openFile(file);
                 }
-                leaf?.getViewState && newLeaf.setViewState(leaf.getViewState());
+                if (leaf?.getViewState) newLeaf.setViewState(leaf.getViewState());
               });
-
           });
         }
-      })
+      }),
     );
   }
 
@@ -258,20 +262,22 @@ export default class HoverEditorPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", leaf => {
         document.querySelector("body > .popover.hover-popover.is-active")?.removeClass("is-active");
-        let hoverEditor = leaf ? HoverEditor.forLeaf(leaf) : undefined;
+        const hoverEditor = leaf ? HoverEditor.forLeaf(leaf) : undefined;
         if (hoverEditor && leaf) {
           hoverEditor.hoverEl.addClass("is-active");
-          let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
+          const titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
           if (!titleEl) return;
           titleEl.textContent = leaf.view?.getDisplayText();
-          leaf?.view?.getViewType() && hoverEditor.hoverEl.setAttribute("data-active-view-type", leaf.view.getViewType());
+          if (leaf?.view?.getViewType()) {
+            hoverEditor.hoverEl.setAttribute("data-active-view-type", leaf.view.getViewType());
+          }
           if (leaf.view?.file?.path) {
             titleEl.setAttribute("data-path", leaf.view.file.path);
           } else {
             titleEl.removeAttribute("data-path");
           }
         }
-      })
+      }),
     );
   }
 
@@ -279,11 +285,11 @@ export default class HoverEditorPlugin extends Plugin {
     this.app.vault.on("rename", (file, oldPath) => {
       HoverEditor.iteratePopoverLeaves(this.app.workspace, leaf => {
         if (file === leaf?.view?.file && file instanceof TFile) {
-          let hoverEditor = HoverEditor.forLeaf(leaf);
+          const hoverEditor = HoverEditor.forLeaf(leaf);
           if (hoverEditor?.hoverEl) {
-            let titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
+            const titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
             if (!titleEl) return;
-            let filePath = titleEl.getAttribute("data-path");
+            const filePath = titleEl.getAttribute("data-path");
             if (oldPath === filePath) {
               titleEl.textContent = leaf.view?.getDisplayText();
               titleEl.setAttribute("data-path", file.path);
@@ -297,11 +303,11 @@ export default class HoverEditorPlugin extends Plugin {
   debouncedPopoverReflow = debounce(
     () => {
       HoverEditor.activePopovers().forEach(popover => {
-        popover?.interact?.reflow({ name: "drag", axis: "xy" });
+        popover.interact?.reflow({ name: "drag", axis: "xy" });
       });
     },
     100,
-    true
+    true,
   );
 
   registerViewportResizeHandler() {
@@ -314,15 +320,14 @@ export default class HoverEditorPlugin extends Plugin {
   }
 
   patchUnresolvedGraphNodeHover() {
-    let leaf = new (WorkspaceLeaf as new (app: App) => WorkspaceLeaf)(this.app);
-    let view = this.app.internalPlugins.plugins.graph.views.localgraph(leaf)
-    let GraphEngine = view.engine.constructor;
+    const leaf = new (WorkspaceLeaf as new (app: App) => WorkspaceLeaf)(this.app);
+    const view = this.app.internalPlugins.plugins.graph.views.localgraph(leaf);
+    const GraphEngine = view.engine.constructor;
     leaf.detach(); // close the view
     view.renderer?.worker?.terminate(); // ensure the worker is terminated
-    let uninstall = around(GraphEngine.prototype, {
-      // @ts-ignore
-      onNodeHover(old: any) {
-        return function (event: UIEvent, linkText: string, nodeType: string, ...items: any[]) {
+    const uninstall = around(GraphEngine.prototype, {
+      onNodeHover(old: Function) {
+        return function (event: UIEvent, linkText: string, nodeType: string, ...items: unknown[]) {
           if (nodeType === "unresolved") {
             if ((this.onNodeUnhover(), event instanceof MouseEvent)) {
               if (
@@ -353,7 +358,7 @@ export default class HoverEditorPlugin extends Plugin {
   }
 
   onunload(): void {
-    HoverEditor.activePopovers().forEach(popover => popover?.explicitHide());
+    HoverEditor.activePopovers().forEach(popover => popover.explicitHide());
   }
 
   async loadSettings() {
@@ -369,7 +374,9 @@ export default class HoverEditorPlugin extends Plugin {
       id: "bounce-popovers",
       name: "Toggle bouncing popovers",
       callback: () => {
-        this.activePopovers.forEach(popover => { popover?.toggleBounce(); });
+        this.activePopovers.forEach(popover => {
+          popover.toggleBounce();
+        });
       },
     });
     this.addCommand({
@@ -377,19 +384,21 @@ export default class HoverEditorPlugin extends Plugin {
       name: "Open new popover",
       callback: () => {
         // Focus the leaf after it's shown
-        let newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
+        const newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
       },
     });
     this.addCommand({
       id: "open-link-in-new-popover",
       name: "Open link under cursor in new popover",
       checkCallback: (checking: boolean) => {
-        let activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (!!activeView) {
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView) {
           if (!checking) {
-            let token = activeView.editor.getClickableTokenAt(activeView.editor.getCursor());
+            const token = activeView.editor.getClickableTokenAt(activeView.editor.getCursor());
             if (token?.type === "internal-link") {
-              let newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
+              const newLeaf = this.spawnPopover(undefined, () =>
+                this.app.workspace.setActiveLeaf(newLeaf, false, true),
+              );
               newLeaf.openLinkText(token.text, activeView.file.path);
             }
           }
@@ -402,10 +411,10 @@ export default class HoverEditorPlugin extends Plugin {
       id: "open-current-file-in-new-popover",
       name: "Open current file in new popover",
       checkCallback: (checking: boolean) => {
-        let activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (!!activeView) {
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView) {
           if (!checking) {
-            let newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
+            const newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
             newLeaf.openFile(activeView.file);
           }
           return true;
@@ -415,10 +424,10 @@ export default class HoverEditorPlugin extends Plugin {
     });
   }
 
-  spawnPopover(initiatingEl?: HTMLElement, onShowCallback?: () => any): WorkspaceLeaf {
-    let parent = this.app.workspace.activeLeaf as unknown as HoverEditorParent;
+  spawnPopover(initiatingEl?: HTMLElement, onShowCallback?: () => unknown): WorkspaceLeaf {
+    const parent = this.app.workspace.activeLeaf as unknown as HoverEditorParent;
     if (!initiatingEl) initiatingEl = parent.containerEl;
-    let hoverPopover = new HoverEditor(parent, initiatingEl!, this, undefined, onShowCallback);
+    const hoverPopover = new HoverEditor(parent, initiatingEl!, this, undefined, onShowCallback);
     hoverPopover.togglePin(true);
     return hoverPopover.attachLeaf();
   }
@@ -430,6 +439,7 @@ export default class HoverEditorPlugin extends Plugin {
 }
 
 export function genId(size: number) {
-  for (var e = [], n = 0; n < size; n++) e.push(((16 * Math.random()) | 0).toString(16));
-  return e.join("");
+  const chars = [];
+  for (let n = 0; n < size; n++) chars.push(((16 * Math.random()) | 0).toString(16));
+  return chars.join("");
 }
