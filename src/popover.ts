@@ -423,14 +423,14 @@ export class HoverEditor extends HoverPopover {
 
   position(pos?: Pos): void {
     // without this adjustment, the x dimension keeps sliding over to the left as you progressively mouse over files
-    if (pos && pos.x !== undefined) {
-      pos.x = pos.x + 20;
-    }
+    // disabling this for now since messing with pos.x like this breaks the detect() logic
+    // if (pos && pos.x !== undefined) {
+    //   pos.x = pos.x + 20;
+    // }
     super.position(pos);
     if (pos) {
       setTimeout(() => {
         const left = parseFloat(this.hoverEl.style.left);
-        // this.hoverEl.style.left = left + "px";
         const top = parseFloat(this.hoverEl.style.top);
         this.hoverEl.setAttribute("data-x", String(left));
         this.hoverEl.setAttribute("data-y", String(top));
