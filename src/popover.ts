@@ -45,7 +45,7 @@ type ConstructableWorkspaceSplit = new (ws: Workspace, dir: string) => Workspace
 // eslint-disable-next-line prefer-const
 let mouseCoords: Pos | null = null;
 
-function nosuper<T>(base: new (...args: any[]) => T): new () => T {
+function nosuper<T>(base: new (...args: unknown[]) => T): new () => T {
   const derived = function () {
     return Component.call(this);
   };
@@ -271,7 +271,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
       // return true;
     }, this.rootSplit);
     if (leafCount === 0) {
-      this.explicitHide(); // close if we have no leaves
+      this.hide(); // close if we have no leaves
     } else if (leafCount > 1) {
       this.toggleConstrainAspectRatio(false);
     }
@@ -389,7 +389,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     const closeEl = popoverActions.createEl("a", "popover-action mod-close");
     setIcon(closeEl, "x");
     closeEl.addEventListener("click", event => {
-      this.explicitHide();
+      this.hide();
     });
     this.containerEl.prepend(this.titleEl);
   }
@@ -491,7 +491,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
       }
     } else {
       if (this.state === PopoverState.Showing) {
-        this.explicitHide();
+        this.hide();
       } else {
         if (this.state === PopoverState.Shown) {
           this.state = PopoverState.Hiding;
@@ -605,7 +605,13 @@ export class HoverEditor extends nosuper(HoverPopover) {
     // return !this.detaching && (this.onTarget || this.onHover);
     return (
       !this.detaching &&
-      !!(this.onTarget || this.onHover || this.isPinned || document.querySelector("body>.modal-container"))
+      !!(
+        this.onTarget ||
+        this.onHover ||
+        this.isPinned ||
+        this.activeMenu ||
+        document.querySelector("body>.modal-container")
+      )
     );
   }
 
@@ -870,54 +876,46 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
   }
 
-  explicitHide() {
-    this.activeMenu?.hide();
-    this.activeMenu = undefined;
-    this.onTarget = this.onHover = false;
-    this.isPinned = false;
-    this.hide();
-  }
-
   hide() {
     console.log(
       `hiding popver ${this.id}: isPinned = ${this.isPinned}, activeMenu = ${this.activeMenu}, onHover = ${this.onHover}, onTarget = ${this.onTarget}`,
     );
-    if (this.detaching || !(this.isPinned || this.activeMenu || this.onHover)) {
-      // Once we reach this point, we're committed to closing
-      this.detaching = true;
+    this.onTarget = this.onHover = false;
+    this.isPinned = false;
+    this.detaching = true;
+    // Once we reach this point, we're committed to closing
 
-      // A timer might be pending to call show() for the first time, make sure
-      // it doesn't bring us back up after we close
-      if (this.timer) {
-        clearTimeout(this.timer);
-        this.timer = 0;
-      }
+    // A timer might be pending to call show() for the first time, make sure
+    // it doesn't bring us back up after we close
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = 0;
+    }
 
-      // Hide our HTML element immediately, even if our leaves might not be
-      // detachable yet.  This makes things more responsive and improves the
-      // odds of not showing an empty popup that's just going to disappear
-      // momentarily.
-      this.hoverEl.hide();
+    // Hide our HTML element immediately, even if our leaves might not be
+    // detachable yet.  This makes things more responsive and improves the
+    // odds of not showing an empty popup that's just going to disappear
+    // momentarily.
+    this.hoverEl.hide();
 
-      // If a file load is in progress, we need to wait until it's finished before
-      // detaching leaves.  Because we set .detaching, The in-progress openFile()
-      // will call us again when it finishes.
-      if (this.opening) return;
+    // If a file load is in progress, we need to wait until it's finished before
+    // detaching leaves.  Because we set .detaching, The in-progress openFile()
+    // will call us again when it finishes.
+    if (this.opening) return;
 
-      const leaves = this.leaves();
-      if (leaves.length) {
-        // Detach all leaves before we unload the popover and remove it from the DOM.
-        // Each leaf.detach() will trigger layout-changed
-        // method will then call hide() again when the last one is gone.
-        leaves.forEach(leaf => leaf.detach());
-      } else {
-        this.parent = null;
-        if (this.interact?.unset) this.interact.unset();
-        this.abortController?.abort();
-        this.abortController = undefined;
-        this.interact = undefined;
-        return this.nativeHide();
-      }
+    const leaves = this.leaves();
+    if (leaves.length) {
+      // Detach all leaves before we unload the popover and remove it from the DOM.
+      // Each leaf.detach() will trigger layout-changed
+      // method will then call hide() again when the last one is gone.
+      leaves.forEach(leaf => leaf.detach());
+    } else {
+      this.parent = null;
+      if (this.interact?.unset) this.interact.unset();
+      this.abortController?.abort();
+      this.abortController = undefined;
+      this.interact = undefined;
+      return this.nativeHide();
     }
   }
 
@@ -939,7 +937,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.onHover = false;
     // note: activeHoverPopovers does not get populated so this logic will not run
     // this is responsible for closing any child popovers when a parent popover is closed
-    // activeHoverPopovers
+    // HoverEditor.activePopovers()
     //   .filter(popver => {
     //     if (popver.targetEl) {
     //       return this.hoverEl.contains(popver.targetEl);
@@ -1080,7 +1078,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
       console.error(e);
     } finally {
       this.opening = false;
-      if (this.detaching) this.explicitHide();
+      if (this.detaching) this.hide();
     }
     return leaf;
   }

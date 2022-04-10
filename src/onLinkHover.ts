@@ -34,7 +34,7 @@ export function onLinkHover(
       if (!editor) return;
       if (!editor.activeMenu && event.target instanceof HTMLElement && !event.target.closest(".hover-editor, .menu")) {
         editor.state = PopoverState.Hidden;
-        editor.explicitHide();
+        editor.hide();
         editor.lockedOut = true;
         setTimeout(unlock, 1000);
       }
