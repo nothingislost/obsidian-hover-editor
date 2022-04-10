@@ -3,6 +3,7 @@ import {
   App,
   debounce,
   EphemeralState,
+  ItemView,
   MarkdownView,
   Menu,
   Platform,
@@ -34,6 +35,7 @@ export default class HoverEditorPlugin extends Plugin {
     this.patchWorkspace();
     this.patchQuickSwitcher();
     this.patchWorkspaceLeaf();
+    this.patchItemView();
     this.patchMenu();
 
     await this.loadSettings();
@@ -156,6 +158,30 @@ export default class HoverEditorPlugin extends Plugin {
     this.register(uninstaller);
   }
 
+  patchItemView() {
+    const plugin = this;
+    const uninstaller = around(ItemView.prototype, {
+      onMoreOptionsMenu(old) {
+        return function (menu: Menu, ...args: unknown[]) {
+          const popover = this.leaf ? HoverEditor.forLeaf(this.leaf) : undefined;
+          if (!popover) {
+            menu.addItem(item => {
+              item
+                .setIcon("popup-open")
+                .setTitle("Open in Hover Editor")
+                .onClick(() => {
+                  const newLeaf = plugin.spawnPopover();
+                  if (this.leaf?.getViewState) newLeaf.setViewState(this.leaf.getViewState());
+                });
+            });
+          }
+          return old.call(this, menu, ...args);
+        };
+      },
+    });
+    this.register(uninstaller);
+  }
+
   patchWorkspace() {
     const uninstaller = around(Workspace.prototype, {
       recordHistory(old) {
@@ -270,17 +296,14 @@ export default class HoverEditorPlugin extends Plugin {
             }, 1000);
           };
         }
-        if (file instanceof TFile && !popover) {
+        if (file instanceof TFile && !popover && !leaf) {
           menu.addItem(item => {
             item
               .setIcon("popup-open")
-              .setTitle("Open in new popover")
+              .setTitle("Open in Hover Editor")
               .onClick(() => {
                 const newLeaf = this.spawnPopover();
-                if (!leaf) {
-                  newLeaf.openFile(file);
-                }
-                if (leaf?.getViewState) newLeaf.setViewState(leaf.getViewState());
+                newLeaf.openFile(file);
               });
           });
         }
