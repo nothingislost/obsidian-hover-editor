@@ -32,7 +32,7 @@ export function onLinkHover(
 
     const onMouseDown = function (event: MouseEvent) {
       if (!editor) return;
-      if (!editor.activeMenu && event.target instanceof HTMLElement && !event.target.closest(".hover-editor, .menu")) {
+      if (event.target instanceof HTMLElement && !event.target.closest(".hover-editor, .menu")) {
         editor.state = PopoverState.Hidden;
         editor.hide();
         editor.lockedOut = true;

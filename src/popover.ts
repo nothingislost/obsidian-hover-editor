@@ -8,7 +8,6 @@ import {
   EphemeralState,
   HoverPopover,
   MarkdownEditView,
-  Menu,
   OpenViewState,
   parseLinktext,
   PopoverState,
@@ -65,8 +64,6 @@ export class HoverEditor extends nosuper(HoverPopover) {
   isDragging: boolean;
 
   isResizing: boolean;
-
-  activeMenu?: Menu;
 
   interact?: Interactable;
 
@@ -152,7 +149,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.targetEl = targetEl;
     this.waitTime = waitTime;
     this.state = PopoverState.Showing;
-    const hoverEl = (this.hoverEl = createDiv("popover hover-popover"));
+    const hoverEl = (this.hoverEl = createDiv({ cls: "popover hover-popover", attr: { id: "he" + this.id } }));
     this.onMouseIn = this._onMouseIn.bind(this);
     this.onMouseOut = this._onMouseOut.bind(this);
 
@@ -609,8 +606,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
         this.onTarget ||
         this.onHover ||
         this.isPinned ||
-        this.activeMenu ||
-        document.querySelector("body>.modal-container")
+        document.querySelector(`body>.modal-container, body > #he${this.id} ~ .menu`)
       )
     );
   }
@@ -878,7 +874,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   hide() {
     console.log(
-      `hiding popver ${this.id}: isPinned = ${this.isPinned}, activeMenu = ${this.activeMenu}, onHover = ${this.onHover}, onTarget = ${this.onTarget}`,
+      `hiding popver ${this.id}: isPinned = ${this.isPinned}, onHover = ${this.onHover}, onTarget = ${this.onTarget}`,
     );
     this.onTarget = this.onHover = false;
     this.isPinned = false;
@@ -929,6 +925,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
     hoverEl.detach();
 
     if (targetEl) {
+      const parent = targetEl.matchParent(".hover-popover");
+      if (parent) popovers.get(parent)?.transition();
       targetEl.removeEventListener("mouseover", this.onMouseIn);
       targetEl.removeEventListener("mouseout", this.onMouseOut);
     }

@@ -36,7 +36,6 @@ export default class HoverEditorPlugin extends Plugin {
     this.patchQuickSwitcher();
     this.patchWorkspaceLeaf();
     this.patchItemView();
-    this.patchMenu();
 
     await this.loadSettings();
     this.registerSettingsTab();
@@ -130,28 +129,6 @@ export default class HoverEditorPlugin extends Plugin {
             return false;
           });
           return result;
-        };
-      },
-    });
-    this.register(uninstaller);
-  }
-
-  patchMenu() {
-    const plugin = this;
-    const uninstaller = around(Menu.prototype, {
-      onload(old) {
-        return function (...args: unknown[]) {
-          plugin.activePopovers.forEach(popover => {
-            if (!popover.isPinned && !popover.activeMenu) {
-              popover.activeMenu = this;
-              this.register(() => {
-                setTimeout(() => {
-                  if (popover.activeMenu === this) popover.activeMenu = undefined;
-                }, 10);
-              });
-            }
-          });
-          return old.call(this, ...args);
         };
       },
     });
@@ -288,14 +265,6 @@ export default class HoverEditorPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf) => {
         const popover = leaf ? HoverEditor.forLeaf(leaf) : undefined;
-        if (source === "pane-more-options" && popover) {
-          popover.activeMenu = menu;
-          menu.hideCallback = function () {
-            setTimeout(() => {
-              if (popover?.activeMenu === menu) popover.activeMenu = undefined;
-            }, 1000);
-          };
-        }
         if (file instanceof TFile && !popover && !leaf) {
           menu.addItem(item => {
             item
