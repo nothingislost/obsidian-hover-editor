@@ -4,6 +4,7 @@ import type { Interactable, InteractEvent, Interaction, ResizeEvent } from "@int
 import interact from "@nothingislost/interactjs";
 import { around } from "monkey-around";
 import {
+  Component,
   EphemeralState,
   HoverPopover,
   MarkdownEditView,
@@ -22,7 +23,7 @@ import {
   WorkspaceSplit,
 } from "obsidian";
 
-import HoverEditorPlugin from "./main";
+import HoverEditorPlugin, { genId } from "./main";
 import {
   restorePopover,
   calculateOffsets,
@@ -44,7 +45,15 @@ type ConstructableWorkspaceSplit = new (ws: Workspace, dir: string) => Workspace
 // eslint-disable-next-line prefer-const
 let mouseCoords: Pos | null = null;
 
-export class HoverEditor extends HoverPopover {
+function nosuper<T>(base: new (...args: any[]) => T): new () => T {
+  const derived = function () {
+    return Component.call(this);
+  };
+  derived.prototype = base.prototype;
+  return Object.setPrototypeOf(derived, base);
+}
+
+export class HoverEditor extends nosuper(HoverPopover) {
   onTarget: boolean;
 
   onHover: boolean;
@@ -84,6 +93,8 @@ export class HoverEditor extends HoverPopover {
   oldPopover = this.parent?.hoverPopover;
 
   constrainAspectRatio: boolean;
+
+  id = genId(8);
 
   resizeModifiers: Modifier[];
 
@@ -129,16 +140,8 @@ export class HoverEditor extends HoverPopover {
     public onShowCallback?: () => unknown,
   ) {
     //
-    super(parent, targetEl, waitTime);
-    //
-    // unset native handlers which were set during the super call
-    //
-    if (targetEl) {
-      targetEl.removeEventListener("mouseover", this.onMouseIn);
-      targetEl.removeEventListener("mouseout", this.onMouseOut);
-    }
-    window.clearTimeout(this.timer);
-    // end
+    super();
+
     if (waitTime === undefined) {
       waitTime = 300;
     }
@@ -580,21 +583,6 @@ export class HoverEditor extends HoverPopover {
     }
   }
 
-  onHide() {
-    this.oldPopover = null;
-    if (this.parent?.hoverPopover === this) {
-      this.parent.hoverPopover = null;
-    }
-  }
-
-  explicitHide() {
-    this.activeMenu?.hide();
-    this.activeMenu = undefined;
-    this.onTarget = this.onHover = false;
-    this.isPinned = false;
-    this.hide();
-  }
-
   shouldShow() {
     return this.shouldShowSelf() || this.shouldShowChild();
   }
@@ -613,12 +601,7 @@ export class HoverEditor extends HoverPopover {
     // return !this.detaching && (this.onTarget || this.onHover);
     return (
       !this.detaching &&
-      !!(
-        this.onTarget ||
-        this.onHover ||
-        document.querySelector("body>.modal-container") ||
-        document.querySelector("body>.menu")
-      )
+      !!(this.onTarget || this.onHover || this.isPinned || document.querySelector("body>.modal-container"))
     );
   }
 
@@ -860,6 +843,7 @@ export class HoverEditor extends HoverPopover {
     }
     // native obsidian logic end
 
+    console.log(`spawning popover: ${this.id}`);
     // if this is an image view, set the dimensions to the natural dimensions of the image
     // an interactjs reflow will be triggered to constrain the image to the viewport if it's
     // too large
@@ -875,7 +859,25 @@ export class HoverEditor extends HoverPopover {
     this.interact?.reflow({ name: "drag", axis: "xy" });
   }
 
+  onHide() {
+    this.oldPopover = null;
+    if (this.parent?.hoverPopover === this) {
+      this.parent.hoverPopover = null;
+    }
+  }
+
+  explicitHide() {
+    this.activeMenu?.hide();
+    this.activeMenu = undefined;
+    this.onTarget = this.onHover = false;
+    this.isPinned = false;
+    this.hide();
+  }
+
   hide() {
+    console.log(
+      `hiding popver ${this.id}: isPinned = ${this.isPinned}, activeMenu = ${this.activeMenu}, onHover = ${this.onHover}, onTarget = ${this.onTarget}`,
+    );
     if (this.detaching || !(this.isPinned || this.activeMenu || this.onHover)) {
       // Once we reach this point, we're committed to closing
       this.detaching = true;
@@ -910,14 +912,12 @@ export class HoverEditor extends HoverPopover {
         this.abortController?.abort();
         this.abortController = undefined;
         this.interact = undefined;
-        return super.hide();
+        return this.nativeHide();
       }
     }
   }
 
-  _nativeHide() {
-    // for reference purposes only. do not call.
-    // this is what the base class does when we call super.hide()
+  nativeHide() {
     const hoverEl = this.hoverEl;
     const targetEl = this.targetEl;
     this.state = PopoverState.Hidden;
