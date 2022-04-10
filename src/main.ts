@@ -34,6 +34,7 @@ export default class HoverEditorPlugin extends Plugin {
     this.patchWorkspace();
     this.patchQuickSwitcher();
     this.patchWorkspaceLeaf();
+    this.patchMenu();
 
     await this.loadSettings();
     this.registerSettingsTab();
@@ -127,6 +128,28 @@ export default class HoverEditorPlugin extends Plugin {
             return false;
           });
           return result;
+        };
+      },
+    });
+    this.register(uninstaller);
+  }
+
+  patchMenu() {
+    const plugin = this;
+    const uninstaller = around(Menu.prototype, {
+      onload(old) {
+        return function (...args: unknown[]) {
+          plugin.activePopovers.forEach(popover => {
+            if (!popover.isPinned && !popover.activeMenu) {
+              popover.activeMenu = this;
+              this.register(() => {
+                setTimeout(() => {
+                  if (popover.activeMenu === this) popover.activeMenu = undefined;
+                }, 10);
+              });
+            }
+          });
+          return old.call(this, ...args);
         };
       },
     });
