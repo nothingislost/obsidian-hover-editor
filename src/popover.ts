@@ -311,8 +311,12 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.titleEl.insertAdjacentElement("afterend", this.rootSplit.containerEl);
     const leaf = this.plugin.app.workspace.createLeafInParent(this.rootSplit, 0);
     this.updateLeaves();
-    this.registerEvent(this.plugin.app.workspace.on("layout-change", this.updateLeaves, this));
     return leaf;
+  }
+
+  onload(): void {
+    super.onload();
+    this.registerEvent(this.plugin.app.workspace.on("layout-change", this.updateLeaves, this));
   }
 
   leaves() {
