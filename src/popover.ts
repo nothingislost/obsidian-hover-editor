@@ -11,7 +11,7 @@ import {
   OpenViewState,
   parseLinktext,
   PopoverState,
-  Pos,
+  MousePos,
   requireApiVersion,
   resolveSubpath,
   setIcon,
@@ -42,7 +42,7 @@ export interface HoverEditorParent {
 type ConstructableWorkspaceSplit = new (ws: Workspace, dir: string) => WorkspaceSplit;
 
 // eslint-disable-next-line prefer-const
-let mouseCoords: Pos | null = null;
+let mouseCoords: MousePos | null = null;
 
 function nosuper<T>(base: new (...args: unknown[]) => T): new () => T {
   const derived = function () {
@@ -57,7 +57,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   onHover: boolean;
 
-  shownPos: Pos | null;
+  shownPos: MousePos | null;
 
   isPinned: boolean = this.plugin.settings.autoPin === "always" ? true : false;
 
@@ -172,17 +172,6 @@ export class HoverEditor extends nosuper(HoverPopover) {
     });
     this.timer = window.setTimeout(this.show.bind(this), waitTime);
     document.addEventListener("mousemove", setMouseCoords);
-
-    // we can't stop popovers from getting added to the internal initializingHoverPopovers array
-    // but it's harmless since the entry will be removed when we call super.hide()
-    //
-    // initializingHoverPopovers.push(this);
-
-    // we can't stop the popoverChecker from running
-    // but it will clear itself in 500ms when it can't find any active popovers
-    // we prevent show() from adding the popover to the internal activeHoverPopovers array so it's always empty
-    //
-    // initializePopoverChecker();
 
     // custom logic begin
     popovers.set(this.hoverEl, this);
@@ -529,7 +518,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
   }
 
-  position(pos?: Pos | null): void {
+  position(pos?: MousePos | null): void {
     // without this adjustment, the x dimension keeps sliding over to the left as you progressively mouse over files
     // disabling this for now since messing with pos.x like this breaks the detect() logic
     // if (pos && pos.x !== undefined) {

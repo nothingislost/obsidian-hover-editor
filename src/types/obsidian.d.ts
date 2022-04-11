@@ -140,7 +140,7 @@ declare module "obsidian" {
     parent: HoverEditorParent | null;
     targetEl: HTMLElement;
     hoverEl: HTMLElement;
-    position(pos?: Pos): void;
+    position(pos?: MousePos): void;
     hide(): void;
     show(): void;
     shouldShowSelf(): boolean;
@@ -149,7 +149,7 @@ declare module "obsidian" {
     shouldShow(): boolean;
     transition(): void;
   }
-  interface Pos {
+  interface MousePos {
     x: number;
     y: number;
   }
