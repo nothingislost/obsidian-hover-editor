@@ -1005,9 +1005,11 @@ export class HoverEditor extends nosuper(HoverPopover) {
       const createEl = leaf.view.actionListEl?.createEl("button", "empty-state-action");
       if (!createEl) return;
       createEl.textContent = `${linkText} is not yet created. Click to create.`;
-      setTimeout(() => {
-        createEl?.focus();
-      }, 200);
+      if (this.parentAllowsAutoFocus) {
+        setTimeout(() => {
+          createEl?.focus();
+        }, 200);
+      }
       createEl.addEventListener(
         "click",
         async () => {
