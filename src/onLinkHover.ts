@@ -18,7 +18,8 @@ export function onLinkHover(
     prevPopover &&
     prevPopover.state !== PopoverState.Hidden &&
     prevPopover.targetEl !== null &&
-    prevPopover.targetEl === targetEl;
+    targetEl &&
+    prevPopover.adopt(targetEl);
 
   if (!parentHasExistingPopover) {
     const editor = new HoverEditor(parent, targetEl, plugin, plugin.settings.triggerDelay);

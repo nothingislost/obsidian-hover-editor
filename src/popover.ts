@@ -41,8 +41,7 @@ export interface HoverEditorParent {
 }
 type ConstructableWorkspaceSplit = new (ws: Workspace, dir: string) => WorkspaceSplit;
 
-// eslint-disable-next-line prefer-const
-let mouseCoords: MousePos | null = null;
+let mouseCoords: MousePos = { x: 0, y: 0 };
 
 function nosuper<T>(base: new (...args: unknown[]) => T): new () => T {
   const derived = function () {
@@ -76,6 +75,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
   opening = false;
 
   rootSplit: WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(window.app.workspace, "vertical");
+
+  targetRect = this.targetEl?.getBoundingClientRect();
 
   pinEl: HTMLElement;
 
@@ -131,7 +132,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   constructor(
     parent: HoverEditorParent,
-    targetEl: HTMLElement,
+    public targetEl: HTMLElement,
     public plugin: HoverEditorPlugin,
     waitTime?: number,
     public onShowCallback?: () => unknown,
@@ -146,7 +147,6 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.onHover = false;
     this.shownPos = null;
     this.parent = parent;
-    this.targetEl = targetEl;
     this.waitTime = waitTime;
     this.state = PopoverState.Showing;
     const hoverEl = (this.hoverEl = createDiv({ cls: "popover hover-popover", attr: { id: "he" + this.id } }));
@@ -161,12 +161,14 @@ export class HoverEditor extends nosuper(HoverPopover) {
     hoverEl.addEventListener("mouseover", event => {
       if (mouseIsOffTarget(event, hoverEl)) {
         this.onHover = true;
+        this.onTarget = false;
         this.transition();
       }
     });
     hoverEl.addEventListener("mouseout", event => {
       if (mouseIsOffTarget(event, hoverEl)) {
         this.onHover = false;
+        this.onTarget = false;
         this.transition();
       }
     });
@@ -191,6 +193,24 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
     this.createResizeHandles();
     if (this.plugin.settings.imageZoom) this.registerZoomImageHandlers();
+  }
+
+  adopt(targetEl: HTMLElement) {
+    if (this.targetEl === targetEl) return true;
+    const bounds = targetEl?.getBoundingClientRect();
+    if (overlaps(this.targetRect, bounds)) {
+      this.targetEl.removeEventListener("mouseover", this.onMouseIn);
+      this.targetEl.removeEventListener("mouseout", this.onMouseOut);
+      targetEl.addEventListener("mouseover", this.onMouseIn);
+      targetEl.addEventListener("mouseout", this.onMouseOut);
+      this.targetEl = targetEl;
+      this.targetRect = bounds;
+      const { x, y } = mouseCoords;
+      this.onTarget = overlaps(bounds, { left: x, right: x, top: y, bottom: y } as DOMRect);
+      this.transition();
+      return true;
+    }
+    return false;
   }
 
   onZoomOut() {
@@ -226,14 +246,6 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.hoverEl.addClass("image-zoom");
     this.boundOnZoomOut = this.onZoomOut.bind(this);
     this.hoverEl.on("mousedown", "img", this.onZoomIn.bind(this));
-  }
-
-  get parentAllowsAutoFocus() {
-    // the calendar view currently bugs out when it is a hover parent and auto focus is enabled, so we need to prevent it
-    // calendar regenerates all calender DOM elements on active leaf change which causes the targetEl we received to be invalid
-    const CalendarView = this.plugin.app.plugins.getPlugin("calendar")?.view.constructor;
-    if (CalendarView && this.parent instanceof CalendarView) return false;
-    return true;
   }
 
   togglePin(value?: boolean) {
@@ -992,7 +1004,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
       const createEl = leaf.view.actionListEl?.createEl("button", "empty-state-action");
       if (!createEl) return;
       createEl.textContent = `${linkText} is not yet created. Click to create.`;
-      if (this.parentAllowsAutoFocus) {
+      if (this.plugin.settings.autoFocus) {
         setTimeout(() => {
           createEl?.focus();
         }, 200);
@@ -1014,7 +1026,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.opening = true;
     try {
       await leaf.openFile(file, openState);
-      if (this.plugin.settings.autoFocus && !this.detaching && this.parentAllowsAutoFocus) {
+      if (this.plugin.settings.autoFocus && !this.detaching) {
         const existingCallback = this.onShowCallback;
         this.onShowCallback = () => {
           this.plugin.app.workspace.setActiveLeaf(leaf, false, true);
@@ -1234,4 +1246,15 @@ function setMouseCoords(event: MouseEvent) {
 function mouseIsOffTarget(event: MouseEvent, el: Element) {
   const relatedTarget = event.relatedTarget;
   return !(relatedTarget instanceof Node && el.contains(relatedTarget));
+}
+
+function overlaps(rect1?: DOMRect, rect2?: DOMRect) {
+  return !!(
+    rect1 &&
+    rect2 &&
+    rect1.right >= rect2.left &&
+    rect1.left <= rect2.right &&
+    rect1.bottom >= rect2.top &&
+    rect1.top <= rect2.bottom
+  );
 }
