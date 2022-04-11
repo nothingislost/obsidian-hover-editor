@@ -17,7 +17,7 @@ import {
 } from "obsidian";
 
 import { onLinkHover } from "./onLinkHover";
-import { HoverEditorParent, HoverEditor, isHoverLeaf } from "./popover";
+import { HoverEditorParent, HoverEditor, isHoverLeaf, setMouseCoords } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
 
 export default class HoverEditorPlugin extends Plugin {
@@ -235,6 +235,12 @@ export default class HoverEditorPlugin extends Plugin {
     const pagePreviewPlugin = this.app.internalPlugins.plugins["page-preview"];
     if (!pagePreviewPlugin.enabled) return;
     const uninstaller = around(pagePreviewPlugin.instance.constructor.prototype, {
+      onHoverLink(old: Function) {
+        return function (options: { event: MouseEvent }, ...args: unknown[]) {
+          if (options && options.event instanceof MouseEvent) setMouseCoords(options.event);
+          return old.call(this, options, ...args);
+        };
+      },
       onLinkHover(old: Function) {
         return function (
           parent: HoverEditorParent,

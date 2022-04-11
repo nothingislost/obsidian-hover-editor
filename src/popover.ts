@@ -850,7 +850,6 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
     // native obsidian logic end
 
-    console.log(`spawning popover: ${this.id}`);
     // if this is an image view, set the dimensions to the natural dimensions of the image
     // an interactjs reflow will be triggered to constrain the image to the viewport if it's
     // too large
@@ -874,13 +873,13 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   hide() {
-    console.log(
-      `hiding popver ${this.id}: isPinned = ${this.isPinned}, onHover = ${this.onHover}, onTarget = ${this.onTarget}`,
-    );
     this.onTarget = this.onHover = false;
     this.isPinned = false;
     this.detaching = true;
     // Once we reach this point, we're committed to closing
+
+    // in case we didn't ever call show()
+    document.removeEventListener("mousemove", setMouseCoords);
 
     // A timer might be pending to call show() for the first time, make sure
     // it doesn't bring us back up after we close
@@ -1236,7 +1235,7 @@ function getRelativePos(el: HTMLElement | null, parentEl: HTMLElement | null) {
   };
 }
 
-function setMouseCoords(event: MouseEvent) {
+export function setMouseCoords(event: MouseEvent) {
   mouseCoords = {
     x: event.clientX,
     y: event.clientY,
