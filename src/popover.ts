@@ -888,6 +888,20 @@ export class HoverEditor extends nosuper(HoverPopover) {
     // will call us again when it finishes.
     if (this.opening) return;
 
+    // This is responsible for closing any child popovers when a parent popover is closed
+    // it must run before the detach leaves logic below, otherwise the targetEls will no longer exist
+    // currently it will only close descendants that are not pinned
+    HoverEditor.activePopovers()
+      .filter(popover => {
+        if (popover.targetEl && !popover.isPinned) {
+          return this.hoverEl.contains(popover.targetEl);
+        }
+        return false;
+      })
+      .forEach(popover => {
+        return popover.hide();
+      });
+
     const leaves = this.leaves();
     if (leaves.length) {
       // Detach all leaves before we unload the popover and remove it from the DOM.
@@ -905,12 +919,10 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   nativeHide() {
-    const hoverEl = this.hoverEl;
-    const targetEl = this.targetEl;
+    const { hoverEl, targetEl } = this;
+
     this.state = PopoverState.Hidden;
-    // initializingHoverPopovers.remove(this);
-    // activeHoverPopovers.remove(this);
-    clearTimeout(this.timer);
+
     hoverEl.detach();
 
     if (targetEl) {
@@ -920,20 +932,6 @@ export class HoverEditor extends nosuper(HoverPopover) {
       targetEl.removeEventListener("mouseout", this.onMouseOut);
     }
 
-    this.onTarget = false;
-    this.onHover = false;
-    // note: activeHoverPopovers does not get populated so this logic will not run
-    // this is responsible for closing any child popovers when a parent popover is closed
-    // HoverEditor.activePopovers()
-    //   .filter(popver => {
-    //     if (popver.targetEl) {
-    //       return this.hoverEl.contains(popver.targetEl);
-    //     }
-    //     return false;
-    //   })
-    //   .forEach(popover => {
-    //     return popover.hide();
-    //   });
     this.onHide();
     this.unload();
   }
