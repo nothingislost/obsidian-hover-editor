@@ -1,4 +1,4 @@
-import { EphemeralState, PopoverState } from "obsidian";
+import { Component, EphemeralState, PopoverState } from "obsidian";
 
 import HoverEditorPlugin from "./main";
 import { HoverEditorParent, HoverEditor } from "./popover";
@@ -42,7 +42,7 @@ export function onLinkHover(
     editor.originalLinkText = linkText;
     editor.originalPath = path;
     parent.hoverPopover = editor;
-    const controller = (editor.abortController = new AbortController());
+    const controller = editor.abortController!;
 
     const unlock = function () {
       if (!editor) return;
@@ -59,10 +59,8 @@ export function onLinkHover(
       }
     };
 
-    document.body.addEventListener("mousedown", onMouseDown, {
-      capture: true,
-      signal: controller.signal,
-    });
+    document.body.addEventListener("mousedown", onMouseDown, true);
+    controller.register(() => document.body.removeEventListener("mousedown", onMouseDown, true));
 
     setTimeout(() => {
       if (editor?.state == PopoverState.Hidden) {

@@ -68,7 +68,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   lockedOut: boolean;
 
-  abortController?: AbortController;
+  abortController? = this.addChild(new Component);
 
   detaching = false;
 
@@ -155,6 +155,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     const hoverEl = (this.hoverEl = createDiv({ cls: "popover hover-popover", attr: { id: "he" + this.id } }));
     this.onMouseIn = this._onMouseIn.bind(this);
     this.onMouseOut = this._onMouseOut.bind(this);
+    this.abortController!.load();
 
     if (targetEl) {
       targetEl.addEventListener("mouseover", this.onMouseIn);
@@ -258,7 +259,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     if (value === undefined) {
       value = !this.isPinned;
     }
-    if (value) this.abortController?.abort();
+    if (value) this.abortController?.unload();
     this.hoverEl.toggleClass("is-pinned", value);
     this.pinEl.toggleClass("is-active", value);
     this.isPinned = value;
@@ -917,7 +918,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     } else {
       this.parent = null;
       if (this.interact?.unset) this.interact.unset();
-      this.abortController?.abort();
+      this.abortController?.unload();
       this.abortController = undefined;
       this.interact = undefined;
       return this.nativeHide();
