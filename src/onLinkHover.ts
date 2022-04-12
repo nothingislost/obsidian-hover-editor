@@ -18,11 +18,15 @@ export function onLinkHover(
     prevPopover &&
     prevPopover.state !== PopoverState.Hidden &&
     prevPopover.targetEl !== null &&
+    prevPopover.originalLinkText === linkText &&
+    prevPopover.originalPath === path &&
     targetEl &&
     prevPopover.adopt(targetEl);
 
   if (!parentHasExistingPopover) {
     const editor = new HoverEditor(parent, targetEl, plugin, plugin.settings.triggerDelay);
+    editor.originalLinkText = linkText;
+    editor.originalPath = path;
     parent.hoverPopover = editor;
     const controller = (editor.abortController = new AbortController());
 
