@@ -69,7 +69,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   lockedOut: boolean;
 
-  abortController? = this.addChild(new Component);
+  abortController? = this.addChild(new Component());
 
   detaching = false;
 
@@ -961,7 +961,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
       this.displayCreateFileAction(linkText, sourcePath, eState);
       return;
     }
-    const {viewRegistry} = this.plugin.app;
+    const { viewRegistry } = this.plugin.app;
     const viewType = viewRegistry.typeByExtension[file.extension];
     if (!viewType || !viewRegistry.viewByType[viewType]) {
       this.displayOpenFileAction(file);
@@ -1003,10 +1003,10 @@ export class HoverEditor extends nosuper(HoverPopover) {
     const view = leaf.view! as EmptyView;
     view.emptyTitleEl.hide();
     view.actionListEl.empty();
-    const {actionListEl} = view;
-    actionListEl.createDiv({cls: "file-embed-title"}, (div) => {
-        div.createSpan({cls: "file-embed-icon"}, (span) => setIcon(span, "document", 22));
-        div.appendText(" " + file.name);
+    const { actionListEl } = view;
+    actionListEl.createDiv({ cls: "file-embed-title" }, div => {
+      div.createSpan({ cls: "file-embed-icon" }, span => setIcon(span, "document", 22));
+      div.appendText(" " + file.name);
     });
     actionListEl.addEventListener("click", () => this.plugin.app.openWithDefaultApp(file.path));
     actionListEl.setAttribute("aria-label", i18next.t("interface.embed-open-in-default-app-tooltip"));

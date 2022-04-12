@@ -38,7 +38,7 @@ interface QuickSwitcherPlugin extends InternalPlugin {
 declare global {
   const i18next: {
     t(id: string): string;
-  }
+  };
 }
 
 declare module "obsidian" {
@@ -58,12 +58,12 @@ declare module "obsidian" {
       getPlugin(id: "calendar"): CalendarPlugin;
     };
     dom: { appContainerEl: HTMLElement };
-    viewRegistry: ViewRegistry
+    viewRegistry: ViewRegistry;
     openWithDefaultApp(path: string): void;
   }
   interface ViewRegistry {
-    typeByExtension: Record<string, string>;  // file extensions to view types
-    viewByType: Record<string, (leaf: WorkspaceLeaf) => View >;  // file extensions to view types
+    typeByExtension: Record<string, string>; // file extensions to view types
+    viewByType: Record<string, (leaf: WorkspaceLeaf) => View>; // file extensions to view types
   }
   interface CalendarPlugin {
     view: View;
