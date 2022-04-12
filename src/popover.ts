@@ -209,6 +209,9 @@ export class HoverEditor extends nosuper(HoverPopover) {
       this.onTarget = overlaps(bounds, { left: x, right: x, top: y, bottom: y } as DOMRect);
       this.transition();
       return true;
+    } else {
+      this.onTarget = false;
+      this.transition();
     }
     return false;
   }
@@ -263,10 +266,13 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   updateLeaves() {
+    if (this.onTarget && this.targetEl && !document.contains(this.targetEl)) {
+      this.onTarget = false;
+      this.transition();
+    }
     let leafCount = 0;
     this.plugin.app.workspace.iterateLeaves(leaf => {
       leafCount++;
-      // return true;
     }, this.rootSplit);
     if (leafCount === 0) {
       this.hide(); // close if we have no leaves
@@ -899,24 +905,10 @@ export class HoverEditor extends nosuper(HoverPopover) {
     // will call us again when it finishes.
     if (this.opening) return;
 
-    // This is responsible for closing any child popovers when a parent popover is closed
-    // it must run before the detach leaves logic below, otherwise the targetEls will no longer exist
-    // currently it will only close descendants that are not pinned
-    HoverEditor.activePopovers()
-      .filter(popover => {
-        if (popover.targetEl && !popover.isPinned) {
-          return this.hoverEl.contains(popover.targetEl);
-        }
-        return false;
-      })
-      .forEach(popover => {
-        return popover.hide();
-      });
-
     const leaves = this.leaves();
     if (leaves.length) {
       // Detach all leaves before we unload the popover and remove it from the DOM.
-      // Each leaf.detach() will trigger layout-changed
+      // Each leaf.detach() will trigger layout-changed and the updateLeaves()
       // method will then call hide() again when the last one is gone.
       leaves.forEach(leaf => leaf.detach());
     } else {
@@ -1251,9 +1243,9 @@ function overlaps(rect1?: DOMRect, rect2?: DOMRect) {
   return !!(
     rect1 &&
     rect2 &&
-    rect1.right >= rect2.left &&
-    rect1.left <= rect2.right &&
-    rect1.bottom >= rect2.top &&
-    rect1.top <= rect2.bottom
+    rect1.right > rect2.left &&
+    rect1.left < rect2.right &&
+    rect1.bottom > rect2.top &&
+    rect1.top < rect2.bottom
   );
 }
