@@ -20,6 +20,7 @@ import {
   Workspace,
   WorkspaceLeaf,
   WorkspaceSplit,
+  EmptyView,
 } from "obsidian";
 
 import HoverEditorPlugin, { genId } from "./main";
@@ -960,6 +961,12 @@ export class HoverEditor extends nosuper(HoverPopover) {
       this.displayCreateFileAction(linkText, sourcePath, eState);
       return;
     }
+    const {viewRegistry} = this.plugin.app;
+    const viewType = viewRegistry.typeByExtension[file.extension];
+    if (!viewType || !viewRegistry.viewByType[viewType]) {
+      this.displayOpenFileAction(file);
+      return;
+    }
     eState = Object.assign(this.buildEphemeralState(file, link), eState);
     const parentMode = this.getDefaultMode();
     const state = this.buildState(parentMode, eState);
@@ -991,12 +998,27 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
   }
 
+  displayOpenFileAction(file: TFile) {
+    const leaf = this.attachLeaf();
+    const view = leaf.view! as EmptyView;
+    view.emptyTitleEl.hide();
+    view.actionListEl.empty();
+    const {actionListEl} = view;
+    actionListEl.createDiv({cls: "file-embed-title"}, (div) => {
+        div.createSpan({cls: "file-embed-icon"}, (span) => setIcon(span, "document", 22));
+        div.appendText(" " + file.name);
+    });
+    actionListEl.addEventListener("click", () => this.plugin.app.openWithDefaultApp(file.path));
+    actionListEl.setAttribute("aria-label", i18next.t("interface.embed-open-in-default-app-tooltip"));
+  }
+
   displayCreateFileAction(linkText: string, sourcePath: string, eState?: EphemeralState) {
     const leaf = this.attachLeaf();
-    if (leaf?.view?.emptyTitleEl) {
-      leaf.view.emptyTitleEl?.hide();
-      leaf.view.actionListEl?.empty();
-      const createEl = leaf.view.actionListEl?.createEl("button", "empty-state-action");
+    const view = leaf.view as EmptyView;
+    if (view) {
+      view.emptyTitleEl?.hide();
+      view.actionListEl?.empty();
+      const createEl = view.actionListEl?.createEl("button", "empty-state-action");
       if (!createEl) return;
       createEl.textContent = `${linkText} is not yet created. Click to create.`;
       if (this.plugin.settings.autoFocus) {
