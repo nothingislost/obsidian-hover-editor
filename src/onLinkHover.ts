@@ -18,7 +18,8 @@ export function onLinkHover(
     prevPopover &&
     prevPopover.state !== PopoverState.Hidden &&
     prevPopover.targetEl !== null &&
-    prevPopover.targetEl === targetEl;
+    targetEl &&
+    prevPopover.adopt(targetEl);
 
   if (!parentHasExistingPopover) {
     const editor = new HoverEditor(parent, targetEl, plugin, plugin.settings.triggerDelay);
@@ -32,9 +33,9 @@ export function onLinkHover(
 
     const onMouseDown = function (event: MouseEvent) {
       if (!editor) return;
-      if (!editor.activeMenu && event.target instanceof HTMLElement && !event.target.closest(".hover-editor")) {
+      if (event.target instanceof HTMLElement && !event.target.closest(".hover-editor, .menu")) {
         editor.state = PopoverState.Hidden;
-        editor.explicitHide();
+        editor.hide();
         editor.lockedOut = true;
         setTimeout(unlock, 1000);
       }

@@ -17,7 +17,7 @@ import {
 } from "obsidian";
 
 import { onLinkHover } from "./onLinkHover";
-import { HoverEditorParent, HoverEditor, isHoverLeaf } from "./popover";
+import { HoverEditorParent, HoverEditor, isHoverLeaf, setMouseCoords } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
 
 export default class HoverEditorPlugin extends Plugin {
@@ -36,7 +36,6 @@ export default class HoverEditorPlugin extends Plugin {
     this.patchQuickSwitcher();
     this.patchWorkspaceLeaf();
     this.patchItemView();
-    this.patchMenu();
 
     await this.loadSettings();
     this.registerSettingsTab();
@@ -130,28 +129,6 @@ export default class HoverEditorPlugin extends Plugin {
             return false;
           });
           return result;
-        };
-      },
-    });
-    this.register(uninstaller);
-  }
-
-  patchMenu() {
-    const plugin = this;
-    const uninstaller = around(Menu.prototype, {
-      onload(old) {
-        return function (...args: unknown[]) {
-          plugin.activePopovers.forEach(popover => {
-            if (!popover.isPinned && !popover.activeMenu) {
-              popover.activeMenu = this;
-              this.register(() => {
-                setTimeout(() => {
-                  if (popover.activeMenu === this) popover.activeMenu = undefined;
-                }, 10);
-              });
-            }
-          });
-          return old.call(this, ...args);
         };
       },
     });
@@ -258,6 +235,12 @@ export default class HoverEditorPlugin extends Plugin {
     const pagePreviewPlugin = this.app.internalPlugins.plugins["page-preview"];
     if (!pagePreviewPlugin.enabled) return;
     const uninstaller = around(pagePreviewPlugin.instance.constructor.prototype, {
+      onHoverLink(old: Function) {
+        return function (options: { event: MouseEvent }, ...args: unknown[]) {
+          if (options && options.event instanceof MouseEvent) setMouseCoords(options.event);
+          return old.call(this, options, ...args);
+        };
+      },
       onLinkHover(old: Function) {
         return function (
           parent: HoverEditorParent,
@@ -288,14 +271,6 @@ export default class HoverEditorPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf) => {
         const popover = leaf ? HoverEditor.forLeaf(leaf) : undefined;
-        if (source === "pane-more-options" && popover) {
-          popover.activeMenu = menu;
-          menu.hideCallback = function () {
-            setTimeout(() => {
-              if (popover?.activeMenu === menu) popover.activeMenu = undefined;
-            }, 1000);
-          };
-        }
         if (file instanceof TFile && !popover && !leaf) {
           menu.addItem(item => {
             item
@@ -411,7 +386,7 @@ export default class HoverEditorPlugin extends Plugin {
   }
 
   onunload(): void {
-    HoverEditor.activePopovers().forEach(popover => popover.explicitHide());
+    HoverEditor.activePopovers().forEach(popover => popover.hide());
   }
 
   async loadSettings() {
