@@ -3,6 +3,8 @@ import { EphemeralState, PopoverState } from "obsidian";
 import HoverEditorPlugin from "./main";
 import { HoverEditorParent, HoverEditor } from "./popover";
 
+const targetPops = new WeakMap<HTMLElement, HoverEditor>();
+
 export function onLinkHover(
   plugin: HoverEditorPlugin,
   parent: HoverEditorParent,
@@ -12,17 +14,33 @@ export function onLinkHover(
   oldState: EphemeralState,
   ...args: unknown[]
 ) {
-  const prevPopover = parent.hoverPopover;
+  // Tweak the targetEl for calendar to point to the table cell instead of the actual day,
+  // so the link won't be broken when the day div is recreated by calendar refreshing
+  if (
+    targetEl &&
+    targetEl.matches('.workspace-leaf-content[data-type="calendar"] table.calendar td > div')
+  )
+    targetEl = targetEl.parentElement!;
+
+  const prevPopover = targetPops.has(targetEl) ? targetPops.get(targetEl) : parent.hoverPopover;
   if (prevPopover?.lockedOut) return;
+
   const parentHasExistingPopover =
     prevPopover &&
     prevPopover.state !== PopoverState.Hidden &&
     prevPopover.targetEl !== null &&
+    prevPopover.originalLinkText === linkText &&
+    prevPopover.originalPath === path &&
     targetEl &&
     prevPopover.adopt(targetEl);
 
-  if (!parentHasExistingPopover) {
+  if (parentHasExistingPopover) {
+    targetPops.set(targetEl, prevPopover);
+  } else {
     const editor = new HoverEditor(parent, targetEl, plugin, plugin.settings.triggerDelay);
+    if (targetEl) targetPops.set(targetEl, editor);
+    editor.originalLinkText = linkText;
+    editor.originalPath = path;
     parent.hoverPopover = editor;
     const controller = (editor.abortController = new AbortController());
 

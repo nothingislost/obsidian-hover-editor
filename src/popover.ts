@@ -110,6 +110,9 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   boundOnZoomOut: () => void;
 
+  originalPath: string; // these are kept to avoid adopting targets w/a different link
+  originalLinkText: string;
+
   static activePopovers() {
     return document.body
       .findAll(".hover-popover")
