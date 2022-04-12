@@ -28,6 +28,8 @@ export function onLinkHover(
   const parentHasExistingPopover =
     prevPopover &&
     prevPopover.state !== PopoverState.Hidden &&
+    // Don't keep the old popover if manually pinned (so you can tear off multiples)
+    (!prevPopover.isPinned || plugin.settings.autoPin === "always") &&
     prevPopover.targetEl !== null &&
     prevPopover.originalLinkText === linkText &&
     prevPopover.originalPath === path &&
