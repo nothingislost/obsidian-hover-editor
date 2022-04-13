@@ -20,6 +20,7 @@ import {
   Workspace,
   WorkspaceLeaf,
   WorkspaceSplit,
+  EmptyView,
 } from "obsidian";
 
 import HoverEditorPlugin, { genId } from "./main";
@@ -68,7 +69,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   lockedOut: boolean;
 
-  abortController?: AbortController;
+  abortController? = this.addChild(new Component());
 
   detaching = false;
 
@@ -155,6 +156,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     const hoverEl = (this.hoverEl = createDiv({ cls: "popover hover-popover", attr: { id: "he" + this.id } }));
     this.onMouseIn = this._onMouseIn.bind(this);
     this.onMouseOut = this._onMouseOut.bind(this);
+    this.abortController!.load();
 
     if (targetEl) {
       targetEl.addEventListener("mouseover", this.onMouseIn);
@@ -258,7 +260,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     if (value === undefined) {
       value = !this.isPinned;
     }
-    if (value) this.abortController?.abort();
+    if (value) this.abortController?.unload();
     this.hoverEl.toggleClass("is-pinned", value);
     this.pinEl.toggleClass("is-active", value);
     this.isPinned = value;
@@ -917,7 +919,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     } else {
       this.parent = null;
       if (this.interact?.unset) this.interact.unset();
-      this.abortController?.abort();
+      this.abortController?.unload();
       this.abortController = undefined;
       this.interact = undefined;
       return this.nativeHide();
@@ -959,6 +961,12 @@ export class HoverEditor extends nosuper(HoverPopover) {
       this.displayCreateFileAction(linkText, sourcePath, eState);
       return;
     }
+    const { viewRegistry } = this.plugin.app;
+    const viewType = viewRegistry.typeByExtension[file.extension];
+    if (!viewType || !viewRegistry.viewByType[viewType]) {
+      this.displayOpenFileAction(file);
+      return;
+    }
     eState = Object.assign(this.buildEphemeralState(file, link), eState);
     const parentMode = this.getDefaultMode();
     const state = this.buildState(parentMode, eState);
@@ -990,12 +998,27 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
   }
 
+  displayOpenFileAction(file: TFile) {
+    const leaf = this.attachLeaf();
+    const view = leaf.view! as EmptyView;
+    view.emptyTitleEl.hide();
+    view.actionListEl.empty();
+    const { actionListEl } = view;
+    actionListEl.createDiv({ cls: "file-embed-title" }, div => {
+      div.createSpan({ cls: "file-embed-icon" }, span => setIcon(span, "document", 22));
+      div.appendText(" " + file.name);
+    });
+    actionListEl.addEventListener("click", () => this.plugin.app.openWithDefaultApp(file.path));
+    actionListEl.setAttribute("aria-label", i18next.t("interface.embed-open-in-default-app-tooltip"));
+  }
+
   displayCreateFileAction(linkText: string, sourcePath: string, eState?: EphemeralState) {
     const leaf = this.attachLeaf();
-    if (leaf?.view?.emptyTitleEl) {
-      leaf.view.emptyTitleEl?.hide();
-      leaf.view.actionListEl?.empty();
-      const createEl = leaf.view.actionListEl?.createEl("button", "empty-state-action");
+    const view = leaf.view as EmptyView;
+    if (view) {
+      view.emptyTitleEl?.hide();
+      view.actionListEl?.empty();
+      const createEl = view.actionListEl?.createEl("button", "empty-state-action");
       if (!createEl) return;
       createEl.textContent = `${linkText} is not yet created. Click to create.`;
       if (this.plugin.settings.autoFocus) {

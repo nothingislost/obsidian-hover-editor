@@ -35,6 +35,12 @@ interface QuickSwitcherPlugin extends InternalPlugin {
   };
 }
 
+declare global {
+  const i18next: {
+    t(id: string): string;
+  };
+}
+
 declare module "obsidian" {
   interface App {
     internalPlugins: {
@@ -52,6 +58,12 @@ declare module "obsidian" {
       getPlugin(id: "calendar"): CalendarPlugin;
     };
     dom: { appContainerEl: HTMLElement };
+    viewRegistry: ViewRegistry;
+    openWithDefaultApp(path: string): void;
+  }
+  interface ViewRegistry {
+    typeByExtension: Record<string, string>; // file extensions to view types
+    viewByType: Record<string, (leaf: WorkspaceLeaf) => View>; // file extensions to view types
   }
   interface CalendarPlugin {
     view: View;
@@ -95,7 +107,6 @@ declare module "obsidian" {
   }
   interface View {
     iconEl: HTMLElement;
-    actionListEl?: HTMLElement;
     file: TFile;
     setMode(mode: MarkdownSubView): Promise<void>;
     followLinkUnderCursor(newLeaf: boolean): void;
@@ -103,8 +114,13 @@ declare module "obsidian" {
     getMode(): string;
     headerEl: HTMLElement;
     contentEl: HTMLElement;
-    emptyTitleEl?: HTMLElement;
   }
+
+  interface EmptyView extends View {
+    actionListEl: HTMLElement;
+    emptyTitleEl: HTMLElement;
+  }
+
   interface FileManager {
     createNewMarkdownFile(folder: TFolder, fileName: string): Promise<TFile>;
   }
