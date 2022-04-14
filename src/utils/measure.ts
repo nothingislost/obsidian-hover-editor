@@ -7,7 +7,7 @@ export function calculateOffsets() {
   const appContainerEl = document.body.querySelector(".app-container") as HTMLElement;
   const leftRibbonEl = document.body.querySelector(".mod-left.workspace-ribbon") as HTMLElement;
   const titlebarHeight = appContainerEl.offsetTop;
-  const ribbonWidth = document.body.hasClass("hider-ribbon") ? 0 : leftRibbonEl.offsetWidth;
+  const ribbonWidth = document.body.hasClass("hider-ribbon") ? 0 : leftRibbonEl ? leftRibbonEl.offsetWidth : 0;
   return { top: titlebarHeight, left: ribbonWidth };
 }
 
