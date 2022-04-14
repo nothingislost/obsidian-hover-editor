@@ -151,6 +151,14 @@ export default class HoverEditorPlugin extends Plugin {
                   if (this.leaf?.getViewState) newLeaf.setViewState(this.leaf.getViewState());
                 });
             });
+            menu.addItem(item => {
+              item
+                .setIcon("popup-open")
+                .setTitle("Convert to Hover Editor")
+                .onClick(() => {
+                  plugin.convertLeafToPopover(this.leaf);
+                });
+            });
           }
           return old.call(this, menu, ...args);
         };
@@ -409,7 +417,7 @@ export default class HoverEditorPlugin extends Plugin {
     });
     this.addCommand({
       id: "open-new-popover",
-      name: "Open new popover",
+      name: "Open new Hover Editor",
       callback: () => {
         // Focus the leaf after it's shown
         const newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
@@ -417,7 +425,7 @@ export default class HoverEditorPlugin extends Plugin {
     });
     this.addCommand({
       id: "open-link-in-new-popover",
-      name: "Open link under cursor in new popover",
+      name: "Open link under cursor in new Hover Editor",
       checkCallback: (checking: boolean) => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView) {
@@ -437,7 +445,7 @@ export default class HoverEditorPlugin extends Plugin {
     });
     this.addCommand({
       id: "open-current-file-in-new-popover",
-      name: "Open current file in new popover",
+      name: "Open current file in new Hover Editor",
       checkCallback: (checking: boolean) => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView) {
@@ -450,6 +458,31 @@ export default class HoverEditorPlugin extends Plugin {
         return false;
       },
     });
+    this.addCommand({
+      id: "convert-active-pane-to-popover",
+      name: "Convert active pane to Hover Editor",
+      checkCallback: (checking: boolean) => {
+        const { activeLeaf } = this.app.workspace;
+        if (activeLeaf) {
+          if (!checking) {
+            this.convertLeafToPopover(activeLeaf);
+          }
+          return true;
+        }
+        return false;
+      },
+    });
+  }
+
+  convertLeafToPopover(oldLeaf: WorkspaceLeaf) {
+    const newLeaf = this.spawnPopover(undefined, () => {
+      const { parentSplit: newParentSplit } = newLeaf;
+      const { parentSplit: oldParentSplit } = oldLeaf;
+      oldParentSplit.removeChild(oldLeaf);
+      newParentSplit.replaceChild(0, oldLeaf, true);
+      this.app.workspace.setActiveLeaf(oldLeaf, false, true);
+    });
+    return newLeaf;
   }
 
   spawnPopover(initiatingEl?: HTMLElement, onShowCallback?: () => unknown): WorkspaceLeaf {

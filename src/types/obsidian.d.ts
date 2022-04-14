@@ -68,8 +68,10 @@ declare module "obsidian" {
   interface CalendarPlugin {
     view: View;
   }
-  interface WorkspaceSplit {
+  interface WorkspaceParent {
     insertChild(index: number, leaf: WorkspaceLeaf, resize?: boolean): void;
+    replaceChild(index: number, leaf: WorkspaceLeaf, resize?: boolean): void;
+    removeChild(leaf: WorkspaceLeaf, resize?: boolean): void;
     containerEl: HTMLElement;
   }
   interface MarkdownView {
