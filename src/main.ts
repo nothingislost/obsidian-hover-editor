@@ -159,6 +159,15 @@ export default class HoverEditorPlugin extends Plugin {
                   plugin.convertLeafToPopover(this.leaf);
                 });
             });
+          } else {
+            menu.addItem(item => {
+              item
+                .setIcon("popup-open")
+                .setTitle("Dock Hover Editor to workspace")
+                .onClick(() => {
+                  plugin.dockPopoverToWorkspace(this.leaf);
+                });
+            });
           }
           return old.call(this, menu, ...args);
         };
@@ -472,9 +481,24 @@ export default class HoverEditorPlugin extends Plugin {
         return false;
       },
     });
+    this.addCommand({
+      id: "dock-active-popover-to-workspace",
+      name: "Dock active Hover Editor to workspace",
+      checkCallback: (checking: boolean) => {
+        const { activeLeaf } = this.app.workspace;
+        if (activeLeaf && HoverEditor.forLeaf(activeLeaf)) {
+          if (!checking) {
+            this.dockPopoverToWorkspace(activeLeaf);
+          }
+          return true;
+        }
+        return false;
+      },
+    });
   }
 
   convertLeafToPopover(oldLeaf: WorkspaceLeaf) {
+    if (!oldLeaf) return;
     const newLeaf = this.spawnPopover(undefined, () => {
       const { parentSplit: newParentSplit } = newLeaf;
       const { parentSplit: oldParentSplit } = oldLeaf;
@@ -483,6 +507,13 @@ export default class HoverEditorPlugin extends Plugin {
       this.app.workspace.setActiveLeaf(oldLeaf, false, true);
     });
     return newLeaf;
+  }
+
+  dockPopoverToWorkspace(oldLeaf: WorkspaceLeaf) {
+    if (!oldLeaf) return;
+    oldLeaf.parentSplit.removeChild(oldLeaf);
+    this.app.workspace.rootSplit.insertChild(-1, oldLeaf);
+    return oldLeaf;
   }
 
   spawnPopover(initiatingEl?: HTMLElement, onShowCallback?: () => unknown): WorkspaceLeaf {
