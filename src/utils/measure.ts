@@ -22,12 +22,14 @@ export function getOrigDimensions(el: HTMLElement) {
   return { height, width, top, left };
 }
 
-export function restoreDimentions(el: HTMLElement) {
+export function restoreDimentions(el: HTMLElement, retain?: boolean) {
   const { height, width, top, left } = getOrigDimensions(el);
-  el.removeAttribute("data-orig-width");
-  el.removeAttribute("data-orig-height");
-  el.removeAttribute("data-orig-pos-left");
-  el.removeAttribute("data-orig-pos-top");
+  if (!retain) {
+    el.removeAttribute("data-orig-width");
+    el.removeAttribute("data-orig-height");
+    el.removeAttribute("data-orig-pos-left");
+    el.removeAttribute("data-orig-pos-top");
+  }
   if (width) {
     el.style.width = width + "px";
   }
@@ -183,6 +185,8 @@ export const snapActivePopover = (direction: string, checking?: boolean) => {
     if (!checking) {
       if (!hasStoredDimensions(popover)) {
         storeDimensions(popover);
+      } else {
+        restoreDimentions(popover, true);
       }
       popover.removeClasses(["snap-to-left", "snap-to-right", "snap-to-viewport"]);
       const offset = calculateOffsets();
