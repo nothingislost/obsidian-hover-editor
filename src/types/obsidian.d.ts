@@ -80,6 +80,9 @@ declare module "obsidian" {
   interface MarkdownEditView {
     editorEl: HTMLElement;
   }
+  class MarkdownPreviewRendererStatic extends MarkdownPreviewRenderer {
+    static registerDomEvents(el: HTMLElement, handlerInstance: unknown, cb: (el: HTMLElement) => unknown): void;
+  }
   interface WorkspaceLeaf {
     openLinkText(linkText: string, path: string, state?: unknown): Promise<void>;
     updateHeader(): void;
@@ -153,6 +156,9 @@ declare module "obsidian" {
     eState?: EphemeralState;
     state?: { mode: string };
     active?: boolean;
+  }
+  interface HoverParent {
+    source?: string;
   }
   interface HoverPopover {
     parent: HoverEditorParent | null;

@@ -3,7 +3,10 @@ import {
   App,
   debounce,
   EphemeralState,
+  HoverParent,
   ItemView,
+  MarkdownPreviewRenderer,
+  MarkdownPreviewRendererStatic,
   MarkdownView,
   Menu,
   Platform,
@@ -37,6 +40,7 @@ export default class HoverEditorPlugin extends Plugin {
     this.patchQuickSwitcher();
     this.patchWorkspaceLeaf();
     this.patchItemView();
+    this.patchMarkdownPreviewRenderer();
 
     await this.loadSettings();
     this.registerSettingsTab();
@@ -171,6 +175,33 @@ export default class HoverEditorPlugin extends Plugin {
             });
           }
           return old.call(this, menu, ...args);
+        };
+      },
+    });
+    this.register(uninstaller);
+  }
+
+  patchMarkdownPreviewRenderer() {
+    const uninstaller = around(MarkdownPreviewRenderer as MarkdownPreviewRendererStatic, {
+      registerDomEvents(old: Function) {
+        return function (
+          el: HTMLElement,
+          instance: { app: App; getFile(): TFile; hoverParent: HoverParent },
+          ...args: unknown[]
+        ) {
+          el.on("mouseover", ".internal-embed.is-loaded", (event: MouseEvent, targetEl: HTMLElement) => {
+            if (targetEl) {
+              instance.app.workspace.trigger("hover-link", {
+                event: event,
+                source: instance.hoverParent.source === "source" ? "editor" : "preview",
+                hoverParent: instance.hoverParent,
+                targetEl: targetEl,
+                linktext: targetEl.getAttribute("src"),
+                sourcePath: instance.getFile()?.path || "",
+              });
+            }
+          });
+          return old.call(this, el, instance, ...args);
         };
       },
     });
