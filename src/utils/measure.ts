@@ -1,4 +1,5 @@
 import { InteractEvent } from "@interactjs/types";
+import { HoverEditor } from "src/popover";
 
 const SNAP_DISTANCE = 10;
 const UNSNAP_THRESHOLD = 60;
@@ -71,6 +72,15 @@ export function storeDimensions(el: HTMLElement) {
   if (!el.hasAttribute("data-orig-pos-top")) {
     el.setAttribute("data-orig-pos-top", String(parseFloat(el.style.top)));
   }
+}
+
+export function hasStoredDimensions(el: HTMLElement) {
+  return (
+    el.hasAttribute("data-orig-width") &&
+    el.hasAttribute("data-orig-height") &&
+    el.hasAttribute("data-orig-pos-left") &&
+    el.hasAttribute("data-orig-pos-top")
+  );
 }
 
 function calculatePointerPosition(event: InteractEvent) {
@@ -164,3 +174,47 @@ export function dragMoveListener(event: InteractEvent) {
   target.setAttribute("data-x", String(x));
   target.setAttribute("data-y", String(y));
 }
+
+export const snapDirections = ["left", "right", "viewport"];
+
+export const snapActivePopover = (direction: string, checking?: boolean) => {
+  const popover = document.body.querySelector(".hover-editor.is-active");
+  if (popover && popover instanceof HTMLElement) {
+    if (!checking) {
+      if (!hasStoredDimensions(popover)) {
+        storeDimensions(popover);
+      }
+      popover.removeClasses(["snap-to-left", "snap-to-right", "snap-to-viewport"]);
+      const offset = calculateOffsets();
+      snapToEdge(popover, direction, offset);
+    }
+    return true;
+  }
+  return false;
+};
+
+export const restoreActivePopover = (checking?: boolean) => {
+  const popover = document.body.querySelector(".hover-editor.is-active");
+  if (popover && popover instanceof HTMLElement) {
+    if (!checking) {
+      if (hasStoredDimensions(popover)) {
+        popover.removeClasses(["snap-to-left", "snap-to-right", "snap-to-viewport"]);
+        restoreDimentions(popover);
+      }
+    }
+    return true;
+  }
+  return false;
+};
+
+export const minimizeActivePopover = (checking?: boolean) => {
+  const popover = document.body.querySelector(".hover-editor.is-active");
+  const he = HoverEditor.activePopovers().find(he => he.hoverEl === popover);
+  if (he) {
+    if (!checking) {
+      he.toggleMinimized();
+    }
+    return true;
+  }
+  return false;
+};

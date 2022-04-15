@@ -19,6 +19,7 @@ import {
 import { onLinkHover } from "./onLinkHover";
 import { HoverEditorParent, HoverEditor, isHoverLeaf, setMouseCoords } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
+import { snapActivePopover, snapDirections, restoreActivePopover, minimizeActivePopover } from "./utils/measure";
 
 export default class HoverEditorPlugin extends Plugin {
   settings: HoverEditorSettings;
@@ -494,6 +495,29 @@ export default class HoverEditorPlugin extends Plugin {
         }
         return false;
       },
+    });
+    this.addCommand({
+      id: `restore-active-popover`,
+      name: `Restore active Hover Editor`,
+      checkCallback: (checking: boolean) => {
+        return restoreActivePopover(checking);
+      },
+    });
+    this.addCommand({
+      id: `minimize-active-popover`,
+      name: `Minimize active Hover Editor`,
+      checkCallback: (checking: boolean) => {
+        return minimizeActivePopover(checking);
+      },
+    });
+    snapDirections.forEach(direction => {
+      this.addCommand({
+        id: `snap-active-popover-to-${direction}`,
+        name: `Snap active Hover Editor to ${direction}`,
+        checkCallback: (checking: boolean) => {
+          return snapActivePopover(direction, checking);
+        },
+      });
     });
   }
 
