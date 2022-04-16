@@ -193,7 +193,7 @@ export default class HoverEditorPlugin extends Plugin {
             if (targetEl) {
               instance.app.workspace.trigger("hover-link", {
                 event: event,
-                source: instance.hoverParent.source === "source" ? "editor" : "preview",
+                source: instance.hoverParent.type === "source" ? "editor" : "preview",
                 hoverParent: instance.hoverParent,
                 targetEl: targetEl,
                 linktext: targetEl.getAttribute("src"),

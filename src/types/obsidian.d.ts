@@ -158,7 +158,7 @@ declare module "obsidian" {
     active?: boolean;
   }
   interface HoverParent {
-    source?: string;
+    type?: string;
   }
   interface HoverPopover {
     parent: HoverEditorParent | null;
