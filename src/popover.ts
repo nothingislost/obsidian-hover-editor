@@ -950,10 +950,10 @@ export class HoverEditor extends nosuper(HoverPopover) {
     return tFile;
   }
 
-  async openLink(linkText: string, sourcePath: string, eState?: EphemeralState, autoCreate?: boolean) {
+  async openLink(linkText: string, sourcePath: string, eState?: EphemeralState, createInLeaf?: WorkspaceLeaf) {
     let file = this.resolveLink(linkText, sourcePath);
     const link = parseLinktext(linkText);
-    if (!file && autoCreate) {
+    if (!file && createInLeaf) {
       const folder = this.plugin.app.fileManager.getNewFileParent(sourcePath);
       file = await this.plugin.app.fileManager.createNewMarkdownFile(folder, link.path);
     }
@@ -970,7 +970,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     eState = Object.assign(this.buildEphemeralState(file, link), eState);
     const parentMode = this.getDefaultMode();
     const state = this.buildState(parentMode, eState);
-    const leaf = await this.openFile(file, state);
+    const leaf = await this.openFile(file, state, createInLeaf);
     const leafViewType = leaf?.view?.getViewType();
     if (leafViewType === "image") {
       // TODO: temporary workaround to prevent image popover from disappearing immediately when using live preview
@@ -1030,16 +1030,16 @@ export class HoverEditor extends nosuper(HoverPopover) {
         "click",
         async () => {
           this.togglePin(true);
-          await this.openLink(linkText, sourcePath, eState, true);
+          await this.openLink(linkText, sourcePath, eState, leaf);
         },
         { once: true },
       );
     }
   }
 
-  async openFile(file: TFile, openState?: OpenViewState) {
+  async openFile(file: TFile, openState?: OpenViewState, useLeaf?: WorkspaceLeaf) {
     if (this.detaching) return;
-    const leaf = this.attachLeaf();
+    const leaf = useLeaf ?? this.attachLeaf();
     this.opening = true;
     try {
       await leaf.openFile(file, openState);
