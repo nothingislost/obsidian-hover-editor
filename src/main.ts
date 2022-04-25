@@ -209,7 +209,19 @@ export default class HoverEditorPlugin extends Plugin {
   }
 
   patchWorkspace() {
+    let layoutChanging = false;
     const uninstaller = around(Workspace.prototype, {
+      changeLayout(old) {
+        return async function (workspace: unknown) {
+          layoutChanging = true;
+          try {
+            // Don't consider hover popovers part of the workspace while it's changing
+            await old.call(this, workspace);
+          } finally {
+            layoutChanging = false;
+          }
+        };
+      },
       recordHistory(old) {
         return function (leaf: WorkspaceLeaf, pushHistory: boolean, ...args: unknown[]) {
           const paneReliefLoaded = this.app.plugins.plugins["pane-relief"]?._loaded;
@@ -226,7 +238,7 @@ export default class HoverEditorPlugin extends Plugin {
       },
       iterateRootLeaves(old) {
         return function (callback: (leaf: WorkspaceLeaf) => unknown) {
-          return old.call(this, callback) || HoverEditor.iteratePopoverLeaves(this, callback);
+          return old.call(this, callback) || (!layoutChanging && HoverEditor.iteratePopoverLeaves(this, callback));
         };
       },
       getDropLocation(old) {
