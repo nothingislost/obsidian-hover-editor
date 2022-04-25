@@ -1,4 +1,4 @@
-import { EphemeralState, PopoverState } from "obsidian";
+import { EphemeralState, PopoverState, Platform } from "obsidian";
 
 import HoverEditorPlugin from "./main";
 import { HoverEditorParent, HoverEditor } from "./popover";
@@ -58,8 +58,26 @@ export function onLinkHover(
       }
     };
 
+    // to prevent mod based keyboard shortcuts from accidentally triggering popovers
+    const onKeyUp = function (event: KeyboardEvent) {
+      if (!editor) return;
+      const modKey = Platform.isMacOS ? "Meta" : "Control";
+      if (!editor.onHover && editor.state !== PopoverState.Shown && event.key !== modKey) {
+        editor.state = PopoverState.Hidden;
+        editor.hide();
+        editor.lockedOut = true;
+        setTimeout(unlock, 1000);
+      } else {
+        document.body.removeEventListener("keyup", onKeyUp, true);
+      }
+    };
+
     document.body.addEventListener("mousedown", onMouseDown, true);
-    controller.register(() => document.body.removeEventListener("mousedown", onMouseDown, true));
+    document.body.addEventListener("keyup", onKeyUp, true);
+    controller.register(() => {
+      document.body.removeEventListener("mousedown", onMouseDown, true);
+      document.body.removeEventListener("keyup", onKeyUp, true);
+    });
 
     setTimeout(() => {
       if (editor?.state == PopoverState.Hidden) {

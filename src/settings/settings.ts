@@ -15,6 +15,7 @@ export interface HoverEditorSettings {
   initialWidth: string;
   showViewHeader: boolean;
   imageZoom: boolean;
+  hoverEmbeds: boolean;
 }
 
 export const DEFAULT_SETTINGS: HoverEditorSettings = {
@@ -29,6 +30,7 @@ export const DEFAULT_SETTINGS: HoverEditorSettings = {
   initialWidth: "400px",
   showViewHeader: false,
   imageZoom: true,
+  hoverEmbeds: false,
 };
 
 export const modeOptions = {
@@ -74,6 +76,18 @@ export class SettingTab extends PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
+
+    new Setting(containerEl)
+      .setName("Trigger hover preview on embeds")
+      .setDesc(
+        "Allow hover preview to trigger when hovering over any type of rendered embed such as images or block references",
+      )
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.hoverEmbeds).onChange(value => {
+          this.plugin.settings.hoverEmbeds = value;
+          this.plugin.saveSettings();
+        }),
+      );
 
     new Setting(containerEl)
       .setName("Auto Focus")

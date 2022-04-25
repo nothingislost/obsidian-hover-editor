@@ -182,6 +182,7 @@ export default class HoverEditorPlugin extends Plugin {
   }
 
   patchMarkdownPreviewRenderer() {
+    const plugin = this;
     const uninstaller = around(MarkdownPreviewRenderer as MarkdownPreviewRendererStatic, {
       registerDomEvents(old: Function) {
         return function (
@@ -189,8 +190,8 @@ export default class HoverEditorPlugin extends Plugin {
           instance: { app: App; getFile(): TFile; hoverParent: HoverParent },
           ...args: unknown[]
         ) {
-          el.on("mouseover", ".internal-embed.is-loaded", (event: MouseEvent, targetEl: HTMLElement) => {
-            if (targetEl) {
+          el?.on("mouseover", ".internal-embed.is-loaded", (event: MouseEvent, targetEl: HTMLElement) => {
+            if (targetEl && plugin.settings.hoverEmbeds) {
               instance.app.workspace.trigger("hover-link", {
                 event: event,
                 source: instance.hoverParent.type === "source" ? "editor" : "preview",

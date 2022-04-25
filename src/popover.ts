@@ -884,6 +884,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   hide() {
+    console.log("hide");
     this.onTarget = this.onHover = false;
     this.isPinned = false;
     this.detaching = true;
