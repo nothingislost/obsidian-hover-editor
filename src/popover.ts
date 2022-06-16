@@ -114,6 +114,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
   originalPath: string; // these are kept to avoid adopting targets w/a different link
   originalLinkText: string;
 
+  static activePopover?: HoverEditor;
+
   static activePopovers() {
     return document.body
       .findAll(".hover-popover")

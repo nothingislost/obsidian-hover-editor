@@ -351,8 +351,8 @@ export default class HoverEditorPlugin extends Plugin {
   registerActivePopoverHandler() {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", leaf => {
-        document.querySelector("body > .popover.hover-popover.is-active")?.removeClass("is-active");
-        const hoverEditor = leaf ? HoverEditor.forLeaf(leaf) : undefined;
+        HoverEditor.activePopover?.hoverEl.removeClass("is-active");
+        const hoverEditor = (HoverEditor.activePopover = leaf ? HoverEditor.forLeaf(leaf) : undefined);
         if (hoverEditor && leaf) {
           hoverEditor.hoverEl.addClass("is-active");
           const titleEl = hoverEditor.hoverEl.querySelector(".popover-title");

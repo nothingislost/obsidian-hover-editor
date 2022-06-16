@@ -180,7 +180,7 @@ export function dragMoveListener(event: InteractEvent) {
 export const snapDirections = ["left", "right", "viewport"];
 
 export const snapActivePopover = (direction: string, checking?: boolean) => {
-  const popover = document.body.querySelector(".hover-editor.is-active");
+  const popover = HoverEditor.activePopover?.hoverEl;
   if (popover && popover instanceof HTMLElement) {
     if (!checking) {
       if (!hasStoredDimensions(popover)) {
@@ -198,7 +198,7 @@ export const snapActivePopover = (direction: string, checking?: boolean) => {
 };
 
 export const restoreActivePopover = (checking?: boolean) => {
-  const popover = document.body.querySelector(".hover-editor.is-active");
+  const popover = HoverEditor.activePopover?.hoverEl;
   if (popover && popover instanceof HTMLElement) {
     if (!checking) {
       if (hasStoredDimensions(popover)) {
@@ -212,7 +212,7 @@ export const restoreActivePopover = (checking?: boolean) => {
 };
 
 export const minimizeActivePopover = (checking?: boolean) => {
-  const popover = document.body.querySelector(".hover-editor.is-active");
+  const popover = HoverEditor.activePopover?.hoverEl;
   const he = HoverEditor.activePopovers().find(he => he.hoverEl === popover);
   if (he) {
     if (!checking) {
