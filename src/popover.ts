@@ -118,11 +118,24 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   static activePopover?: HoverEditor;
 
+  static activeWindows() {
+    const windows: Window[] = [window];
+    const { floatingSplit } = app.workspace;
+    if (floatingSplit) {
+      for (const split of floatingSplit.children) {
+        if (split.win) windows.push(split.win);
+      }
+    }
+    return windows;
+  }
+
   static activePopovers() {
-    return document.body
-      .findAll(".hover-popover")
-      .map(el => popovers.get(el)!)
-      .filter(he => he);
+    return this.activeWindows().flatMap(w =>
+      w.document.body
+        .findAll(".hover-popover")
+        .map(el => popovers.get(el)!)
+        .filter(he => he),
+    );
   }
 
   static forLeaf(leaf: WorkspaceLeaf | undefined) {
@@ -137,6 +150,11 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
     return false;
   }
+
+  hoverEl: HTMLElement = this.document.defaultView!.createDiv({
+    cls: "popover hover-popover",
+    attr: { id: "he" + this.id },
+  });
 
   constructor(
     parent: HoverEditorParent,
@@ -157,7 +175,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.parent = parent;
     this.waitTime = waitTime;
     this.state = PopoverState.Showing;
-    const hoverEl = (this.hoverEl = createDiv({ cls: "popover hover-popover", attr: { id: "he" + this.id } }));
+    const { hoverEl } = this;
     this.onMouseIn = this._onMouseIn.bind(this);
     this.onMouseOut = this._onMouseOut.bind(this);
     this.abortController!.load();
@@ -190,7 +208,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.containerEl = this.hoverEl.createDiv("popover-content");
     this.buildWindowControls();
     this.setInitialDimensions();
-    const pinEl = (this.pinEl = createEl("a", "popover-header-icon mod-pin-popover"));
+    const pinEl = (this.pinEl = this.document.defaultView!.createEl("a", "popover-header-icon mod-pin-popover"));
     this.titleEl.prepend(this.pinEl);
     pinEl.onclick = () => {
       this.togglePin();
@@ -368,7 +386,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   buildWindowControls() {
-    this.titleEl = createDiv("popover-titlebar");
+    this.titleEl = this.document.defaultView!.createDiv("popover-titlebar");
     this.titleEl.createDiv("popover-title");
     const popoverActions = this.titleEl.createDiv("popover-actions");
     const hideNavBarEl = (this.hideNavBarEl = popoverActions.createEl("a", "popover-action mod-show-navbar"));
