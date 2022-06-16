@@ -39,6 +39,10 @@ declare global {
   const i18next: {
     t(id: string): string;
   };
+  interface Window {
+    activeWindow?: Window;
+    activeDocument?: Document;
+  }
 }
 
 declare module "obsidian" {
