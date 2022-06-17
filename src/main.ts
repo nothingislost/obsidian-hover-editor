@@ -39,7 +39,12 @@ class Interactor extends PerWindowComponent<HoverEditorPlugin> {
     return interact;
   }
 
+  onload() {
+    this.win.addEventListener("resize", this.plugin.debouncedPopoverReflow);
+  }
+
   onunload() {
+    this.win.removeEventListener("resize", this.plugin.debouncedPopoverReflow);
     this.interact.removeDocument(this.win.document);
   }
 }
@@ -53,7 +58,6 @@ export default class HoverEditorPlugin extends Plugin {
   async onload() {
     this.registerActivePopoverHandler();
     this.registerFileRenameHandler();
-    this.registerViewportResizeHandler();
     this.registerContextMenuHandler();
     this.registerCommands();
     this.patchUnresolvedGraphNodeHover();
@@ -420,15 +424,6 @@ export default class HoverEditorPlugin extends Plugin {
     100,
     true,
   );
-
-  registerViewportResizeHandler() {
-    // we can't use the native obsidian onResize event because
-    // it triggers for WAY more than just a main window resize
-    window.addEventListener("resize", this.debouncedPopoverReflow);
-    this.register(() => {
-      window.removeEventListener("resize", this.debouncedPopoverReflow);
-    });
-  }
 
   patchUnresolvedGraphNodeHover() {
     const leaf = new (WorkspaceLeaf as new (app: App) => WorkspaceLeaf)(this.app);
