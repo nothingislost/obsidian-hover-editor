@@ -20,11 +20,32 @@ import {
 } from "obsidian";
 
 import { onLinkHover } from "./onLinkHover";
+import { PerWindowComponent } from "./PerWindowComponent";
 import { HoverEditorParent, HoverEditor, isHoverLeaf, setMouseCoords } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
 import { snapActivePopover, snapDirections, restoreActivePopover, minimizeActivePopover } from "./utils/measure";
+import { Scope } from "@interactjs/types";
+import interactStatic from "@nothingislost/interactjs";
+
+class Interactor extends PerWindowComponent<HoverEditorPlugin> {
+  interact = this.createInteractor();
+
+  createInteractor() {
+    if (this.win === window) return interactStatic;
+    const oldScope = (interactStatic as unknown as { scope: Scope }).scope;
+    const newScope = new (oldScope.constructor as new () => Scope)();
+    const interact = newScope.init(this.win).interactStatic;
+    for (const plugin of oldScope._plugins.list) interact.use(plugin);
+    return interact;
+  }
+
+  onunload() {
+    this.interact.removeDocument(this.win.document);
+  }
+}
 
 export default class HoverEditorPlugin extends Plugin {
+  interact = Interactor.perWindow(this, false);
   settings: HoverEditorSettings;
 
   settingsTab: SettingTab;

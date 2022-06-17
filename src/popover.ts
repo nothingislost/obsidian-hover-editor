@@ -1,7 +1,6 @@
 import type { ActionMap } from "@interactjs/core/scope";
 import type { Modifier } from "@interactjs/modifiers/base";
 import type { Interactable, InteractEvent, Interaction, ResizeEvent } from "@interactjs/types";
-import interact from "@nothingislost/interactjs";
 import { around } from "monkey-around";
 import {
   Component,
@@ -92,6 +91,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
   oldPopover = this.parent?.hoverPopover;
 
   document: Document = this.targetEl?.ownerDocument ?? window.activeDocument ?? window.document;
+
+  interactStatic = this.plugin.interact.forWindow(this.document.defaultView!).interact;
 
   constrainAspectRatio: boolean;
 
@@ -699,21 +700,21 @@ export class HoverEditor extends nosuper(HoverPopover) {
     let windowChromeHeight: number;
     const imgRatio = this.hoverEl.dataset?.imgRatio ? parseFloat(this.hoverEl.dataset?.imgRatio) : undefined;
     this.resizeModifiers = [
-      interact.modifiers.restrictEdges({
+      this.interactStatic.modifiers.restrictEdges({
         outer: viewPortBounds,
       }),
-      interact.modifiers.restrictSize({
+      this.interactStatic.modifiers.restrictSize({
         min: self.calculateMinSize.bind(this),
         max: self.calculateMaxSize.bind(this),
       }),
-      interact.modifiers.aspectRatio({
+      this.interactStatic.modifiers.aspectRatio({
         ratio: imgRatio || "preserve",
         enabled: false,
       }),
     ];
     this.dragElementRect = { top: 0, left: 1, bottom: 0, right: 0 };
     const dragModifiers = [
-      interact.modifiers.restrict({
+      this.interactStatic.modifiers.restrict({
         restriction: calculateBoundaryRestriction,
         offset: { top: 0, left: 40, bottom: 0, right: 40 },
         elementRect: this.dragElementRect,
@@ -723,7 +724,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     if (this.constrainAspectRatio && imgRatio !== undefined) {
       this.toggleConstrainAspectRatio(true, imgRatio);
     }
-    const i = interact(this.hoverEl)
+    const i = this.interactStatic(this.hoverEl)
       .preventDefault("always")
 
       .on("doubletap", this.onDoubleTap.bind(this))
