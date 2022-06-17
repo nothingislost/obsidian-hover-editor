@@ -124,13 +124,14 @@ export function dragMoveListener(event: InteractEvent) {
 
   if (this.plugin.settings.snapToEdges) {
     let offset: { top: number; left: number };
+    const document = target.ownerDocument;
 
     const insideLeftSnapTarget = event.client.x < SNAP_DISTANCE;
     const insideRightSnapTarget = event.client.x > document.body.offsetWidth - SNAP_DISTANCE;
     const insideTopSnapTarget = event.client.y < 30;
 
     if (insideLeftSnapTarget || insideRightSnapTarget || insideTopSnapTarget) {
-      offset = calculateOffsets(target.ownerDocument);
+      offset = calculateOffsets(document);
       storeDimensions(target);
     }
 
