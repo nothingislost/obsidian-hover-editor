@@ -4,8 +4,8 @@ import { HoverEditor } from "src/popover";
 const SNAP_DISTANCE = 10;
 const UNSNAP_THRESHOLD = 60;
 
-export function calculateOffsets() {
-  const appContainerEl = document.body.querySelector(".app-container") as HTMLElement;
+export function calculateOffsets(document: Document) {
+  const appContainerEl = document.body.querySelector(".app-container, .workspace-split") as HTMLElement;
   const leftRibbonEl = document.body.querySelector(".mod-left.workspace-ribbon") as HTMLElement;
   const titlebarHeight = appContainerEl.offsetTop;
   const ribbonWidth = document.body.hasClass("hider-ribbon") ? 0 : leftRibbonEl ? leftRibbonEl.offsetWidth : 0;
@@ -17,7 +17,7 @@ export function getOrigDimensions(el: HTMLElement) {
   const width = el.getAttribute("data-orig-width");
   const left = parseFloat(el.getAttribute("data-orig-pos-left") || "0");
   let top = parseFloat(el.getAttribute("data-orig-pos-top") || "0");
-  const titlebarHeight = calculateOffsets().top;
+  const titlebarHeight = calculateOffsets(el.ownerDocument).top;
   if (top < titlebarHeight) top = titlebarHeight;
   return { height, width, top, left };
 }
@@ -124,13 +124,14 @@ export function dragMoveListener(event: InteractEvent) {
 
   if (this.plugin.settings.snapToEdges) {
     let offset: { top: number; left: number };
+    const document = target.ownerDocument;
 
     const insideLeftSnapTarget = event.client.x < SNAP_DISTANCE;
     const insideRightSnapTarget = event.client.x > document.body.offsetWidth - SNAP_DISTANCE;
     const insideTopSnapTarget = event.client.y < 30;
 
     if (insideLeftSnapTarget || insideRightSnapTarget || insideTopSnapTarget) {
-      offset = calculateOffsets();
+      offset = calculateOffsets(document);
       storeDimensions(target);
     }
 
@@ -180,7 +181,7 @@ export function dragMoveListener(event: InteractEvent) {
 export const snapDirections = ["left", "right", "viewport"];
 
 export const snapActivePopover = (direction: string, checking?: boolean) => {
-  const popover = document.body.querySelector(".hover-editor.is-active");
+  const popover = HoverEditor.activePopover?.hoverEl;
   if (popover && popover instanceof HTMLElement) {
     if (!checking) {
       if (!hasStoredDimensions(popover)) {
@@ -189,7 +190,7 @@ export const snapActivePopover = (direction: string, checking?: boolean) => {
         restoreDimentions(popover, true);
       }
       popover.removeClasses(["snap-to-left", "snap-to-right", "snap-to-viewport"]);
-      const offset = calculateOffsets();
+      const offset = calculateOffsets(popover.ownerDocument);
       snapToEdge(popover, direction, offset);
     }
     return true;
@@ -198,7 +199,7 @@ export const snapActivePopover = (direction: string, checking?: boolean) => {
 };
 
 export const restoreActivePopover = (checking?: boolean) => {
-  const popover = document.body.querySelector(".hover-editor.is-active");
+  const popover = HoverEditor.activePopover?.hoverEl;
   if (popover && popover instanceof HTMLElement) {
     if (!checking) {
       if (hasStoredDimensions(popover)) {
@@ -212,7 +213,7 @@ export const restoreActivePopover = (checking?: boolean) => {
 };
 
 export const minimizeActivePopover = (checking?: boolean) => {
-  const popover = document.body.querySelector(".hover-editor.is-active");
+  const popover = HoverEditor.activePopover?.hoverEl;
   const he = HoverEditor.activePopovers().find(he => he.hoverEl === popover);
   if (he) {
     if (!checking) {

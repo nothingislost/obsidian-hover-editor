@@ -1,7 +1,6 @@
 import type { ActionMap } from "@interactjs/core/scope";
 import type { Modifier } from "@interactjs/modifiers/base";
 import type { Interactable, InteractEvent, Interaction, ResizeEvent } from "@interactjs/types";
-import interact from "@nothingislost/interactjs";
 import { around } from "monkey-around";
 import {
   Component,
@@ -91,6 +90,10 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   oldPopover = this.parent?.hoverPopover;
 
+  document: Document = this.targetEl?.ownerDocument ?? window.activeDocument ?? window.document;
+
+  interactStatic = this.plugin.interact.forWindow(this.document.defaultView!).interact;
+
   constrainAspectRatio: boolean;
 
   id = genId(8);
@@ -114,11 +117,26 @@ export class HoverEditor extends nosuper(HoverPopover) {
   originalPath: string; // these are kept to avoid adopting targets w/a different link
   originalLinkText: string;
 
+  static activePopover?: HoverEditor;
+
+  static activeWindows() {
+    const windows: Window[] = [window];
+    const { floatingSplit } = app.workspace;
+    if (floatingSplit) {
+      for (const split of floatingSplit.children) {
+        if (split.win) windows.push(split.win);
+      }
+    }
+    return windows;
+  }
+
   static activePopovers() {
-    return document.body
-      .findAll(".hover-popover")
-      .map(el => popovers.get(el)!)
-      .filter(he => he);
+    return this.activeWindows().flatMap(w =>
+      w.document.body
+        .findAll(".hover-popover")
+        .map(el => popovers.get(el)!)
+        .filter(he => he),
+    );
   }
 
   static forLeaf(leaf: WorkspaceLeaf | undefined) {
@@ -133,6 +151,11 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
     return false;
   }
+
+  hoverEl: HTMLElement = this.document.defaultView!.createDiv({
+    cls: "popover hover-popover",
+    attr: { id: "he" + this.id },
+  });
 
   constructor(
     parent: HoverEditorParent,
@@ -153,7 +176,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.parent = parent;
     this.waitTime = waitTime;
     this.state = PopoverState.Showing;
-    const hoverEl = (this.hoverEl = createDiv({ cls: "popover hover-popover", attr: { id: "he" + this.id } }));
+    const { hoverEl } = this;
     this.onMouseIn = this._onMouseIn.bind(this);
     this.onMouseOut = this._onMouseOut.bind(this);
     this.abortController!.load();
@@ -178,7 +201,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
       }
     });
     this.timer = window.setTimeout(this.show.bind(this), waitTime);
-    document.addEventListener("mousemove", setMouseCoords);
+    this.document.addEventListener("mousemove", setMouseCoords);
 
     // custom logic begin
     popovers.set(this.hoverEl, this);
@@ -186,7 +209,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.containerEl = this.hoverEl.createDiv("popover-content");
     this.buildWindowControls();
     this.setInitialDimensions();
-    const pinEl = (this.pinEl = createEl("a", "popover-header-icon mod-pin-popover"));
+    const pinEl = (this.pinEl = this.document.defaultView!.createEl("a", "popover-header-icon mod-pin-popover"));
     this.titleEl.prepend(this.pinEl);
     pinEl.onclick = () => {
       this.togglePin();
@@ -222,8 +245,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   onZoomOut() {
-    document.body.removeEventListener("mouseup", this.boundOnZoomOut);
-    document.body.removeEventListener("dragend", this.boundOnZoomOut);
+    this.document.body.removeEventListener("mouseup", this.boundOnZoomOut);
+    this.document.body.removeEventListener("dragend", this.boundOnZoomOut);
     if (this.hoverEl.hasClass("do-not-restore")) {
       this.hoverEl.removeClass("do-not-restore");
     } else {
@@ -238,13 +261,13 @@ export class HoverEditor extends nosuper(HoverPopover) {
     if (this.hoverEl.hasClass("snap-to-viewport")) {
       this.hoverEl.addClass("do-not-restore");
     }
-    document.body.addEventListener("mouseup", this.boundOnZoomOut, {
+    this.document.body.addEventListener("mouseup", this.boundOnZoomOut, {
       once: true,
     });
-    document.body.addEventListener("dragend", this.boundOnZoomOut, {
+    this.document.body.addEventListener("dragend", this.boundOnZoomOut, {
       once: true,
     });
-    const offset = calculateOffsets();
+    const offset = calculateOffsets(this.document);
     storeDimensions(this.hoverEl);
     snapToEdge(this.hoverEl, "viewport", offset);
     return false;
@@ -271,7 +294,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   updateLeaves() {
-    if (this.onTarget && this.targetEl && !document.contains(this.targetEl)) {
+    if (this.onTarget && this.targetEl && !this.document.contains(this.targetEl)) {
       this.onTarget = false;
       this.transition();
     }
@@ -364,7 +387,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   buildWindowControls() {
-    this.titleEl = createDiv("popover-titlebar");
+    this.titleEl = this.document.defaultView!.createDiv("popover-titlebar");
     this.titleEl.createDiv("popover-title");
     const popoverActions = this.titleEl.createDiv("popover-actions");
     const hideNavBarEl = (this.hideNavBarEl = popoverActions.createEl("a", "popover-action mod-show-navbar"));
@@ -390,7 +413,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
         return;
       }
       setIcon(maxEl, "minimize", 14);
-      const offset = calculateOffsets();
+      const offset = calculateOffsets(this.document);
       storeDimensions(this.hoverEl);
       snapToEdge(this.hoverEl, "viewport", offset);
     });
@@ -424,7 +447,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
     this.hoverEl.toggleClass("is-new", true);
 
-    document.body.addEventListener(
+    this.document.body.addEventListener(
       "click",
       () => {
         this.hoverEl.toggleClass("is-new", false);
@@ -471,12 +494,12 @@ export class HoverEditor extends nosuper(HoverPopover) {
     const y = parseFloat(this.hoverEl.style.top);
     const width = parseFloat(this.hoverEl.style.width);
     const height = parseFloat(this.hoverEl.style.height);
-    if (x <= 0 || x + width >= document.body.offsetWidth) {
+    if (x <= 0 || x + width >= this.document.body.offsetWidth) {
       this.xspeed *= -1;
       this.pickColor();
     }
 
-    if (y <= 0 || y + height >= document.body.offsetHeight) {
+    if (y <= 0 || y + height >= this.document.body.offsetHeight) {
       this.yspeed *= -1;
       this.pickColor();
     }
@@ -563,7 +586,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
         right: pos.x,
       };
     } else if (this.targetEl) {
-      const relativePos = getRelativePos(this.targetEl, document.body);
+      const relativePos = getRelativePos(this.targetEl, this.document.body);
       rect = {
         top: relativePos.top,
         bottom: relativePos.top + this.targetEl.offsetHeight,
@@ -579,10 +602,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
       };
     }
 
-    document.body.appendChild(this.hoverEl);
-    positionEl(rect, this.hoverEl, {
-      gap: 10,
-    });
+    this.document.body.appendChild(this.hoverEl);
+    positionEl(rect, this.hoverEl, { gap: 10 }, this.document);
 
     // custom hover editor logic
     if (pos) {
@@ -618,7 +639,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
         this.onTarget ||
         this.onHover ||
         (this.state == PopoverState.Shown && this.isPinned) ||
-        document.querySelector(`body>.modal-container, body > #he${this.id} ~ .menu`)
+        this.document.querySelector(`body>.modal-container, body > #he${this.id} ~ .menu`)
       )
     );
   }
@@ -628,8 +649,10 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   calculateMaxSize(x: number, y: number, interaction: Interaction<keyof ActionMap>) {
-    const width = interaction.pointerType === "reflow" ? document.body.offsetWidth / 1.5 : document.body.offsetWidth;
-    const height = interaction.pointerType === "reflow" ? document.body.offsetHeight / 1.5 : document.body.offsetHeight;
+    const width =
+      interaction.pointerType === "reflow" ? this.document.body.offsetWidth / 1.5 : this.document.body.offsetWidth;
+    const height =
+      interaction.pointerType === "reflow" ? this.document.body.offsetHeight / 1.5 : this.document.body.offsetHeight;
     return { width: width, height: height };
   }
 
@@ -650,7 +673,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   registerInteract() {
-    const viewPortBounds = this.plugin.app.dom.appContainerEl;
+    const viewPortBounds: HTMLElement = this.document.querySelector("div.app-container, div.workspace-split")!;
     const self = this;
     const calculateBoundaryRestriction = function (
       eventX: number,
@@ -677,21 +700,21 @@ export class HoverEditor extends nosuper(HoverPopover) {
     let windowChromeHeight: number;
     const imgRatio = this.hoverEl.dataset?.imgRatio ? parseFloat(this.hoverEl.dataset?.imgRatio) : undefined;
     this.resizeModifiers = [
-      interact.modifiers.restrictEdges({
+      this.interactStatic.modifiers.restrictEdges({
         outer: viewPortBounds,
       }),
-      interact.modifiers.restrictSize({
+      this.interactStatic.modifiers.restrictSize({
         min: self.calculateMinSize.bind(this),
         max: self.calculateMaxSize.bind(this),
       }),
-      interact.modifiers.aspectRatio({
+      this.interactStatic.modifiers.aspectRatio({
         ratio: imgRatio || "preserve",
         enabled: false,
       }),
     ];
     this.dragElementRect = { top: 0, left: 1, bottom: 0, right: 0 };
     const dragModifiers = [
-      interact.modifiers.restrict({
+      this.interactStatic.modifiers.restrict({
         restriction: calculateBoundaryRestriction,
         offset: { top: 0, left: 40, bottom: 0, right: 40 },
         elementRect: this.dragElementRect,
@@ -701,7 +724,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     if (this.constrainAspectRatio && imgRatio !== undefined) {
       this.toggleConstrainAspectRatio(true, imgRatio);
     }
-    const i = interact(this.hoverEl)
+    const i = this.interactStatic(this.hoverEl)
       .preventDefault("always")
 
       .on("doubletap", this.onDoubleTap.bind(this))
@@ -794,7 +817,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
                 x = String(parseFloat(target.style.left));
               }
             } else {
-              if (imgRatio && height > document.body.offsetHeight) {
+              if (imgRatio && height > this.document.body.offsetHeight) {
                 height = height / 1.5;
                 width = height * imgRatio;
               }
@@ -845,12 +868,12 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   show() {
     // native obsidian logic start
-    if (!this.targetEl || document.body.contains(this.targetEl)) {
+    if (!this.targetEl || this.document.body.contains(this.targetEl)) {
       this.state = PopoverState.Shown;
       this.timer = 0;
       this.shownPos = mouseCoords;
       this.position(mouseCoords);
-      document.removeEventListener("mousemove", setMouseCoords);
+      this.document.removeEventListener("mousemove", setMouseCoords);
       this.onShow();
       // initializingHoverPopovers.remove(this);
       // activeHoverPopovers.push(this);
@@ -890,7 +913,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     // Once we reach this point, we're committed to closing
 
     // in case we didn't ever call show()
-    document.removeEventListener("mousemove", setMouseCoords);
+    this.document.removeEventListener("mousemove", setMouseCoords);
 
     // A timer might be pending to call show() for the first time, make sure
     // it doesn't bring us back up after we close
@@ -1142,7 +1165,8 @@ export function isHoverLeaf(leaf: WorkspaceLeaf) {
 export function positionEl(
   rect: { top: number; bottom: number; left: number; right: number },
   el: HTMLElement,
-  options?: { gap?: number; preference?: string; offsetParent?: HTMLElement; horizontalAlignment?: string },
+  options: { gap?: number; preference?: string; offsetParent?: HTMLElement; horizontalAlignment?: string },
+  document: Document,
 ) {
   options = options || {};
   el.show();

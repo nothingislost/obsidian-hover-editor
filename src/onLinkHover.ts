@@ -58,6 +58,8 @@ export function onLinkHover(
       }
     };
 
+    const { document } = editor;
+
     // to prevent mod based keyboard shortcuts from accidentally triggering popovers
     const onKeyUp = function (event: KeyboardEvent) {
       if (!editor) return;

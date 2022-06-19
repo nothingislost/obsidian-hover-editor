@@ -20,11 +20,37 @@ import {
 } from "obsidian";
 
 import { onLinkHover } from "./onLinkHover";
+import { PerWindowComponent } from "./PerWindowComponent";
 import { HoverEditorParent, HoverEditor, isHoverLeaf, setMouseCoords } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
 import { snapActivePopover, snapDirections, restoreActivePopover, minimizeActivePopover } from "./utils/measure";
+import { Scope } from "@interactjs/types";
+import interactStatic from "@nothingislost/interactjs";
+
+class Interactor extends PerWindowComponent<HoverEditorPlugin> {
+  interact = this.createInteractor();
+
+  createInteractor() {
+    if (this.win === window) return interactStatic;
+    const oldScope = (interactStatic as unknown as { scope: Scope }).scope;
+    const newScope = new (oldScope.constructor as new () => Scope)();
+    const interact = newScope.init(this.win).interactStatic;
+    for (const plugin of oldScope._plugins.list) interact.use(plugin);
+    return interact;
+  }
+
+  onload() {
+    this.win.addEventListener("resize", this.plugin.debouncedPopoverReflow);
+  }
+
+  onunload() {
+    this.win.removeEventListener("resize", this.plugin.debouncedPopoverReflow);
+    this.interact.removeDocument(this.win.document);
+  }
+}
 
 export default class HoverEditorPlugin extends Plugin {
+  interact = Interactor.perWindow(this, false);
   settings: HoverEditorSettings;
 
   settingsTab: SettingTab;
@@ -32,7 +58,6 @@ export default class HoverEditorPlugin extends Plugin {
   async onload() {
     this.registerActivePopoverHandler();
     this.registerFileRenameHandler();
-    this.registerViewportResizeHandler();
     this.registerContextMenuHandler();
     this.registerCommands();
     this.patchUnresolvedGraphNodeHover();
@@ -351,8 +376,8 @@ export default class HoverEditorPlugin extends Plugin {
   registerActivePopoverHandler() {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", leaf => {
-        document.querySelector("body > .popover.hover-popover.is-active")?.removeClass("is-active");
-        const hoverEditor = leaf ? HoverEditor.forLeaf(leaf) : undefined;
+        HoverEditor.activePopover?.hoverEl.removeClass("is-active");
+        const hoverEditor = (HoverEditor.activePopover = leaf ? HoverEditor.forLeaf(leaf) : undefined);
         if (hoverEditor && leaf) {
           hoverEditor.hoverEl.addClass("is-active");
           const titleEl = hoverEditor.hoverEl.querySelector(".popover-title");
@@ -399,15 +424,6 @@ export default class HoverEditorPlugin extends Plugin {
     100,
     true,
   );
-
-  registerViewportResizeHandler() {
-    // we can't use the native obsidian onResize event because
-    // it triggers for WAY more than just a main window resize
-    window.addEventListener("resize", this.debouncedPopoverReflow);
-    this.register(() => {
-      window.removeEventListener("resize", this.debouncedPopoverReflow);
-    });
-  }
 
   patchUnresolvedGraphNodeHover() {
     const leaf = new (WorkspaceLeaf as new (app: App) => WorkspaceLeaf)(this.app);
