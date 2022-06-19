@@ -92,7 +92,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   document: Document = this.targetEl?.ownerDocument ?? window.activeDocument ?? window.document;
 
-  interactStatic = this.plugin.interact.forWindow(this.document.defaultView!).interact;
+  interactStatic = this.plugin.interact.forDom(this.document).interact;
 
   constrainAspectRatio: boolean;
 
@@ -132,8 +132,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   static activePopovers() {
     return this.activeWindows().flatMap(w =>
-      w.document.body
-        .findAll(".hover-popover")
+      // Emulate findAll() since this can be called during setActiveLeaf events and the new window doesn't have the enhance.js API yet
+      (Array.prototype.slice.call(w.document.body.querySelectorAll(".hover-popover")) as HTMLElement[])
         .map(el => popovers.get(el)!)
         .filter(he => he),
     );

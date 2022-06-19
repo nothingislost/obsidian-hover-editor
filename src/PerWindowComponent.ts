@@ -136,7 +136,7 @@ export class WindowManager<T extends PerWindowComponent<P>, P extends Plugin> ex
 }
 
 export function windowForDom(el: Node) {
-  return (el instanceof Document ? el : el.ownerDocument!).defaultView!;
+  return (el.ownerDocument || <Document>el).defaultView!;
 }
 
 declare global {
