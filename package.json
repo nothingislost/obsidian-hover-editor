@@ -13,7 +13,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@codemirror/view": "^0.19.47",
+    "@codemirror/view": "^6.0.0",
     "@interactjs/types": "^1.10.11",
     "@nothingislost/interactjs": "^1.10.11",
     "@types/node": "^16.11.6",
@@ -28,7 +28,7 @@
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "eslint-plugin-prettier": "^4.0.0",
     "monkey-around": "^2.2.0",
-    "obsidian": "^0.14.4",
+    "obsidian": "^0.15.1",
     "parse-unit": "^1.0.1",
     "prettier": "^2.6.2",
     "tslib": "2.3.1",

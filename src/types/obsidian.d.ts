@@ -40,8 +40,8 @@ declare global {
     t(id: string): string;
   };
   interface Window {
-    activeWindow?: Window;
-    activeDocument?: Document;
+    activeWindow: Window;
+    activeDocument: Document;
   }
 }
 
@@ -155,11 +155,6 @@ declare module "obsidian" {
     startLoc?: Loc;
     endLoc?: Loc;
     scroll?: number;
-  }
-  interface OpenViewState {
-    eState?: EphemeralState;
-    state?: { mode: string };
-    active?: boolean;
   }
   interface HoverParent {
     type?: string;
