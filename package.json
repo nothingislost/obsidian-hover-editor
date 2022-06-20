@@ -1,6 +1,6 @@
 {
   "name": "obsidian-hover-editor",
-  "version": "0.6.0",
+  "version": "0.10.0",
   "description": "Transform the Page Preview hover popover into a fully working editor instance",
   "main": "main.js",
   "scripts": {
