@@ -260,6 +260,7 @@ export default class HoverEditorPlugin extends Plugin {
           this.iterateRootLeaves(cb);
           this.iterateLeaves(cb, this.leftSplit);
           this.iterateLeaves(cb, this.rightSplit);
+          if (this.floatingSplit) this.iterateLeaves(cb, this.floatingSplit);
         };
       },
       iterateRootLeaves(old) {
