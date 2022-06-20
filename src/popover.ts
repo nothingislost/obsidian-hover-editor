@@ -141,7 +141,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   static forLeaf(leaf: WorkspaceLeaf | undefined) {
     // leaf can be null such as when right clicking on an internal link
-    const el = leaf?.containerEl.matchParent(".hover-popover");
+    const el = leaf && document.body.matchParent.call(leaf.containerEl, ".hover-popover"); // work around matchParent race condition
     return el ? popovers.get(el) : undefined;
   }
 
