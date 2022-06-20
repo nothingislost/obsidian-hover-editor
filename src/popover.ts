@@ -648,6 +648,12 @@ export class HoverEditor extends nosuper(HoverPopover) {
     return { width: 40, height: this.headerHeight };
   }
 
+  calculateBoundaries(x: number, y: number, interaction: Interaction<keyof ActionMap>) {
+    const bodyEl = interaction.element.closest("body");
+    const boundaryEl = bodyEl?.querySelector(".workspace") || bodyEl?.querySelector(".workspace-window");
+    return boundaryEl?.getBoundingClientRect();
+  }
+
   calculateMaxSize(x: number, y: number, interaction: Interaction<keyof ActionMap>) {
     const width =
       interaction.pointerType === "reflow" ? this.document.body.offsetWidth / 1.5 : this.document.body.offsetWidth;
@@ -701,7 +707,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     const imgRatio = this.hoverEl.dataset?.imgRatio ? parseFloat(this.hoverEl.dataset?.imgRatio) : undefined;
     this.resizeModifiers = [
       this.interactStatic.modifiers.restrictEdges({
-        outer: viewPortBounds,
+        outer: self.calculateBoundaries.bind(this),
       }),
       this.interactStatic.modifiers.restrictSize({
         min: self.calculateMinSize.bind(this),
