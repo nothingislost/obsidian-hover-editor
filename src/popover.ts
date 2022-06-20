@@ -1152,7 +1152,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
 }
 
 export function isHoverLeaf(leaf: WorkspaceLeaf) {
-  return !!HoverEditor.forLeaf(leaf);
+  // Work around missing enhance.js API by checking match condition instead of looking up parent
+  return leaf.containerEl.matches(".popover.hover-popover.hover-editor .workspace-leaf");
 }
 
 /**
