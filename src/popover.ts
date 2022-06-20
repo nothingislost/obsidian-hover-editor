@@ -92,7 +92,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   document: Document = this.targetEl?.ownerDocument ?? window.activeDocument ?? window.document;
 
-  interactStatic = this.plugin.interact.forWindow(this.document.defaultView!).interact;
+  interactStatic = this.plugin.interact.forDom(this.document).interact;
 
   constrainAspectRatio: boolean;
 
@@ -132,8 +132,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   static activePopovers() {
     return this.activeWindows().flatMap(w =>
-      w.document.body
-        .findAll(".hover-popover")
+      // Emulate findAll() since this can be called during setActiveLeaf events and the new window doesn't have the enhance.js API yet
+      (Array.prototype.slice.call(w.document.body.querySelectorAll(".hover-popover")) as HTMLElement[])
         .map(el => popovers.get(el)!)
         .filter(he => he),
     );
@@ -141,7 +141,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   static forLeaf(leaf: WorkspaceLeaf | undefined) {
     // leaf can be null such as when right clicking on an internal link
-    const el = leaf?.containerEl.matchParent(".hover-popover");
+    const el = leaf && document.body.matchParent.call(leaf.containerEl, ".hover-popover"); // work around matchParent race condition
     return el ? popovers.get(el) : undefined;
   }
 
@@ -1151,7 +1151,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
 }
 
 export function isHoverLeaf(leaf: WorkspaceLeaf) {
-  return !!HoverEditor.forLeaf(leaf);
+  // Work around missing enhance.js API by checking match condition instead of looking up parent
+  return leaf.containerEl.matches(".popover.hover-popover.hover-editor .workspace-leaf");
 }
 
 /**
