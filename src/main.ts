@@ -12,6 +12,7 @@ import {
   Platform,
   Plugin,
   PopoverState,
+  requireApiVersion,
   TAbstractFile,
   TFile,
   ViewState,
@@ -272,7 +273,15 @@ export default class HoverEditorPlugin extends Plugin {
         return function getDropLocation(event: MouseEvent) {
           for (const popover of HoverEditor.activePopovers()) {
             const dropLoc = this.recursiveGetTarget(event, popover.rootSplit);
-            if (dropLoc) return { target: dropLoc, sidedock: false };
+            if (dropLoc) {
+              if (requireApiVersion && requireApiVersion("0.15.3")) {
+                // getDropLocation's return signature changed in 0.15.3
+                // it now only returns the target
+                return dropLoc;
+              } else {
+                return { target: dropLoc, sidedock: false };
+              }
+            }
           }
           return old.call(this, event);
         };
