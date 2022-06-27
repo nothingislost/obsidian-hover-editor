@@ -15,6 +15,7 @@ import {
   requireApiVersion,
   TAbstractFile,
   TFile,
+  View,
   ViewState,
   Workspace,
   WorkspaceLeaf,
@@ -46,7 +47,12 @@ class Interactor extends PerWindowComponent<HoverEditorPlugin> {
 
   onunload() {
     this.win.removeEventListener("resize", this.plugin.debouncedPopoverReflow);
-    this.interact.removeDocument(this.win.document);
+    try { this.interact.removeDocument(this.win.document); }
+    catch (e) {
+      // Sometimes, interact.removeDocument fails when the plugin unloads in 0.14.x:
+      // Don't let it stop the plugin from fully unloading
+      console.error(e);
+    }
   }
 }
 
@@ -168,8 +174,10 @@ export default class HoverEditorPlugin extends Plugin {
 
   patchItemView() {
     const plugin = this;
-    const uninstaller = around(ItemView.prototype, {
-      onMoreOptionsMenu(old) {
+    // Once 0.15.3+ is min. required Obsidian, this can be simplified to View + "onPaneMenu"
+    const [cls, method] = View.prototype.onPaneMenu ? [View, "onPaneMenu"] : [ItemView, "onMoreOptionsMenu"];
+    const uninstaller = around(cls.prototype, {
+      [method](old: (menu: Menu, ...args: unknown[]) => void) {
         return function (menu: Menu, ...args: unknown[]) {
           const popover = this.leaf ? HoverEditor.forLeaf(this.leaf) : undefined;
           if (!popover) {
@@ -180,7 +188,8 @@ export default class HoverEditorPlugin extends Plugin {
                 .onClick(() => {
                   const newLeaf = plugin.spawnPopover();
                   if (this.leaf?.getViewState) newLeaf.setViewState(this.leaf.getViewState());
-                });
+                })
+                .setSection?.("open");
             });
             menu.addItem(item => {
               item
@@ -188,7 +197,8 @@ export default class HoverEditorPlugin extends Plugin {
                 .setTitle("Convert to Hover Editor")
                 .onClick(() => {
                   plugin.convertLeafToPopover(this.leaf);
-                });
+                })
+                .setSection?.("open");
             });
           } else {
             menu.addItem(item => {
@@ -197,7 +207,8 @@ export default class HoverEditorPlugin extends Plugin {
                 .setTitle("Dock Hover Editor to workspace")
                 .onClick(() => {
                   plugin.dockPopoverToWorkspace(this.leaf);
-                });
+                })
+                .setSection?.("open");
             });
           }
           return old.call(this, menu, ...args);
@@ -376,7 +387,8 @@ export default class HoverEditorPlugin extends Plugin {
               .onClick(() => {
                 const newLeaf = this.spawnPopover();
                 newLeaf.openFile(file);
-              });
+              })
+              .setSection?.("open");
           });
         }
       }),
