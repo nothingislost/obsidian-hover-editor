@@ -123,7 +123,7 @@ declare module "obsidian" {
     getMode(): string;
     headerEl: HTMLElement;
     contentEl: HTMLElement;
-    onPaneMenu?(menu: Menu, source: 'more-options' | 'tab-header' | string): void
+    onPaneMenu?(menu: Menu, source: "more-options" | "tab-header" | string): void;
   }
 
   interface EmptyView extends View {
@@ -148,7 +148,7 @@ declare module "obsidian" {
   interface MenuItem {
     iconEl: HTMLElement;
     dom: HTMLElement;
-    setSection?(section: string): this
+    setSection?(section: string): this;
   }
   interface EphemeralState {
     focus?: boolean;

@@ -47,8 +47,9 @@ class Interactor extends PerWindowComponent<HoverEditorPlugin> {
 
   onunload() {
     this.win.removeEventListener("resize", this.plugin.debouncedPopoverReflow);
-    try { this.interact.removeDocument(this.win.document); }
-    catch (e) {
+    try {
+      this.interact.removeDocument(this.win.document);
+    } catch (e) {
       // Sometimes, interact.removeDocument fails when the plugin unloads in 0.14.x:
       // Don't let it stop the plugin from fully unloading
       console.error(e);

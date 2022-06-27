@@ -66,7 +66,7 @@ export class WindowManager<T extends PerWindowComponent<P>, P extends Plugin> ex
                   const result = old!.call(this);
                   // Handle both sync and async versions of openPopout; sync version needs a
                   // microtask delay in any case
-                  Promise.resolve(result).then((popoutSplit) => self.forWindow(popoutSplit.win));
+                  Promise.resolve(result).then(popoutSplit => self.forWindow(popoutSplit.win));
                   return result;
                 };
               },
