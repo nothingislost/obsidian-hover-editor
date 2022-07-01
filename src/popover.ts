@@ -881,6 +881,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
       this.position(mouseCoords);
       this.document.removeEventListener("mousemove", setMouseCoords);
       this.onShow();
+      app.workspace.onLayoutChange();
       // initializingHoverPopovers.remove(this);
       // activeHoverPopovers.push(this);
       // initializePopoverChecker();
