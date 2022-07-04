@@ -827,7 +827,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
                 x = String(parseFloat(target.style.left));
               }
             } else {
-              if (imgRatio && height > this.document.body.offsetHeight) {
+              if (imgRatio && height > this?.document?.body.offsetHeight) {
                 height = height / 1.5;
                 width = height * imgRatio;
               }
