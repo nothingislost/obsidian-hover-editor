@@ -643,7 +643,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
         this.onTarget ||
         this.onHover ||
         (this.state == PopoverState.Shown && this.isPinned) ||
-        this.document.querySelector(`body>.modal-container, body > #he${this.id} ~ .menu`)
+        this.document.querySelector(`body>.modal-container, body > #he${this.id} ~ .menu, body > #he${this.id} ~ .suggestion-container`)
       )
     );
   }
