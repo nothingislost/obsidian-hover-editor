@@ -87,6 +87,13 @@ declare module "obsidian" {
   class MarkdownPreviewRendererStatic extends MarkdownPreviewRenderer {
     static registerDomEvents(el: HTMLElement, handlerInstance: unknown, cb: (el: HTMLElement) => unknown): void;
   }
+  export class WorkspaceContainer extends WorkspaceSplit {
+    constructor(ws: Workspace, direction: "horizontal"|"vertical", id?: string)
+    /** @public */
+    win: Window;
+    /** @public */
+    doc: Document;
+  }
   interface WorkspaceLeaf {
     openLinkText(linkText: string, path: string, state?: unknown): Promise<void>;
     updateHeader(): void;

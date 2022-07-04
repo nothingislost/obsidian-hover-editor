@@ -19,6 +19,7 @@ import {
   Workspace,
   WorkspaceLeaf,
   WorkspaceSplit,
+  WorkspaceContainer,
   EmptyView,
 } from "obsidian";
 
@@ -39,7 +40,7 @@ export interface HoverEditorParent {
   view?: View;
   dom?: HTMLElement;
 }
-type ConstructableWorkspaceSplit = new (ws: Workspace, dir: string) => WorkspaceSplit;
+type ConstructableWorkspaceSplit = new (ws: Workspace, dir: "horizontal"|"vertical") => WorkspaceContainer | WorkspaceSplit;
 
 let mouseCoords: MousePos = { x: 0, y: 0 };
 
@@ -74,7 +75,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   opening = false;
 
-  rootSplit: WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(window.app.workspace, "vertical");
+  rootSplit: WorkspaceSplit = new (WorkspaceContainer ?? WorkspaceSplit as ConstructableWorkspaceSplit)(window.app.workspace, "vertical");
 
   targetRect = this.targetEl?.getBoundingClientRect();
 
@@ -180,6 +181,9 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.onMouseIn = this._onMouseIn.bind(this);
     this.onMouseOut = this._onMouseOut.bind(this);
     this.abortController!.load();
+
+    (this.rootSplit as WorkspaceContainer).doc = this.document;
+    (this.rootSplit as WorkspaceContainer).win = this.document.defaultView!;
 
     if (targetEl) {
       targetEl.addEventListener("mouseover", this.onMouseIn);
