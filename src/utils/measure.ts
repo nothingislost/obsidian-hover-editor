@@ -1,5 +1,6 @@
 import { InteractEvent } from "@interactjs/types";
 import { HoverEditor } from "src/popover";
+import { isA } from "./misc";
 
 const SNAP_DISTANCE = 10;
 const UNSNAP_THRESHOLD = 60;
@@ -182,7 +183,7 @@ export const snapDirections = ["left", "right", "viewport"];
 
 export const snapActivePopover = (direction: string, checking?: boolean) => {
   const popover = HoverEditor.activePopover?.hoverEl;
-  if (popover && popover instanceof HTMLElement) {
+  if (popover && isA(popover, HTMLElement)) {
     if (!checking) {
       if (!hasStoredDimensions(popover)) {
         storeDimensions(popover);
@@ -200,7 +201,7 @@ export const snapActivePopover = (direction: string, checking?: boolean) => {
 
 export const restoreActivePopover = (checking?: boolean) => {
   const popover = HoverEditor.activePopover?.hoverEl;
-  if (popover && popover instanceof HTMLElement) {
+  if (popover && isA(popover, HTMLElement)) {
     if (!checking) {
       if (hasStoredDimensions(popover)) {
         popover.removeClasses(["snap-to-left", "snap-to-right", "snap-to-viewport"]);

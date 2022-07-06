@@ -28,6 +28,7 @@ import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/se
 import { snapActivePopover, snapDirections, restoreActivePopover, minimizeActivePopover } from "./utils/measure";
 import { Scope } from "@interactjs/types";
 import interactStatic from "@nothingislost/interactjs";
+import { isA } from "./utils/misc";
 
 class Interactor extends PerWindowComponent<HoverEditorPlugin> {
   interact = this.createInteractor();
@@ -346,7 +347,7 @@ export default class HoverEditorPlugin extends Plugin {
     const uninstaller = around(pagePreviewPlugin.instance.constructor.prototype, {
       onHoverLink(old: Function) {
         return function (options: { event: MouseEvent }, ...args: unknown[]) {
-          if (options && options.event instanceof MouseEvent) setMouseCoords(options.event);
+          if (options && isA(options.event, MouseEvent)) setMouseCoords(options.event);
           return old.call(this, options, ...args);
         };
       },
@@ -458,7 +459,7 @@ export default class HoverEditorPlugin extends Plugin {
       onNodeHover(old: Function) {
         return function (event: UIEvent, linkText: string, nodeType: string, ...items: unknown[]) {
           if (nodeType === "unresolved") {
-            if ((this.onNodeUnhover(), event instanceof MouseEvent)) {
+            if ((this.onNodeUnhover(), isA(event, MouseEvent))) {
               if (
                 this.hoverPopover &&
                 this.hoverPopover.state !== PopoverState.Hidden &&

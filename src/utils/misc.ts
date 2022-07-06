@@ -17,3 +17,11 @@ export function parseCssUnitValue(value: string) {
     return undefined;
   }
 }
+
+/**
+ * Window-safe 'instanceof' replacement for Event and DOM class checks
+ * (Compatibility wrapper for Obsidian 0.14.x: can be replaced with plain `.instanceOf()` later)
+ */
+export function isA<T>(el: unknown, cls: new (...args: unknown[]) => T): el is T {
+  return el instanceof cls || (el as { instanceOf(cls: new () => T): boolean })?.instanceOf?.(cls);
+}

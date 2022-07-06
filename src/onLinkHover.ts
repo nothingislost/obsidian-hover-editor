@@ -2,6 +2,7 @@ import { EphemeralState, PopoverState, Platform } from "obsidian";
 
 import HoverEditorPlugin from "./main";
 import { HoverEditorParent, HoverEditor } from "./popover";
+import { isA } from "./utils/misc";
 
 const targetPops = new WeakMap<HTMLElement, HoverEditor>();
 
@@ -50,7 +51,7 @@ export function onLinkHover(
 
     const onMouseDown = function (event: MouseEvent) {
       if (!editor) return;
-      if (event.target instanceof HTMLElement && !event.target.closest(".hover-editor, .menu")) {
+      if (isA(event.target, HTMLElement) && !event.target.closest(".hover-editor, .menu")) {
         editor.state = PopoverState.Hidden;
         editor.hide();
         editor.lockedOut = true;

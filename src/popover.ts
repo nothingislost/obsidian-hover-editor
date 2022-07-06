@@ -32,6 +32,7 @@ import {
   expandContract,
   dragMoveListener,
 } from "./utils/measure";
+import { isA } from "./utils/misc";
 
 const popovers = new WeakMap<Element, HoverEditor>();
 export interface HoverEditorParent {
@@ -750,12 +751,12 @@ export class HoverEditor extends nosuper(HoverPopover) {
             // only auto pin if the drag with user initiated
             // this avoids a reflow causing an auto pin
             if (event.buttons) self.togglePin(true);
-            if (event.buttons && event.target instanceof HTMLElement) {
+            if (event.buttons && isA(event.target, HTMLElement)) {
               event.target.addClass("is-dragging");
             }
           },
           end(event: DragEvent) {
-            if (event.target instanceof HTMLElement) {
+            if (isA(event.target, HTMLElement)) {
               event.target.removeClass("is-dragging");
             }
           },
@@ -1298,7 +1299,7 @@ export function setMouseCoords(event: MouseEvent) {
 
 function mouseIsOffTarget(event: MouseEvent, el: Element) {
   const relatedTarget = event.relatedTarget;
-  return !(relatedTarget instanceof Node && el.contains(relatedTarget));
+  return !(isA(relatedTarget, Node) && el.contains(relatedTarget));
 }
 
 function overlaps(rect1?: DOMRect, rect2?: DOMRect) {
