@@ -41,7 +41,7 @@ export interface HoverEditorParent {
   view?: View;
   dom?: HTMLElement;
 }
-type ConstructableWorkspaceSplit = new (ws: Workspace, dir: "horizontal"|"vertical") => WorkspaceContainer | WorkspaceSplit;
+type ConstructableWorkspaceSplit = new (ws: Workspace, dir: "horizontal"|"vertical") => WorkspaceSplit;
 
 let mouseCoords: MousePos = { x: 0, y: 0 };
 
@@ -76,7 +76,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   opening = false;
 
-  rootSplit: WorkspaceSplit = new (WorkspaceContainer ?? WorkspaceSplit as ConstructableWorkspaceSplit)(window.app.workspace, "vertical");
+  rootSplit: WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(window.app.workspace, "vertical");
 
   targetRect = this.targetEl?.getBoundingClientRect();
 
@@ -132,13 +132,22 @@ export class HoverEditor extends nosuper(HoverPopover) {
     return windows;
   }
 
+  static containerForDocument(doc: Document) {
+    if (doc !== document && app.workspace.floatingSplit)
+      for (const container of app.workspace.floatingSplit.children) {
+        if (container.doc === document) return container;
+      }
+    return app.workspace.rootSplit;
+  }
+
   static activePopovers() {
-    return this.activeWindows().flatMap(w =>
-      // Emulate findAll() since this can be called during setActiveLeaf events and the new window doesn't have the enhance.js API yet
-      (Array.prototype.slice.call(w.document.body.querySelectorAll(".hover-popover")) as HTMLElement[])
-        .map(el => popovers.get(el)!)
-        .filter(he => he),
-    );
+    return this.activeWindows().flatMap(this.popoversForWindow);
+  }
+
+  static popoversForWindow(win: Window) {
+    return (Array.prototype.slice.call(win.document?.body.querySelectorAll(".hover-popover")) as HTMLElement[])
+    .map(el => popovers.get(el)!)
+    .filter(he => he);
   }
 
   static forLeaf(leaf: WorkspaceLeaf | undefined) {
@@ -147,7 +156,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     return el ? popovers.get(el) : undefined;
   }
 
-  static iteratePopoverLeaves(ws: Workspace, cb: (leaf: WorkspaceLeaf) => unknown) {
+  static iteratePopoverLeaves(ws: Workspace, cb: (leaf: WorkspaceLeaf) => boolean | void) {
     for (const popover of this.activePopovers()) {
       if (popover.rootSplit && ws.iterateLeaves(cb, popover.rootSplit)) return true;
     }
@@ -182,9 +191,6 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.onMouseIn = this._onMouseIn.bind(this);
     this.onMouseOut = this._onMouseOut.bind(this);
     this.abortController!.load();
-
-    (this.rootSplit as WorkspaceContainer).doc = this.document;
-    (this.rootSplit as WorkspaceContainer).win = this.document.defaultView!;
 
     if (targetEl) {
       targetEl.addEventListener("mouseover", this.onMouseIn);
@@ -345,6 +351,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   attachLeaf(): WorkspaceLeaf {
     this.rootSplit.getRoot = () => this.plugin.app.workspace.rootSplit;
+    this.rootSplit.getContainer = () => HoverEditor.containerForDocument(this.document);
     this.titleEl.insertAdjacentElement("afterend", this.rootSplit.containerEl);
     const leaf = this.plugin.app.workspace.createLeafInParent(this.rootSplit, 0);
     this.updateLeaves();

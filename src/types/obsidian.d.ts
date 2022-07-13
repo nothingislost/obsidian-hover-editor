@@ -87,13 +87,7 @@ declare module "obsidian" {
   class MarkdownPreviewRendererStatic extends MarkdownPreviewRenderer {
     static registerDomEvents(el: HTMLElement, handlerInstance: unknown, cb: (el: HTMLElement) => unknown): void;
   }
-  export class WorkspaceContainer extends WorkspaceSplit {
-    constructor(ws: Workspace, direction: "horizontal"|"vertical", id?: string)
-    /** @public */
-    win: Window;
-    /** @public */
-    doc: Document;
-  }
+
   interface WorkspaceLeaf {
     openLinkText(linkText: string, path: string, state?: unknown): Promise<void>;
     updateHeader(): void;
@@ -104,7 +98,8 @@ declare module "obsidian" {
   }
   interface Workspace {
     recordHistory(leaf: WorkspaceLeaf, pushHistory: boolean): void;
-    iterateLeaves(callback: (item: WorkspaceLeaf) => unknown, item: WorkspaceParent): boolean;
+    iterateLeaves(callback: (item: WorkspaceLeaf) => boolean | void, item: WorkspaceItem | WorkspaceItem[]): boolean;
+    iterateLeaves(item: WorkspaceItem | WorkspaceItem[], callback: (item: WorkspaceLeaf) => boolean | void): boolean;
     getDropLocation(event: MouseEvent): {
       target: WorkspaceItem;
       sidedock: boolean;
@@ -131,7 +126,6 @@ declare module "obsidian" {
     getMode(): string;
     headerEl: HTMLElement;
     contentEl: HTMLElement;
-    onPaneMenu?(menu: Menu, source: "more-options" | "tab-header" | string): void;
   }
 
   interface EmptyView extends View {
@@ -156,7 +150,6 @@ declare module "obsidian" {
   interface MenuItem {
     iconEl: HTMLElement;
     dom: HTMLElement;
-    setSection?(section: string): this;
   }
   interface EphemeralState {
     focus?: boolean;

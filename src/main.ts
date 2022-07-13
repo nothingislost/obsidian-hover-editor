@@ -18,6 +18,8 @@ import {
   View,
   ViewState,
   Workspace,
+  WorkspaceContainer,
+  WorkspaceItem,
   WorkspaceLeaf,
 } from "obsidian";
 
@@ -102,6 +104,13 @@ export default class HoverEditorPlugin extends Plugin {
             return top.getRoot === this.getRoot ? top : top.getRoot();
           };
         },
+        getContainer(old) {
+          return function () {
+            if (!old) return; // 0.14.x doesn't have this
+            const top = old.call(this);
+            return top.getContainer === this.getContainer ? top : top.getContainer();
+          };
+        },
         onResize(old) {
           return function () {
             this.view?.onResize();
@@ -177,7 +186,7 @@ export default class HoverEditorPlugin extends Plugin {
   patchItemView() {
     const plugin = this;
     // Once 0.15.3+ is min. required Obsidian, this can be simplified to View + "onPaneMenu"
-    const [cls, method] = View.prototype.onPaneMenu ? [View, "onPaneMenu"] : [ItemView, "onMoreOptionsMenu"];
+    const [cls, method] = View.prototype["onPaneMenu"] ? [View, "onPaneMenu"] : [ItemView, "onMoreOptionsMenu"];
     const uninstaller = around(cls.prototype, {
       [method](old: (menu: Menu, ...args: unknown[]) => void) {
         return function (menu: Menu, ...args: unknown[]) {
@@ -269,17 +278,27 @@ export default class HoverEditorPlugin extends Plugin {
           return old.call(this, leaf, pushHistory, ...args);
         };
       },
-      iterateAllLeaves(old) {
-        return function (cb) {
-          this.iterateRootLeaves(cb);
-          this.iterateLeaves(cb, this.leftSplit);
-          this.iterateLeaves(cb, this.rightSplit);
-          if (this.floatingSplit) this.iterateLeaves(cb, this.floatingSplit);
-        };
-      },
-      iterateRootLeaves(old) {
-        return function (callback: (leaf: WorkspaceLeaf) => unknown) {
-          return old.call(this, callback) || (!layoutChanging && HoverEditor.iteratePopoverLeaves(this, callback));
+      iterateLeaves(old) {
+        type leafIterator = (item: WorkspaceLeaf) => boolean | void;
+        return function (arg1, arg2) {
+          // Fast exit if desired leaf found
+          if (old.call(this, arg1, arg2)) return true;
+
+          // Handle old/new API parameter swap
+          let cb:     leafIterator  = (typeof arg1 === "function" ? arg1 : arg2) as leafIterator;
+          let parent: WorkspaceItem = (typeof arg1 === "function" ? arg2 : arg1) as WorkspaceItem;
+
+          if (!parent) return false;  // <- during app startup, rootSplit can be null
+          if (layoutChanging) return false;  // Don't let HEs close during workspace change
+
+          // 0.14.x doesn't have WorkspaceContainer; this can just be an instanceof check once 15.x is mandatory:
+          if (parent === app.workspace.rootSplit || (WorkspaceContainer && parent instanceof WorkspaceContainer)) {
+            for(const popover of HoverEditor.popoversForWindow((parent as WorkspaceContainer).win ?? window)) {
+              // Use old API here for compat w/0.14.x
+              if (old.call(this, cb, popover.rootSplit)) return true;
+            }
+          }
+          return false;
         };
       },
       getDropLocation(old) {

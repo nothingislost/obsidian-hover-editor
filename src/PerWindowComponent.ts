@@ -52,30 +52,6 @@ export class WindowManager<T extends PerWindowComponent<P>, P extends Plugin> ex
     plugin.addChild(this);
   }
 
-  onload() {
-    const { workspace } = this.plugin.app;
-    if (this.autocreate)
-      workspace.onLayoutReady(() => {
-        const self = this;
-        // Monitor new window creation
-        if (workspace.openPopout)
-          this.register(
-            around(workspace, {
-              openPopout(old) {
-                return function () {
-                  const result = old!.call(this);
-                  // Handle both sync and async versions of openPopout; sync version needs a
-                  // microtask delay in any case
-                  Promise.resolve(result).then(popoutSplit => self.forWindow(popoutSplit.win));
-                  return result;
-                };
-              },
-            }),
-          );
-        this.forAll(); // Autocreate all instances
-      });
-  }
-
   forWindow(): T;
   forWindow(win: Window): T;
   forWindow(win: Window, create: true): T;
@@ -143,9 +119,8 @@ export function windowForDom(el: Node) {
 
 declare module "obsidian" {
   interface Workspace {
-    floatingSplit?: { children: { win?: Window }[] };
+    floatingSplit?: { children: WorkspaceWindow[] };
     openPopout?(): WorkspaceSplit;
-    openPopoutLeaf?(): WorkspaceLeaf;
   }
   interface WorkspaceLeaf {
     containerEl: HTMLElement;
