@@ -350,7 +350,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   attachLeaf(): WorkspaceLeaf {
-    this.rootSplit.getRoot = () => this.plugin.app.workspace.rootSplit;
+    this.rootSplit.getRoot = () => app.workspace[this.document === document ? "rootSplit" : "floatingSplit"]!;
     this.rootSplit.getContainer = () => HoverEditor.containerForDocument(this.document);
     this.titleEl.insertAdjacentElement("afterend", this.rootSplit.containerEl);
     const leaf = this.plugin.app.workspace.createLeafInParent(this.rootSplit, 0);

@@ -119,7 +119,7 @@ export function windowForDom(el: Node) {
 
 declare module "obsidian" {
   interface Workspace {
-    floatingSplit?: { children: WorkspaceWindow[] };
+    floatingSplit?: WorkspaceParent & { children: WorkspaceWindow[] };
     openPopout?(): WorkspaceSplit;
   }
   interface WorkspaceLeaf {
