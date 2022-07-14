@@ -21,6 +21,7 @@ import {
   WorkspaceSplit,
   WorkspaceContainer,
   EmptyView,
+  MarkdownView,
 } from "obsidian";
 
 import HoverEditorPlugin, { genId } from "./main";
@@ -135,7 +136,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
   static containerForDocument(doc: Document) {
     if (doc !== document && app.workspace.floatingSplit)
       for (const container of app.workspace.floatingSplit.children) {
-        if (container.doc === document) return container;
+        if (container.doc === doc) return container;
       }
     return app.workspace.rootSplit;
   }
@@ -470,6 +471,10 @@ export class HoverEditor extends nosuper(HoverPopover) {
     if (this.parent) {
       this.parent.hoverPopover = this;
     }
+
+    // Workaround until 0.15.7
+    if (requireApiVersion("0.15.1") && !requireApiVersion("0.15.7"))
+      app.workspace.iterateLeaves(leaf => { if (leaf.view instanceof MarkdownView) (leaf.view.editMode as any).reinit?.(); }, this.rootSplit);
 
     this.togglePin(this.isPinned);
 

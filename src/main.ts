@@ -104,13 +104,6 @@ export default class HoverEditorPlugin extends Plugin {
             return top.getRoot === this.getRoot ? top : top.getRoot();
           };
         },
-        getContainer(old) {
-          return function () {
-            if (!old) return; // 0.14.x doesn't have this
-            const top = old.call(this);
-            return top.getContainer === this.getContainer ? top : top.getContainer();
-          };
-        },
         onResize(old) {
           return function () {
             this.view?.onResize();
@@ -150,6 +143,17 @@ export default class HoverEditorPlugin extends Plugin {
           };
         },
       }),
+    );
+    this.register(
+      around(WorkspaceItem.prototype, {
+        getContainer(old) {
+          return function () {
+            if (!old) return; // 0.14.x doesn't have this
+            if (!this.parentSplit || this instanceof WorkspaceContainer) return old.call(this);
+            return this.parentSplit.getContainer();
+          };
+        },
+      })
     );
   }
 
