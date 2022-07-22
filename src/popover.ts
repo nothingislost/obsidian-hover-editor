@@ -19,7 +19,6 @@ import {
   Workspace,
   WorkspaceLeaf,
   WorkspaceSplit,
-  WorkspaceContainer,
   EmptyView,
   MarkdownView,
 } from "obsidian";
@@ -1093,7 +1092,10 @@ export class HoverEditor extends nosuper(HoverPopover) {
       if (this.plugin.settings.autoFocus && !this.detaching) {
         const existingCallback = this.onShowCallback;
         this.onShowCallback = () => {
-          this.plugin.app.workspace.setActiveLeaf(leaf, false, true);
+          // Don't set focus so as not to activate the Obsidian window during unfocused mouseover
+          app.workspace.setActiveLeaf(leaf, false, false);
+          // Set only the leaf focus, rather than global focus
+          if (app.workspace.activeLeaf === leaf) leaf.setEphemeralState({focus: true});
           // Prevent this leaf's file from registering as a recent file
           // (for the quick switcher or Recent Files plugin) for the next
           // 1ms.  (They're both triggered by a file-open event that happens
@@ -1150,6 +1152,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     const defaultMode = this.plugin.settings.defaultMode;
     const mode = defaultMode === "match" ? parentMode : this.plugin.settings.defaultMode;
     return {
+      active: false, // Don't let Obsidian force focus if we have autofocus off
       state: { mode: mode },
       eState: eState,
     };
