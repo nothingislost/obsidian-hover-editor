@@ -47,7 +47,7 @@ let mouseCoords: MousePos = { x: 0, y: 0 };
 
 function nosuper<T>(base: new (...args: unknown[]) => T): new () => T {
   const derived = function () {
-    return Component.call(this);
+    return Object.setPrototypeOf(new Component, new.target.prototype);
   };
   derived.prototype = base.prototype;
   return Object.setPrototypeOf(derived, base);
