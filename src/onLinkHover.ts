@@ -75,10 +75,12 @@ export function onLinkHover(
       }
     };
 
-    document.body.addEventListener("mousedown", onMouseDown, true);
+    document.addEventListener("pointerdown", onMouseDown, true);
+    document.addEventListener("mousedown", onMouseDown, true);
     document.body.addEventListener("keyup", onKeyUp, true);
     controller.register(() => {
-      document.body.removeEventListener("mousedown", onMouseDown, true);
+      document.removeEventListener("pointerdown", onMouseDown, true);
+      document.removeEventListener("mousedown", onMouseDown, true);
       document.body.removeEventListener("keyup", onKeyUp, true);
     });
 
