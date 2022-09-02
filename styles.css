@@ -161,6 +161,13 @@ body {
   padding: 0;
   z-index: var(--he-popover-layer-inactive);
   border-radius: var(--he-popover-border-radius);
+
+  /* Prevent snagging on titlebar */
+  -webkit-app-region: no-drag;
+}
+
+.popover.hover-editor .markdown-preview-view {
+  font-size: inherit;
 }
 
 .popover.hover-editor.is-active {
