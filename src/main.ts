@@ -24,7 +24,7 @@ import {
 } from "obsidian";
 
 import { onLinkHover } from "./onLinkHover";
-import { PerWindowComponent } from "./PerWindowComponent";
+import { PerWindowComponent, use } from "@ophidian/core";
 import { HoverEditorParent, HoverEditor, isHoverLeaf, setMouseCoords } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
 import { snapActivePopover, snapDirections, restoreActivePopover, minimizeActivePopover } from "./utils/measure";
@@ -32,8 +32,9 @@ import { Scope } from "@interactjs/types";
 import interactStatic from "@nothingislost/interactjs";
 import { isA } from "./utils/misc";
 
-class Interactor extends PerWindowComponent<HoverEditorPlugin> {
+class Interactor extends PerWindowComponent {
   interact = this.createInteractor();
+  plugin = this.use(HoverEditorPlugin);
 
   createInteractor() {
     if (this.win === window) return interactStatic;
@@ -61,7 +62,8 @@ class Interactor extends PerWindowComponent<HoverEditorPlugin> {
 }
 
 export default class HoverEditorPlugin extends Plugin {
-  interact = Interactor.perWindow(this, false);
+  use = use.plugin(this);
+  interact = this.use(Interactor);
   settings: HoverEditorSettings;
 
   settingsTab: SettingTab;

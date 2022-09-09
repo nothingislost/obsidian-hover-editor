@@ -94,7 +94,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   document: Document = this.targetEl?.ownerDocument ?? window.activeDocument ?? window.document;
 
-  interactStatic = this.plugin.interact.forDom(this.document).interact;
+  interactStatic = this.plugin.interact.forDom(this.document.body).interact;
 
   constrainAspectRatio: boolean;
 
