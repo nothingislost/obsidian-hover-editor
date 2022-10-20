@@ -21,6 +21,7 @@ import {
   WorkspaceSplit,
   EmptyView,
   MarkdownView,
+  WorkspaceTabs,
 } from "obsidian";
 
 import HoverEditorPlugin, { genId } from "./main";
@@ -361,6 +362,14 @@ export class HoverEditor extends nosuper(HoverPopover) {
   onload(): void {
     super.onload();
     this.registerEvent(this.plugin.app.workspace.on("layout-change", this.updateLeaves, this));
+    this.registerEvent(app.workspace.on("layout-change", () => {
+      // Ensure that top-level items in a popover are not tabbed
+      this.rootSplit.children.forEach((item, index) => {
+        if (item instanceof WorkspaceTabs) {
+          this.rootSplit.replaceChild(index, item.children[0]);
+        }
+      })
+    }));
   }
 
   leaves() {

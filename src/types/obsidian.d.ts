@@ -73,8 +73,8 @@ declare module "obsidian" {
     view: View;
   }
   interface WorkspaceParent {
-    insertChild(index: number, leaf: WorkspaceLeaf, resize?: boolean): void;
-    replaceChild(index: number, leaf: WorkspaceLeaf, resize?: boolean): void;
+    insertChild(index: number, child: WorkspaceItem, resize?: boolean): void;
+    replaceChild(index: number, child: WorkspaceItem, resize?: boolean): void;
     removeChild(leaf: WorkspaceLeaf, resize?: boolean): void;
     containerEl: HTMLElement;
   }
@@ -91,7 +91,7 @@ declare module "obsidian" {
   interface WorkspaceLeaf {
     openLinkText(linkText: string, path: string, state?: unknown): Promise<void>;
     updateHeader(): void;
-    containerEl: HTMLElement;
+    containerEl: HTMLDivElement;
     working: boolean;
     parentSplit: WorkspaceParent;
     activeTime: number;
