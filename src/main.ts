@@ -241,18 +241,18 @@ export default class HoverEditorPlugin extends Plugin {
       registerDomEvents(old: Function) {
         return function (
           el: HTMLElement,
-          instance: { app: App; getFile(): TFile; hoverParent: HoverParent },
+          instance: { getFile?(): TFile; hoverParent?: HoverParent, info?: HoverParent & { getFile(): TFile} },
           ...args: unknown[]
         ) {
           el?.on("mouseover", ".internal-embed.is-loaded", (event: MouseEvent, targetEl: HTMLElement) => {
             if (targetEl && plugin.settings.hoverEmbeds) {
-              instance.app.workspace.trigger("hover-link", {
+              app.workspace.trigger("hover-link", {
                 event: event,
-                source: instance.hoverParent.type === "source" ? "editor" : "preview",
-                hoverParent: instance.hoverParent,
+                source: targetEl.matchParent(".markdown-source-view") ? "editor" : "preview",
+                hoverParent: instance.hoverParent ?? instance.info,
                 targetEl: targetEl,
                 linktext: targetEl.getAttribute("src"),
-                sourcePath: instance.getFile()?.path || "",
+                sourcePath: (instance.info ?? instance).getFile?.()?.path || "",
               });
             }
           });
