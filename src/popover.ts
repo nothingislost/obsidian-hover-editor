@@ -144,8 +144,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
     return this.activeWindows().flatMap(this.popoversForWindow);
   }
 
-  static popoversForWindow(win: Window) {
-    return (Array.prototype.slice.call(win.document?.body.querySelectorAll(".hover-popover")) as HTMLElement[])
+  static popoversForWindow(win?: Window) {
+    return (Array.prototype.slice.call(win?.document?.body.querySelectorAll(".hover-popover") ?? []) as HTMLElement[])
     .map(el => popovers.get(el)!)
     .filter(he => he);
   }

@@ -299,7 +299,7 @@ export default class HoverEditorPlugin extends Plugin {
 
           // 0.14.x doesn't have WorkspaceContainer; this can just be an instanceof check once 15.x is mandatory:
           if (parent === app.workspace.rootSplit || (WorkspaceContainer && parent instanceof WorkspaceContainer)) {
-            for(const popover of HoverEditor.popoversForWindow((parent as WorkspaceContainer).win ?? window)) {
+            for(const popover of HoverEditor.popoversForWindow((parent as WorkspaceContainer).win)) {
               // Use old API here for compat w/0.14.x
               if (old.call(this, cb, popover.rootSplit)) return true;
             }
