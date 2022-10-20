@@ -429,6 +429,11 @@ body {
 .popover.hover-editor .view-header {
   border-top: none;
   transition: all var(--he-popover-header-transition-speed);
+  display: flex;
+}
+
+.popover.hover-editor .view-header .view-header-icon {
+  display: flex;
 }
 
 .popover.hover-editor.show-navbar:not(.is-minimized) .popover-title {
