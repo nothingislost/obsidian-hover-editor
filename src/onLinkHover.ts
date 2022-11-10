@@ -89,6 +89,6 @@ export function onLinkHover(
         return;
       }
       editor?.openLink(linkText, path, oldState);
-    }, 100);
+    }, 0);
   }
 }
