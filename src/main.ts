@@ -21,6 +21,7 @@ import {
   WorkspaceContainer,
   WorkspaceItem,
   WorkspaceLeaf,
+  WorkspaceTabs,
 } from "obsidian";
 
 import { onLinkHover } from "./onLinkHover";
@@ -645,7 +646,12 @@ export default class HoverEditorPlugin extends Plugin {
   dockPopoverToWorkspace(oldLeaf: WorkspaceLeaf) {
     if (!oldLeaf) return;
     oldLeaf.parentSplit.removeChild(oldLeaf);
-    this.app.workspace.rootSplit.insertChild(-1, oldLeaf);
+    const {rootSplit} = this.app.workspace;
+    if (requireApiVersion("0.16.3") && rootSplit.children[0] instanceof WorkspaceTabs) {
+      rootSplit.children[0].insertChild(-1, oldLeaf);
+    } else rootSplit.insertChild(-1, oldLeaf);
+    app.workspace.activeLeaf = null;  // Force re-activation
+    app.workspace.setActiveLeaf(oldLeaf, false, true);
     return oldLeaf;
   }
 
