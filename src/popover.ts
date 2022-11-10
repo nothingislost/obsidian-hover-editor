@@ -1045,12 +1045,11 @@ export class HoverEditor extends nosuper(HoverPopover) {
       this.hoverEl.style.height = "800px";
       this.hoverEl.style.width = "600px";
     }
-    if (state.state?.mode === "source") {
-      setTimeout(() => {
-        if (this.detaching) return;
-        leaf?.view?.setEphemeralState(state.eState);
-      }, this.plugin.settings.triggerDelay);
-    }
+    if (state.state?.mode === "source") this.whenShown(() => {
+      // Not sure why this is needed, but without it we get issue #186
+      if (requireApiVersion("1.0"))(leaf?.view as any)?.editMode?.reinit?.();
+      leaf?.view?.setEphemeralState(state.eState);
+    });
   }
 
   displayOpenFileAction(file: TFile) {
@@ -1092,6 +1091,21 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
   }
 
+  whenShown(callback: () => any) {
+    // invoke callback once the popover is visible
+    if (this.detaching) return;
+    const existingCallback = this.onShowCallback;
+    this.onShowCallback = () => {
+      if (this.detaching) return;
+      callback();
+      if (typeof existingCallback === "function") existingCallback();
+    };
+    if (this.state === PopoverState.Shown) {
+      this.onShowCallback();
+      this.onShowCallback = undefined;
+    }
+  }
+
   async openFile(file: TFile, openState?: OpenViewState, useLeaf?: WorkspaceLeaf) {
     if (this.detaching) return;
     const leaf = useLeaf ?? this.attachLeaf();
@@ -1099,8 +1113,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     try {
       await leaf.openFile(file, openState);
       if (this.plugin.settings.autoFocus && !this.detaching) {
-        const existingCallback = this.onShowCallback;
-        this.onShowCallback = () => {
+        this.whenShown(() => {
           // Don't set focus so as not to activate the Obsidian window during unfocused mouseover
           app.workspace.setActiveLeaf(leaf, false, false);
           // Set only the leaf focus, rather than global focus
@@ -1136,12 +1149,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
               }),
               1,
             );
-          if (existingCallback instanceof Function) existingCallback();
-        };
-        if (this.state === PopoverState.Shown) {
-          this.onShowCallback();
-          this.onShowCallback = undefined;
-        }
+        });
       } else if (!this.plugin.settings.autoFocus && !this.detaching) {
         const titleEl = this.hoverEl.querySelector(".popover-title");
         if (!titleEl) return;
