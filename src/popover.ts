@@ -385,21 +385,21 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.hoverEl.style.width = this.plugin.settings.initialWidth;
   }
 
-  toggleViewHeader(value?: boolean) {
+  adjustHeight(byPx: number) {
+    this.hoverEl.style.height = (this.hoverEl.offsetHeight) + byPx + "px";
+  }
+
+  toggleViewHeader(value?: boolean, initial?: boolean) {
     if (value === undefined) value = !this.hoverEl.hasClass("show-navbar");
     this.hideNavBarEl?.toggleClass("is-active", value);
     this.hoverEl.toggleClass("show-navbar", value);
     const viewHeaderEl = this.hoverEl.querySelector(".view-header");
-    if (!viewHeaderEl) return;
+    if (!viewHeaderEl || initial) return;
     const calculatedViewHeaderHeight = parseFloat(
       getComputedStyle(viewHeaderEl).getPropertyValue("--he-view-header-height"),
     );
     this.hoverEl.style.transition = "height 0.2s";
-    if (value) {
-      this.hoverEl.style.height = parseFloat(this.hoverEl.style.height) + calculatedViewHeaderHeight + "px";
-    } else {
-      this.hoverEl.style.height = parseFloat(this.hoverEl.style.height) - calculatedViewHeaderHeight + "px";
-    }
+    this.adjustHeight(value ? calculatedViewHeaderHeight : -calculatedViewHeaderHeight);
     setTimeout(() => {
       this.hoverEl.style.removeProperty("transition");
     }, 200);
@@ -417,7 +417,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
       this.toggleViewHeader();
     });
     if (this.plugin.settings.showViewHeader) {
-      this.toggleViewHeader(true);
+      this.toggleViewHeader(true, true);
     }
     const minEl = popoverActions.createEl("a", "popover-action mod-minimize");
     setIcon(minEl, "minus");
@@ -864,10 +864,6 @@ export class HoverEditor extends nosuper(HoverPopover) {
             Object.assign(target.dataset, { x, y });
           },
           end: function (event: ResizeEvent) {
-            if (event.buttons === undefined) {
-              const height = parseFloat(event.target.style.height) + windowChromeHeight;
-              event.target.style.height = height + "px";
-            }
             if (event.rect.height > self.headerHeight) {
               event.target.removeAttribute("data-restore-height");
             }
