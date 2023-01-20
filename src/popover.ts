@@ -966,7 +966,11 @@ export class HoverEditor extends nosuper(HoverPopover) {
       // Detach all leaves before we unload the popover and remove it from the DOM.
       // Each leaf.detach() will trigger layout-changed and the updateLeaves()
       // method will then call hide() again when the last one is gone.
-      leaves.forEach(leaf => leaf.detach());
+      leaves.forEach(leaf => {
+        leaf.detach();
+        // Newer obsidians don't switch the active leaf until layout processing  :(
+        if (leaf === app.workspace.activeLeaf) app.workspace.activeLeaf = null;
+      });
     } else {
       this.parent = null;
       if (this.interact?.unset) this.interact.unset();
