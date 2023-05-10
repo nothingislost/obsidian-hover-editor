@@ -20,6 +20,14 @@ export function onLinkHover(
   if (targetEl && targetEl.matches('.workspace-leaf-content[data-type="calendar"] table.calendar td > div'))
     targetEl = targetEl.parentElement!;
 
+  // Workaround for bookmarks through 1.3.0
+  if (targetEl && targetEl.matches(".bookmark .tree-item-inner")) {
+    if (parent && (parent as any).innerEl === targetEl) {
+      parent = (parent as any).tree as HoverEditorParent;
+    }
+    targetEl = targetEl.parentElement ?? targetEl;
+  }
+
   const prevPopover = targetPops.has(targetEl) ? targetPops.get(targetEl) : parent.hoverPopover;
   if (prevPopover?.lockedOut) return;
 
