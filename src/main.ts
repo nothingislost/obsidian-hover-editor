@@ -7,6 +7,7 @@ import {
   ItemView,
   MarkdownPreviewRenderer,
   MarkdownPreviewRendererStatic,
+  MarkdownPreviewView,
   MarkdownView,
   Menu,
   Platform,
@@ -80,6 +81,7 @@ export default class HoverEditorPlugin extends Plugin {
     this.patchWorkspaceLeaf();
     this.patchItemView();
     this.patchMarkdownPreviewRenderer();
+    this.patchMarkdownPreviewView();
 
     await this.loadSettings();
     this.registerSettingsTab();
@@ -234,6 +236,20 @@ export default class HoverEditorPlugin extends Plugin {
       },
     });
     this.register(uninstaller);
+  }
+
+  patchMarkdownPreviewView() {
+    // Prevent erratic scrolling of preview views when workspace layout changes
+    this.register(around(MarkdownPreviewView.prototype, {
+      onResize(old) {
+        return function onResize() {
+          this.renderer.onResize();
+          if (this.view.scroll !== null && this.view.scroll !== this.getScroll()) {
+            this.renderer.applyScrollDelayed(this.view.scroll)
+          }
+        }
+      }
+    }))
   }
 
   patchMarkdownPreviewRenderer() {

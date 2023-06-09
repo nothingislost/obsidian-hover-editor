@@ -81,6 +81,11 @@ declare module "obsidian" {
   interface MarkdownView {
     editMode: { cm: EditorView };
   }
+
+  interface MarkdownPreviewView {
+    onResize(): void
+  }
+
   interface MarkdownEditView {
     editorEl: HTMLElement;
   }
