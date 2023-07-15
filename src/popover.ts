@@ -967,6 +967,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
       // Each leaf.detach() will trigger layout-changed and the updateLeaves()
       // method will then call hide() again when the last one is gone.
       leaves.forEach(leaf => {
+        // Prevent saving uninitialized fold info
+        if (leaf.view instanceof MarkdownView && !this._loaded) leaf.view.onMarkdownFold = () => null;
         leaf.detach();
         // Newer obsidians don't switch the active leaf until layout processing  :(
         if (leaf === app.workspace.activeLeaf) app.workspace.activeLeaf = null;

@@ -80,6 +80,7 @@ declare module "obsidian" {
   }
   interface MarkdownView {
     editMode: { cm: EditorView };
+    onMarkdownFold(): void;
   }
 
   interface MarkdownPreviewView {

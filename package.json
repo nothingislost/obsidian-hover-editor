@@ -14,8 +14,8 @@
   "license": "MIT",
   "devDependencies": {
     "@codemirror/view": "^6.0.0",
-    "@interactjs/types": "^1.10.11",
-    "@nothingislost/interactjs": "^1.10.11",
+    "@interactjs/types": "1.10.11",
+    "@nothingislost/interactjs": "1.10.11",
     "@ophidian/core": "0.0.7",
     "@types/node": "^16.11.6",
     "@typescript-eslint/eslint-plugin": "^5.2.0",
