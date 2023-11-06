@@ -22,6 +22,7 @@ import {
   EmptyView,
   MarkdownView,
   WorkspaceTabs,
+  debounce,
 } from "obsidian";
 
 import HoverEditorPlugin, { genId } from "./main";
@@ -53,6 +54,8 @@ function nosuper<T>(base: new (...args: unknown[]) => T): new () => T {
   derived.prototype = base.prototype;
   return Object.setPrototypeOf(derived, base);
 }
+
+const layers = new WeakMap<Window,Set<HoverEditor>>();
 
 export class HoverEditor extends nosuper(HoverPopover) {
   onTarget: boolean;
@@ -256,6 +259,21 @@ export class HoverEditor extends nosuper(HoverPopover) {
     return false;
   }
 
+  activate = debounce(() => {
+    const {win} = this.document;
+    let layer = layers.get(win);
+    layer || layers.set(win, layer = new Set());
+    layer.delete(this);
+    layer.add(this);
+    win.requestAnimationFrame(() => {
+      let zIndex = 41;
+      Array.from(layer!).reverse().forEach(he => {
+        he.hoverEl.style.setProperty("--he-popover-layer-inactive", ""+zIndex);
+        if (zIndex > 31) zIndex--;
+      })
+    })
+  }, 100);
+
   onZoomOut() {
     this.document.body.removeEventListener("mouseup", this.boundOnZoomOut);
     this.document.body.removeEventListener("dragend", this.boundOnZoomOut);
@@ -292,6 +310,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   togglePin(value?: boolean) {
+    this.activate();
     if (value === undefined) {
       value = !this.isPinned;
     }
@@ -327,7 +346,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
     return this.titleEl.getBoundingClientRect().bottom - hoverEl.getBoundingClientRect().top;
   }
 
-  toggleMinimized(value?: boolean) {
+  toggleMinimized() {
+    this.activate();
     const hoverEl = this.hoverEl;
     const headerHeight = this.headerHeight;
 
@@ -390,6 +410,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   toggleViewHeader(value?: boolean, initial?: boolean) {
+    this.activate();
     if (value === undefined) value = !this.hoverEl.hasClass("show-navbar");
     this.hideNavBarEl?.toggleClass("is-active", value);
     this.hoverEl.toggleClass("show-navbar", value);
@@ -428,6 +449,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     const maxEl = popoverActions.createEl("a", "popover-action mod-maximize");
     setIcon(maxEl, "maximize", 14);
     maxEl.addEventListener("click", event => {
+      this.activate();
       if (this.hoverEl.hasClass("snap-to-viewport")) {
         setIcon(maxEl, "maximize", 14);
         restorePopover(this.hoverEl);
@@ -466,6 +488,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.oldPopover?.hide();
     this.oldPopover = null;
 
+    this.activate();
     this.hoverEl.toggleClass("is-new", true);
 
     this.document.body.addEventListener(
@@ -773,6 +796,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
             if (event.buttons) self.togglePin(true);
             if (event.buttons && isA(event.target, HTMLElement)) {
               event.target.addClass("is-dragging");
+              self.activate();
             }
           },
           end(event: DragEvent) {
@@ -794,6 +818,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
         listeners: {
           start(event: ResizeEvent) {
             const viewEl = event.target as HTMLElement;
+            self.activate();
             viewEl.style.removeProperty("max-height");
             const viewHeaderHeight = (self.hoverEl.querySelector(".view-header") as HTMLElement)?.offsetHeight;
             const titlebarHeight = self.titleEl.offsetHeight;
@@ -939,6 +964,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.isPinned = false;
     this.detaching = true;
     // Once we reach this point, we're committed to closing
+    layers.get(this.document.win)?.delete(this);
 
     // in case we didn't ever call show()
     this.document.removeEventListener("mousemove", setMouseCoords);
