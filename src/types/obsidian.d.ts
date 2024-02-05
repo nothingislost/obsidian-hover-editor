@@ -114,6 +114,7 @@ declare module "obsidian" {
     recordMostRecentOpenedFile(file: TFile): void;
     onDragLeaf(event: MouseEvent, leaf: WorkspaceLeaf): void;
     onLayoutChange(): void  // tell Obsidian leaves have been added/removed/etc.
+    activeEditor: MarkdownFileInfo | null;
   }
   interface Editor {
     getClickableTokenAt(pos: EditorPosition): {
@@ -147,6 +148,11 @@ declare module "obsidian" {
     Shown,
     Hiding,
     Hidden,
+  }
+  interface MarkdownFileInfo extends HoverParent {
+    app: App;
+    get file(): TFile | null;
+    editor?: Editor;
   }
   interface Menu {
     items: MenuItem[];

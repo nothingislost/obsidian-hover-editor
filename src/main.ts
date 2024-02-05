@@ -584,7 +584,7 @@ export default class HoverEditorPlugin extends Plugin {
       id: "open-current-file-in-new-popover",
       name: "Open current file in new Hover Editor",
       checkCallback: (checking: boolean) => {
-        const activeFile = this.app.workspace.getActiveFile();
+        const activeFile = this.app.workspace.activeEditor?.file ?? this.app.workspace.getActiveFile();
         if (activeFile) {
           if (!checking) {
             const newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
