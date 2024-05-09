@@ -150,6 +150,15 @@ body {
   width: 100%;
 }
 
+/*
+Obsidian 1.6 sets a different background for non-root splits,
+then uses primary as an override at root.  Since hover editors
+don't live in a root split, we have to copy the override:
+*/
+.popover.hover-editor .workspace-split .view-content {
+  background-color: var(--background-primary);
+}
+
 .popover.hover-editor {
   min-height: unset;
   max-height: unset;
