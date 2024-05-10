@@ -11,6 +11,7 @@ declare class QuickSwitcherModal extends SuggestModal<TFile> {
   getSuggestions(query: string): TFile[] | Promise<TFile[]>;
   renderSuggestion(value: TFile, el: HTMLElement): unknown;
   onChooseSuggestion(item: TFile, evt: MouseEvent | KeyboardEvent): unknown;
+  instructionsEl?: HTMLElement;
 }
 interface InternalPlugin {
   disable(): void;

@@ -169,6 +169,16 @@ export default class HoverEditorPlugin extends Plugin {
       open(old) {
         return function () {
           const result = old.call(this);
+          if (this.instructionsEl instanceof HTMLElement) {
+            // Obsidian 1.6 deletes existing instructions on setInstructions(),
+            // so patch the element to not empty(); setTimeout will remove the
+            // patch once the current event is over
+            setTimeout(around(this.instructionsEl, {
+              empty(next) {
+                return () => {};
+              }
+            }), 0);
+          }
           this.setInstructions([
             {
               command: Platform.isMacOS ? "cmd p" : "ctrl p",
