@@ -554,13 +554,13 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   pickColor() {
-    const r = Math.random() * (254 - 0) + 0;
-    const g = Math.random() * (254 - 0) + 0;
-    const b = Math.random() * (254 - 0) + 0;
+  wasPicked() {
     const el = this.hoverEl.querySelector(".view-content") as HTMLElement;
     if (el?.style) {
-      el.style.backgroundColor = "rgb(" + r + "," + g + ", " + b + ")";
+      const defaultColor = window.getComputedStyle(el).backgroundColor;
+      return el.style.backgroundColor === defaultColor;
     }
+    return false;
   }
 
   transition() {

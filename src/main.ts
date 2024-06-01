@@ -572,6 +572,17 @@ export default class HoverEditorPlugin extends Plugin {
       },
     });
     this.addCommand({
+      id: "pick-color-if-picked-before",
+      name: "Pick random colors for recently opened popovers",
+      callback: () => {
+        this.activePopovers.forEach(popover => {
+          if (!popover.wasPicked()) {
+            popover.pickColor();
+          }
+        });
+      },
+    });
+    this.addCommand({
       id: "open-new-popover",
       name: "Open new Hover Editor",
       callback: () => {
