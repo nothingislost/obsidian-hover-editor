@@ -563,6 +563,15 @@ export default class HoverEditorPlugin extends Plugin {
       },
     });
     this.addCommand({
+      id: "pick-random-color",
+      name: "Pick random background colors for all popovers",
+      callback: () => {
+        this.activePopovers.forEach(popover => {
+          popover.pickColor();
+        });
+      },
+    });
+    this.addCommand({
       id: "open-new-popover",
       name: "Open new Hover Editor",
       callback: () => {
