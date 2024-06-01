@@ -55,7 +55,15 @@ function nosuper<T>(base: new (...args: unknown[]) => T): new () => T {
   return Object.setPrototypeOf(derived, base);
 }
 
-const layers = new WeakMap<Window,Set<HoverEditor>>();
+function calculateLuminance(r: number, g: number, b: number): number {
+  const [R, G, B] = [r, g, b].map(c => {
+    c /= 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+}
+
+const layers = new WeakMap<Window, Set<HoverEditor>>();
 
 export class HoverEditor extends nosuper(HoverPopover) {
   onTarget: boolean;
@@ -553,7 +561,66 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
   }
 
+  calculateContrast(color1: string, color2: string): number {
+    const luminance = (r: number, g: number, b: number) => {
+      const a = [r, g, b].map(v => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+    };
+
+    const rgb1 = color1.match(/\d+/g)?.map(Number) || [0, 0, 0];
+    const rgb2 = color2.match(/\d+/g)?.map(Number) || [255, 255, 255];
+
+    const lum1 = luminance(rgb1[0], rgb1[1], rgb1[2]) + 0.05;
+    const lum2 = luminance(rgb2[0], rgb2[1], rgb2[2]) + 0.05;
+
+    return lum1 > lum2 ? lum1 / lum2 : lum2 / lum1;
+  }
+
   pickColor() {
+    const contentElement = this.hoverEl.querySelector(".cm-content") as HTMLElement;
+    if (contentElement?.style) {
+      const computedStyle = window.getComputedStyle(contentElement);
+      const fontColor = computedStyle.color;
+      const rgb = fontColor?.match(/\d+/g)?.map(Number);
+      if (rgb && rgb.length === 3) {
+        const [r, g, b] = rgb;
+        const luminance = calculateLuminance(r, g, b);
+        const isFontColorDark = luminance <= 0.5;
+        console.log("Luminance:", luminance);
+        const colorToUse = this.generateColor(isFontColorDark, fontColor);
+        contentElement.style.backgroundColor = `rgb(${colorToUse.r}, ${colorToUse.g}, ${colorToUse.b})`;
+      }
+    }
+  }
+
+  generateColor(isFontColorDark: boolean, fontColor: string) {
+    const minContrastRatio = 4.5;
+    let r, g, b, contrastRatio;
+    const viewContentElement = this.hoverEl.querySelector(".view-content") as HTMLElement;
+
+    do {
+      if (isFontColorDark) {
+        r = Math.random() * (255 - 128) + 128; // Generate light background colors
+        g = Math.random() * (255 - 128) + 128;
+        b = Math.random() * (255 - 128) + 128;
+      } else {
+        r = Math.random() * 127; // Generate dark background colors
+        g = Math.random() * 127;
+        b = Math.random() * 127;
+      }
+      const bgColor = `rgb(${r}, ${g}, ${b})`;
+      contrastRatio = this.calculateContrast(fontColor, bgColor);
+    } while (contrastRatio < minContrastRatio);
+
+    if (viewContentElement?.style) {
+      viewContentElement.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+    }
+    return { r, g, b };
+  }
+
   wasPicked() {
     const el = this.hoverEl.querySelector(".view-content") as HTMLElement;
     if (el?.style) {
