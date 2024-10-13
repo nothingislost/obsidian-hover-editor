@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting, requireApiVersion } from "obsidian";
 
 import HoverEditorPlugin from "../main";
 import { parseCssUnitValue } from "../utils/misc";
@@ -16,6 +16,9 @@ export interface HoverEditorSettings {
   showViewHeader: boolean;
   imageZoom: boolean;
   hoverEmbeds: boolean;
+  footnotes: "always" | "never";
+  headings: "always" | "never";
+  blocks: "always" | "never";
 }
 
 export const DEFAULT_SETTINGS: HoverEditorSettings = {
@@ -31,6 +34,9 @@ export const DEFAULT_SETTINGS: HoverEditorSettings = {
   showViewHeader: false,
   imageZoom: true,
   hoverEmbeds: false,
+  footnotes: requireApiVersion("1.6") ? "never" : "always",
+  headings: "always",
+  blocks: requireApiVersion("1.6") ? "never" : "always",
 };
 
 export const modeOptions = {
@@ -85,6 +91,42 @@ export class SettingTab extends PluginSettingTab {
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.hoverEmbeds).onChange(value => {
           this.plugin.settings.hoverEmbeds = value;
+          this.plugin.saveSettings();
+        }),
+      );
+
+    new Setting(containerEl)
+      .setName("Trigger hover preview on sub-heading links")
+      .setDesc(
+        "Use hover editor for links to subheadings, instead of the built-in preview/editor",
+      )
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.headings === "always").onChange(value => {
+          this.plugin.settings.headings = value ? "always" : "never";
+          this.plugin.saveSettings();
+        }),
+      );
+
+    new Setting(containerEl)
+      .setName("Trigger hover preview on block links")
+      .setDesc(
+        "Use hover editor for links to blocks, instead of the built-in preview/editor",
+      )
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.blocks === "always").onChange(value => {
+          this.plugin.settings.blocks = value ? "always" : "never";
+          this.plugin.saveSettings();
+        }),
+      );
+
+    new Setting(containerEl)
+      .setName("Trigger hover preview on footnotes")
+      .setDesc(
+        "Use hover editor for footnotes, instead of the built-in preview/editor",
+      )
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.footnotes === "always").onChange(value => {
+          this.plugin.settings.footnotes = value ? "always" : "never";
           this.plugin.saveSettings();
         }),
       );

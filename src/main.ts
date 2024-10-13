@@ -10,6 +10,7 @@ import {
   MarkdownPreviewView,
   MarkdownView,
   Menu,
+  parseLinktext,
   Platform,
   Plugin,
   PopoverState,
@@ -337,7 +338,7 @@ export default class HoverEditorPlugin extends Plugin {
       getDropLocation(old) {
         return function getDropLocation(event: MouseEvent) {
           for (const popover of HoverEditor.activePopovers()) {
-            const dropLoc = this.recursiveGetTarget(event, popover.rootSplit);
+            const dropLoc: any = this.recursiveGetTarget(event, popover.rootSplit);
             if (dropLoc) {
               if (requireApiVersion && requireApiVersion("0.15.3")) {
                 // getDropLocation's return signature changed in 0.15.3
@@ -412,6 +413,22 @@ export default class HoverEditorPlugin extends Plugin {
           state: EphemeralState,
           ...args: unknown[]
         ) {
+          const {subpath} = parseLinktext(linkText);
+          if (subpath && subpath[0] === "#") {
+            if (subpath.startsWith("#[^")) {
+              if (plugin.settings.footnotes !== "always") {
+                return old.call(this, parent, targetEl, linkText, path, state, ...args);
+              }
+            } else if (subpath.startsWith("#^")) {
+              if (plugin.settings.blocks !== "always") {
+                return old.call(this, parent, targetEl, linkText, path, state, ...args);
+              }
+            } else {
+              if (plugin.settings.headings !== "always") {
+                return old.call(this, parent, targetEl, linkText, path, state, ...args);
+              }
+            }
+          }
           onLinkHover(plugin, parent, targetEl, linkText, path, state, ...args);
         };
       },
