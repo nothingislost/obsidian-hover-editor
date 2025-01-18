@@ -25,7 +25,6 @@ import {
   WorkspaceContainer,
   WorkspaceItem,
   WorkspaceLeaf,
-  WorkspaceTabs,
 } from "obsidian";
 
 import { onLinkHover } from "./onLinkHover";
@@ -701,7 +700,7 @@ export default class HoverEditorPlugin extends Plugin {
       const { parentSplit: oldParentSplit } = oldLeaf;
       oldParentSplit.removeChild(oldLeaf);
       newParentSplit.replaceChild(0, oldLeaf, true);
-      this.app.workspace.setActiveLeaf(oldLeaf, false, true);
+      this.app.workspace.setActiveLeaf(oldLeaf, {focus: true});
     });
     return newLeaf;
   }
@@ -710,11 +709,13 @@ export default class HoverEditorPlugin extends Plugin {
     if (!oldLeaf) return;
     oldLeaf.parentSplit.removeChild(oldLeaf);
     const {rootSplit} = this.app.workspace;
-    if (requireApiVersion("0.16.3") && rootSplit.children[0] instanceof WorkspaceTabs) {
-      rootSplit.children[0].insertChild(-1, oldLeaf);
-    } else rootSplit.insertChild(-1, oldLeaf);
-    app.workspace.activeLeaf = null;  // Force re-activation
-    app.workspace.setActiveLeaf(oldLeaf, false, true);
+    // Add to first pane/tab group
+    this.app.workspace.iterateLeaves(rootSplit, leaf => {
+      leaf.parentSplit.insertChild(-1, oldLeaf)
+      return true
+    })
+    this.app.workspace.activeLeaf = null;  // Force re-activation
+    this.app.workspace.setActiveLeaf(oldLeaf, {focus: true});
     return oldLeaf;
   }
 
