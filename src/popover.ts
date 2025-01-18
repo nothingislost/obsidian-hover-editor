@@ -229,11 +229,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     pinEl.onclick = () => {
       this.togglePin();
     };
-    if (requireApiVersion && requireApiVersion("0.13.27")) {
-      setIcon(pinEl, "lucide-pin", 17);
-    } else {
-      setIcon(pinEl, "pin", 17);
-    }
+    setIcon(pinEl, "lucide-pin");
     this.createResizeHandles();
     if (this.plugin.settings.imageZoom) this.registerZoomImageHandlers();
   }
@@ -433,7 +429,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.titleEl.createDiv("popover-title");
     const popoverActions = this.titleEl.createDiv("popover-actions");
     const hideNavBarEl = (this.hideNavBarEl = popoverActions.createEl("a", "popover-action mod-show-navbar"));
-    setIcon(hideNavBarEl, "sidebar-open", 14);
+    setIcon(hideNavBarEl, "sidebar-open");
     hideNavBarEl.addEventListener("click", event => {
       this.toggleViewHeader();
     });
@@ -447,15 +443,15 @@ export class HoverEditor extends nosuper(HoverPopover) {
       this.toggleMinimized();
     });
     const maxEl = popoverActions.createEl("a", "popover-action mod-maximize");
-    setIcon(maxEl, "maximize", 14);
+    setIcon(maxEl, "maximize");
     maxEl.addEventListener("click", event => {
       this.activate();
       if (this.hoverEl.hasClass("snap-to-viewport")) {
-        setIcon(maxEl, "maximize", 14);
+        setIcon(maxEl, "maximize");
         restorePopover(this.hoverEl);
         return;
       }
-      setIcon(maxEl, "minimize", 14);
+      setIcon(maxEl, "minimize");
       const offset = calculateOffsets(this.document);
       storeDimensions(this.hoverEl);
       snapToEdge(this.hoverEl, "viewport", offset);
@@ -703,11 +699,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   calculateMaxSize(x: number, y: number, interaction: Interaction<keyof ActionMap>) {
-    const width =
-      interaction.pointerType === "reflow" ? this.document.body.offsetWidth / 1.5 : this.document.body.offsetWidth;
-    const height =
-      interaction.pointerType === "reflow" ? this.document.body.offsetHeight / 1.5 : this.document.body.offsetHeight;
-    return { width: width, height: height };
+    return { width: this.document.body.offsetWidth, height: this.document.body.offsetHeight };
   }
 
   toggleConstrainAspectRatio(value?: boolean, ratio?: number) {
@@ -1087,7 +1079,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     view.actionListEl.empty();
     const { actionListEl } = view;
     actionListEl.createDiv({ cls: "file-embed-title" }, div => {
-      div.createSpan({ cls: "file-embed-icon" }, span => setIcon(span, "document", 22));
+      div.createSpan({ cls: "file-embed-icon" }, span => setIcon(span, "document"));
       div.appendText(" " + file.name);
     });
     actionListEl.addEventListener("click", () => this.plugin.app.openWithDefaultApp(file.path));
