@@ -15,6 +15,8 @@ import {
   Plugin,
   PopoverState,
   requireApiVersion,
+  setIcon,
+  setTooltip,
   TAbstractFile,
   TFile,
   View,
@@ -247,6 +249,23 @@ export default class HoverEditorPlugin extends Plugin {
       },
     });
     this.register(uninstaller);
+
+    // Restore pre-1.6 view header icons so you can drag hover editor leaves back to the workspace
+    this.register(around(ItemView.prototype, {
+      load(old) {
+        return function(this: View) {
+          if (!this.iconEl) {
+            const iconEl = this.iconEl = this.headerEl.createDiv("clickable-icon view-header-icon")
+            this.headerEl.prepend(iconEl)
+            iconEl.draggable = true
+            iconEl.addEventListener("dragstart", e => { this.app.workspace.onDragLeaf(e, this.leaf) })
+            setIcon(iconEl, this.getIcon())
+            setTooltip(iconEl, "Drag to rearrange")
+          }
+          return old.call(this)
+        }
+      }
+    }))
   }
 
   patchMarkdownPreviewView() {

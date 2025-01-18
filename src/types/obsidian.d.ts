@@ -37,9 +37,6 @@ interface QuickSwitcherPlugin extends InternalPlugin {
 }
 
 declare global {
-  const i18next: {
-    t(id: string): string;
-  };
   interface Window {
     activeWindow: Window;
     activeDocument: Document;
@@ -150,11 +147,6 @@ declare module "obsidian" {
     Hiding,
     Hidden,
   }
-  interface MarkdownFileInfo extends HoverParent {
-    app: App;
-    get file(): TFile | null;
-    editor?: Editor;
-  }
   interface Menu {
     items: MenuItem[];
     dom: HTMLElement;
@@ -192,4 +184,5 @@ declare module "obsidian" {
     x: number;
     y: number;
   }
+  export function setTooltip(el: HTMLElement, tooltip: string, options?: TooltipOptions): void;
 }
