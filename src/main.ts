@@ -210,16 +210,20 @@ export default class HoverEditorPlugin extends Plugin {
     const [cls, method] = View.prototype["onPaneMenu"] ? [View, "onPaneMenu"] : [ItemView, "onMoreOptionsMenu"];
     const uninstaller = around(cls.prototype, {
       [method](old: (menu: Menu, ...args: unknown[]) => void) {
-        return function (menu: Menu, ...args: unknown[]) {
+        return function (this: View, menu: Menu, ...args: unknown[]) {
           const popover = this.leaf ? HoverEditor.forLeaf(this.leaf) : undefined;
           if (!popover) {
             menu.addItem(item => {
               item
                 .setIcon("popup-open")
                 .setTitle("Open in Hover Editor")
-                .onClick(() => {
-                  const newLeaf = plugin.spawnPopover();
-                  if (this.leaf?.getViewState) newLeaf.setViewState(this.leaf.getViewState());
+                .onClick(async () => {
+                  const newLeaf = plugin.spawnPopover(), {autoFocus} = plugin.settings;
+                  await newLeaf.setViewState({...this.leaf.getViewState(), active: autoFocus}, {focus: autoFocus});
+                  if (autoFocus) {
+                    await sleep(200)
+                    this.app.workspace.setActiveLeaf(newLeaf, {focus: true});
+                  }
                 })
                 .setSection?.("open");
             });
