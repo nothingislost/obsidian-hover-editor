@@ -370,7 +370,14 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.rootSplit.getRoot = () => app.workspace[this.document === document ? "rootSplit" : "floatingSplit"]!;
     this.rootSplit.getContainer = () => HoverEditor.containerForDocument(this.document);
     this.titleEl.insertAdjacentElement("afterend", this.rootSplit.containerEl);
-    const leaf = this.plugin.app.workspace.createLeafInParent(this.rootSplit, 0);
+    // Obsidian 1.8.7 changed createLeafInParent to make new leaves active, so we have to stop it  :-(
+    const remove = around(this.plugin.app.workspace, {setActiveLeaf() { return () => {}; }})
+    let leaf: WorkspaceLeaf
+    try {
+      leaf = this.plugin.app.workspace.createLeafInParent(this.rootSplit, 0);
+    } finally {
+      remove()
+    }
     this.updateLeaves();
     return leaf;
   }
