@@ -54,6 +54,7 @@ declare module "obsidian" {
       plugins: Record<string, Plugin> & {
         ["recent-files-obsidian"]: Plugin & {
           shouldAddFile(file: TFile): boolean;
+          update(file: TFile): Promise<void>;
         };
       };
       getPlugin(id: string): Plugin;

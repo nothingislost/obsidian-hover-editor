@@ -1173,6 +1173,12 @@ export class HoverEditor extends nosuper(HoverPopover) {
                     return _file !== file && old.call(this, _file);
                   };
                 },
+                update(old) {
+                  // Newer versions of the plugin need this instead
+                  return function (_file) {
+                    return old.call(this, _file === file ? null : _file);
+                  }
+                }
               }),
               1,
             );
