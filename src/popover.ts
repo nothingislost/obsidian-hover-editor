@@ -426,9 +426,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
     this.adjustHeight(value ? calculatedViewHeaderHeight : -calculatedViewHeaderHeight);
     setTimeout(() => {
       this.hoverEl.style.removeProperty("transition");
+      this.requestLeafMeasure();
     }, 200);
-
-    this.requestLeafMeasure();
   }
 
   buildWindowControls() {
@@ -473,14 +472,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   requestLeafMeasure() {
-    // address view height measurement issues triggered by css transitions
-    // we wait a bit for the transition to finish and remeasure
-    const leaves = this.leaves();
-    if (leaves.length) {
-      setTimeout(() => {
-        leaves.forEach(leaf => leaf.onResize());
-      }, 200);
-    }
+    // address view height measurement issues triggered by css transitions, resize, etc.
+    this.leaves().forEach(leaf => leaf.onResize());
   }
 
   onShow() {
