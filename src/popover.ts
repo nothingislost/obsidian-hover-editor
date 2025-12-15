@@ -802,6 +802,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
             if (isA(event.target, HTMLElement)) {
               event.target.removeClass("is-dragging");
             }
+            self.requestLeafMeasure();
           },
           move: dragMoveListener.bind(self),
         },
