@@ -3,6 +3,7 @@
   "version": "0.10.0",
   "description": "Transform the Page Preview hover popover into a fully working editor instance",
   "main": "main.js",
+  "packageManager": "pnpm@7.33.6",
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production",

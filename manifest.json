@@ -1,7 +1,7 @@
 {
   "id": "obsidian-hover-editor",
   "name": "Hover Editor",
-  "version": "0.11.29",
+  "version": "0.11.30",
   "minAppVersion": "1.10.6",
   "description": "Transform the Page Preview hover popover into a floating tab",
   "author": "NothingIsLost",

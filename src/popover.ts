@@ -35,7 +35,7 @@ import {
   dragMoveListener,
 } from "./utils/measure";
 import { isA } from "./utils/misc";
-import { defer } from "@ophidian/core";
+import { app, defer } from "@ophidian/core";
 
 const popovers = new WeakMap<Element, HoverEditor>();
 export interface HoverEditorParent {
@@ -437,7 +437,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     const popoverActions = this.titleEl.createDiv("popover-actions");
     const hideNavBarEl = (this.hideNavBarEl = popoverActions.createEl("a", "popover-action mod-show-navbar"));
     setIcon(hideNavBarEl, "sidebar-open");
-    hideNavBarEl.addEventListener("click", event => {
+    hideNavBarEl.addEventListener("click", () => {
       this.toggleViewHeader();
     });
     if (this.plugin.settings.showViewHeader) {
@@ -445,13 +445,13 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
     const minEl = popoverActions.createEl("a", "popover-action mod-minimize");
     setIcon(minEl, "minus");
-    minEl.addEventListener("click", event => {
+    minEl.addEventListener("click", () => {
       restorePopover(this.hoverEl);
       this.toggleMinimized();
     });
     const maxEl = popoverActions.createEl("a", "popover-action mod-maximize");
     setIcon(maxEl, "maximize");
-    maxEl.addEventListener("click", event => {
+    maxEl.addEventListener("click", () => {
       this.activate();
       if (this.hoverEl.hasClass("snap-to-viewport")) {
         setIcon(maxEl, "maximize");
@@ -466,7 +466,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
     const closeEl = popoverActions.createEl("a", "popover-action mod-close");
     setIcon(closeEl, "x");
-    closeEl.addEventListener("click", event => {
+    closeEl.addEventListener("click", () => {
       this.hide();
     });
     this.containerEl.prepend(this.titleEl);
@@ -1176,8 +1176,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
                       // Recent Files 1.7.4+ tries to redraw on file-open event,
                       // which will lose the original hovered element on
                       // autofocus (see #326, tgrosinger/recent-files-obsidian#132)
-                      defer(around(view, {redraw(old) {
-                        // no-op: block refresh from happening in this microtick
+                      defer(around(view, {redraw() {
+                        return function() {} // no-op: block refresh from happening in this microtick
                       }}))
                     }
                     return old.call(this, _file === file ? null : _file);

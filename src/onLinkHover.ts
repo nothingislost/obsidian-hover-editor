@@ -101,7 +101,7 @@ export function onLinkHover(
       if (editor?.state == PopoverState.Hidden) {
         return;
       }
-      editor?.openLink(linkText, path, oldState);
+      void editor?.openLink(linkText, path, oldState);
     }, 0);
   }
 }

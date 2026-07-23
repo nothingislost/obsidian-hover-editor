@@ -77,9 +77,9 @@ export class SettingTab extends PluginSettingTab {
     new Setting(containerEl).setName("Auto Pin").addDropdown(cb => {
       cb.addOptions(pinOptions);
       cb.setValue(this.plugin.settings.autoPin);
-      cb.onChange(async value => {
+      cb.onChange(value => {
         this.plugin.settings.autoPin = value;
-        await this.plugin.saveSettings();
+        this.plugin.saveSettings();
       });
     });
 

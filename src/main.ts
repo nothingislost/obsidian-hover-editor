@@ -28,7 +28,7 @@ import {
 } from "obsidian";
 
 import { onLinkHover } from "./onLinkHover";
-import { PerWindowComponent, use } from "@ophidian/core";
+import { PerWindowComponent, use, app } from "@ophidian/core";
 import { HoverEditorParent, HoverEditor, isHoverLeaf, setMouseCoords } from "./popover";
 import { DEFAULT_SETTINGS, HoverEditorSettings, SettingTab } from "./settings/settings";
 import { snapActivePopover, snapDirections, restoreActivePopover, minimizeActivePopover } from "./utils/measure";
@@ -111,7 +111,7 @@ export default class HoverEditorPlugin extends Plugin {
             return top.getRoot === this.getRoot ? top : top.getRoot();
           };
         },
-        onResize(old) {
+        onResize() {
           return function () {
             this.view?.onResize();
           };
@@ -187,7 +187,7 @@ export default class HoverEditorPlugin extends Plugin {
               purpose: "to open in new popover",
             },
           ]);
-          this.scope.register(["Mod"], "p", (event: KeyboardEvent) => {
+          this.scope.register(["Mod"], "p", (_event: KeyboardEvent) => {
             this.close();
             const item = this.chooser.values[this.chooser.selectedItem];
             if (!item?.file) return;
@@ -274,7 +274,7 @@ export default class HoverEditorPlugin extends Plugin {
   patchMarkdownPreviewView() {
     // Prevent erratic scrolling of preview views when workspace layout changes
     this.register(around(MarkdownPreviewView.prototype, {
-      onResize(old) {
+      onResize() {
         return function onResize() {
           this.renderer.onResize();
           if (this.view.scroll !== null && this.view.scroll !== this.getScroll()) {
@@ -587,8 +587,8 @@ export default class HoverEditorPlugin extends Plugin {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
   }
 
-  async saveSettings() {
-    await this.saveData(this.settings);
+  saveSettings() {
+    this.saveData(this.settings);
   }
 
   registerCommands() {
@@ -699,6 +699,7 @@ export default class HoverEditorPlugin extends Plugin {
 
   convertLeafToPopover(oldLeaf: WorkspaceLeaf) {
     if (!oldLeaf) return;
+    oldLeaf.containerEl.removeAttribute("style")  // needed for stacked tabs
     const newLeaf = this.spawnPopover(undefined, () => {
       const { parentSplit: newParentSplit } = newLeaf;
       const { parentSplit: oldParentSplit } = oldLeaf;
