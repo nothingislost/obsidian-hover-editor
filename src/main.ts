@@ -358,9 +358,9 @@ export default class HoverEditorPlugin extends Plugin {
         };
       },
       getDropLocation(old) {
-        return function getDropLocation(event: MouseEvent) {
+        return function getDropLocation(this: Workspace, event: MouseEvent) {
           for (const popover of HoverEditor.activePopovers()) {
-            const dropLoc: any = this.recursiveGetTarget(event, popover.rootSplit);
+            const dropLoc = this.recursiveGetTarget(event, popover.rootSplit);
             if (dropLoc) {
               if (requireApiVersion && requireApiVersion("0.15.3")) {
                 // getDropLocation's return signature changed in 0.15.3

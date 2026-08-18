@@ -27,8 +27,8 @@ export function onLinkHover(
 
   // Workaround for bookmarks through 1.3.0
   if (targetEl && targetEl.matches(".bookmark .tree-item-inner")) {
-    if (parent && (parent as any).innerEl === targetEl) {
-      parent = (parent as any).tree as HoverEditorParent;
+    if (parent && (parent as unknown as {innerEl: HTMLElement}).innerEl === targetEl) {
+      parent = (parent as unknown as {tree: HoverEditorParent}).tree;
     }
     targetEl = targetEl.parentElement ?? targetEl;
   }

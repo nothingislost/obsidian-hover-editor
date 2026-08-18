@@ -6,6 +6,7 @@ specifiers:
   '@nothingislost/interactjs': 1.10.11
   '@ophidian/core': 0.0.24
   '@types/node': ^16.11.6
+  '@types/parse-unit': ^1.0.3
   '@typescript-eslint/eslint-plugin': ^5.2.0
   '@typescript-eslint/parser': ^5.18.0
   builtin-modules: ^3.2.0
@@ -29,6 +30,7 @@ devDependencies:
   '@nothingislost/interactjs': 1.10.11
   '@ophidian/core': 0.0.24_@codemirror+view@6.14.1
   '@types/node': 16.18.38
+  '@types/parse-unit': 1.0.3
   '@typescript-eslint/eslint-plugin': 5.62.0_p3ikbjph34ysacct4522dgq6ya
   '@typescript-eslint/parser': 5.62.0_uehp6ybvdwvysdrlciovnyarwm
   builtin-modules: 3.3.0
@@ -199,6 +201,10 @@ packages:
 
   /@types/node/16.18.38:
     resolution: {integrity: sha512-6sfo1qTulpVbkxECP+AVrHV9OoJqhzCsfTNp5NIG+enM4HyM3HvZCO798WShIXBN0+QtDIcutJCjsVYnQP5rIQ==}
+    dev: true
+
+  /@types/parse-unit/1.0.3:
+    resolution: {integrity: sha512-huu6LsYM5YB1cJnMXZuZ3zjQ7pakbnGu0WRq+QQ7jmDDVenenpG8B5DFAcbPMf2RTRUanWt/GvWMm/bW5yd/UA==}
     dev: true
 
   /@types/semver/7.5.0:

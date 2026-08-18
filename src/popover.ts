@@ -146,7 +146,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
   }
 
   static activePopovers() {
-    return this.activeWindows().flatMap(this.popoversForWindow);
+    return this.activeWindows().flatMap(this["popoversForWindow"]);
   }
 
   static popoversForWindow(win?: Window) {
@@ -264,7 +264,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     layer.add(this);
     win.requestAnimationFrame(() => {
       let zIndex = 41;
-      Array.from(layer!).reverse().forEach(he => {
+      Array.from(layer).reverse().forEach(he => {
         he.hoverEl.style.setProperty("--he-popover-layer-inactive", ""+zIndex);
         if (zIndex > 31) zIndex--;
       })
@@ -385,7 +385,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
 
   onload(): void {
     super.onload();
-    this.registerEvent(this.plugin.app.workspace.on("layout-change", this.updateLeaves, this));
+    this.registerEvent(this.plugin.app.workspace.on("layout-change", this["updateLeaves"], this));
     this.registerEvent(app.workspace.on("layout-change", () => {
       // Ensure that top-level items in a popover are not tabbed
       this.rootSplit.children.forEach((item, index) => {
@@ -1069,7 +1069,8 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
     if (state.state?.mode === "source") this.whenShown(() => {
       // Not sure why this is needed, but without it we get issue #186
-      if (requireApiVersion("1.0"))(leaf?.view as any)?.editMode?.reinit?.();
+      if (requireApiVersion("1.0") && leaf?.view instanceof MarkdownView)
+        leaf?.view?.editMode?.reinit?.();
       leaf?.view?.setEphemeralState(state.eState);
     });
   }
@@ -1113,7 +1114,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
     }
   }
 
-  whenShown(callback: () => any) {
+  whenShown(callback: () => unknown) {
     // invoke callback once the popover is visible
     if (this.detaching) return;
     const existingCallback = this.onShowCallback;
@@ -1160,7 +1161,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
           );
           const recentFiles = this.plugin.app.plugins.plugins["recent-files-obsidian"];
           if (recentFiles) {
-            const view = this.plugin.app.workspace.getLeavesOfType("recent-files").first()?.view as any
+            const view = this.plugin.app.workspace.getLeavesOfType("recent-files").first()?.view
             setTimeout(
               around(recentFiles, {
                 shouldAddFile(old) {
@@ -1176,7 +1177,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
                       // Recent Files 1.7.4+ tries to redraw on file-open event,
                       // which will lose the original hovered element on
                       // autofocus (see #326, tgrosinger/recent-files-obsidian#132)
-                      defer(around(view, {redraw() {
+                      defer(around(view as unknown as {redraw(): void}, {redraw() {
                         return function() {} // no-op: block refresh from happening in this microtick
                       }}))
                     }

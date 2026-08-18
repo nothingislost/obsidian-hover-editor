@@ -199,8 +199,7 @@ export class SettingTab extends PluginSettingTab {
         textfield.inputEl.type = "text";
         textfield.setValue(this.plugin.settings.initialWidth);
         textfield.onChange(async value => {
-          value = parseCssUnitValue(value);
-          if (!value) value = DEFAULT_SETTINGS.initialWidth;
+          value = parseCssUnitValue(value) || DEFAULT_SETTINGS.initialWidth;
           this.plugin.settings.initialWidth = value;
           this.plugin.saveSettings();
         });
@@ -214,8 +213,7 @@ export class SettingTab extends PluginSettingTab {
         textfield.inputEl.type = "text";
         textfield.setValue(String(this.plugin.settings.initialHeight));
         textfield.onChange(async value => {
-          value = parseCssUnitValue(value);
-          if (!value) value = DEFAULT_SETTINGS.initialHeight;
+          value = parseCssUnitValue(value) || DEFAULT_SETTINGS.initialHeight;
           this.plugin.settings.initialHeight = value;
           this.plugin.saveSettings();
         });

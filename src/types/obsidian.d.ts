@@ -78,7 +78,10 @@ declare module "obsidian" {
     containerEl: HTMLElement;
   }
   interface MarkdownView {
-    editMode: { cm: EditorView };
+    editMode: {
+      cm: EditorView
+      reinit?(): void
+    };
     onMarkdownFold(): void;
   }
 
