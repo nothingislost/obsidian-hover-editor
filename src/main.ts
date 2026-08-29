@@ -183,20 +183,21 @@ export default class HoverEditorPlugin extends Plugin {
           }
           this.setInstructions([
             {
-              command: Platform.isMacOS ? "cmd p" : "ctrl p",
+              command: Platform.isMacOS ? "cmd shift p" : "ctrl shift p",
               purpose: "to open in new popover",
             },
           ]);
-          this.scope.register(["Mod"], "p", (_event: KeyboardEvent) => {
+          const openInHoverEditor = (_event: KeyboardEvent) => {
             this.close();
             const item = this.chooser.values[this.chooser.selectedItem];
             if (!item?.file) return;
-            const newLeaf = plugin.spawnPopover(undefined, () =>
-              this.app.workspace.setActiveLeaf(newLeaf, false, true),
+            const newLeaf = plugin.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true)
             );
             newLeaf.openFile(item.file);
             return false;
-          });
+          };
+          this.scope.register(["Mod"], "p", openInHoverEditor);
+          this.scope.register(["Mod", "Shift"], "p", openInHoverEditor);
           return result;
         };
       },

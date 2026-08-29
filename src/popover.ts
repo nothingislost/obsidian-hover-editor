@@ -496,14 +496,6 @@ export class HoverEditor extends nosuper(HoverPopover) {
       { once: true, capture: true },
     );
 
-    if (this.parent) {
-      this.parent.hoverPopover = this;
-    }
-
-    // Workaround until 0.15.7
-    if (requireApiVersion("0.15.1") && !requireApiVersion("0.15.7"))
-      app.workspace.iterateLeaves(leaf => { if (leaf.view instanceof MarkdownView) (leaf.view.editMode as any).reinit?.(); }, this.rootSplit);
-
     this.togglePin(this.isPinned);
 
     this.onShowCallback?.();
