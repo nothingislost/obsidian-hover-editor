@@ -23,6 +23,7 @@ I will attempt to keep this plugin working across Obsidian updates but my goal i
 - The top drag handle can be double clicked to minimize the popover
 - There is a plugin setting that allows for setting the default editor mode
   - Options are: "Open in Reading mode", "Open in Editing mode", or "Match the mode of the current document"
+- There is a plugin setting that collapses the properties of notes opened in a popover, without changing how they're shown when the note is opened elsewhere
 - When hovering a link containing header or block ref, the editor will open and auto scroll to the ref location
 - When multiple popovers are active and on top of each other, the currently active popover will remain on top
 

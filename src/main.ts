@@ -3,11 +3,13 @@ import {
   App,
   debounce,
   EphemeralState,
+  FoldInfo,
   HoverParent,
   ItemView,
   MarkdownPreviewRenderer,
   MarkdownPreviewRendererStatic,
   MarkdownPreviewView,
+  MarkdownSubView,
   MarkdownView,
   Menu,
   parseLinktext,
@@ -87,6 +89,7 @@ export default class HoverEditorPlugin extends Plugin {
 
     await this.loadSettings();
     this.registerSettingsTab();
+    this.patchMarkdownView();
 
     this.app.workspace.onLayoutReady(() => {
       this.patchSlidingPanes();
@@ -284,6 +287,74 @@ export default class HoverEditorPlugin extends Plugin {
         }
       }
     }))
+  }
+
+  patchMarkdownView() {
+    const plugin = this;
+    // The properties fold state of notes loaded into hover editors, so that collapsing their
+    // properties there doesn't change whether they're collapsed when the note is opened elsewhere
+    const propertiesFolds = new WeakMap<MarkdownView, { file: TFile; collapsed: boolean }>();
+
+    // Call fn(), making any folds it saves for the view's note keep the note's own properties fold state
+    function keepPropertiesFold<T>(view: MarkdownView, fn: () => T): T {
+      const saved = propertiesFolds.get(view);
+      if (!saved || saved.file !== view.file) return fn();
+      const uninstall = around(view.app.foldManager, {
+        save(old) {
+          return function (file: TFile, foldInfo: FoldInfo | null) {
+            if (file === saved.file && foldInfo) {
+              const folds = foldInfo.folds.filter(fold => fold.from !== 0);
+              if (saved.collapsed) folds.unshift({ from: 0, to: 0 });
+              foldInfo = { ...foldInfo, folds };
+            }
+            return old.call(this, file, foldInfo);
+          };
+        },
+      });
+      let result: T | undefined;
+      try {
+        return (result = fn());
+      } finally {
+        // setMode() is async and saves the folds after an await
+        if (result instanceof Promise) result.then(uninstall, uninstall);
+        else uninstall();
+      }
+    }
+
+    this.register(
+      around(MarkdownView.prototype, {
+        setViewData(old) {
+          return function (this: MarkdownView, data: string, clear: boolean) {
+            const result = old.call(this, data, clear);
+            if (clear) {
+              // A note was loaded, with its own fold state
+              propertiesFolds.delete(this);
+              const { metadataEditor } = this;
+              if (
+                plugin.settings.collapseProperties &&
+                metadataEditor?.properties.length &&
+                this.canShowProperties?.() &&
+                isHoverLeaf(this.leaf)
+              ) {
+                propertiesFolds.set(this, { file: this.file, collapsed: metadataEditor.collapsed });
+                metadataEditor.setCollapse(true, false);
+              }
+            }
+            return result;
+          };
+        },
+        onMarkdownFold(old) {
+          return function (this: MarkdownView) {
+            return keepPropertiesFold(this, () => old.call(this));
+          };
+        },
+        setMode(old) {
+          return function (this: MarkdownView, mode: MarkdownSubView) {
+            return keepPropertiesFold(this, () => old.call(this, mode));
+          };
+        },
+      }),
+    );
   }
 
   patchMarkdownPreviewRenderer() {

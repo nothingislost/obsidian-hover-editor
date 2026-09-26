@@ -14,6 +14,7 @@ export interface HoverEditorSettings {
   initialHeight: string;
   initialWidth: string;
   showViewHeader: boolean;
+  collapseProperties: boolean;
   imageZoom: boolean;
   hoverEmbeds: boolean;
   footnotes: "always" | "never";
@@ -32,6 +33,7 @@ export const DEFAULT_SETTINGS: HoverEditorSettings = {
   initialHeight: "340px",
   initialWidth: "400px",
   showViewHeader: false,
+  collapseProperties: false,
   imageZoom: true,
   hoverEmbeds: false,
   footnotes: requireApiVersion("1.6") ? "never" : "always",
@@ -174,6 +176,19 @@ export class SettingTab extends PluginSettingTab {
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.showViewHeader).onChange(value => {
           this.plugin.settings.showViewHeader = value;
+          this.plugin.saveSettings();
+        }),
+      );
+
+    new Setting(containerEl)
+      .setName("Collapse properties by default")
+      .setDesc(
+        `Collapse the properties of notes opened in a hover editor.
+         This doesn't change whether properties are collapsed when the note is opened elsewhere.`,
+      )
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.collapseProperties).onChange(value => {
+          this.plugin.settings.collapseProperties = value;
           this.plugin.saveSettings();
         }),
       );
