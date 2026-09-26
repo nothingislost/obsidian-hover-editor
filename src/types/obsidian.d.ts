@@ -62,7 +62,15 @@ declare module "obsidian" {
     };
     dom: { appContainerEl: HTMLElement };
     viewRegistry: ViewRegistry;
+    foldManager: FoldManager;
     openWithDefaultApp(path: string): void;
+  }
+  interface FoldManager {
+    save(file: TFile, foldInfo: FoldInfo | null): void;
+  }
+  interface FoldInfo {
+    folds: { from: number; to: number }[]; // a fold from line 0 means the properties are collapsed
+    lines: number;
   }
   interface ViewRegistry {
     typeByExtension: Record<string, string>; // file extensions to view types
@@ -82,6 +90,12 @@ declare module "obsidian" {
       cm: EditorView
       reinit?(): void
     };
+    metadataEditor?: {
+      collapsed: boolean;
+      properties: unknown[];
+      setCollapse(collapsed: boolean, animate?: boolean): void; // animate also saves the folds
+    };
+    canShowProperties?(): boolean;
     onMarkdownFold(): void;
   }
 
