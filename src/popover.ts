@@ -35,6 +35,7 @@ import {
   dragMoveListener,
 } from "./utils/measure";
 import { isA } from "./utils/misc";
+import { t } from "./i18n";
 import { app, defer } from "@ophidian/core";
 
 const popovers = new WeakMap<Element, HoverEditor>();
@@ -1089,7 +1090,7 @@ export class HoverEditor extends nosuper(HoverPopover) {
       view.actionListEl?.empty();
       const createEl = view.actionListEl?.createEl("button", "empty-state-action");
       if (!createEl) return;
-      createEl.textContent = `${linkText} is not yet created. Click to create.`;
+      createEl.textContent = t("createFile", { link: linkText });
       if (this.plugin.settings.autoFocus) {
         setTimeout(() => {
           createEl?.focus();
