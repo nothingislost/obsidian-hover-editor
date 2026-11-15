@@ -1,4 +1,4 @@
-import { moment } from "obsidian";
+import * as obsidian from "obsidian";
 
 const en = {
   defaultMode: "Default Mode",
@@ -109,7 +109,17 @@ const zh: typeof en = {
 };
 
 function isChinese(): boolean {
-  const locale = (moment.locale() || "en").toLowerCase().replace("_", "-");
+  // Moment's locale can be changed by date settings in other plugins.
+  // Older Obsidian releases use the persisted UI language as a fallback.
+  let language = (obsidian as { getLanguage?: () => string }).getLanguage?.();
+  if (!language) {
+    try {
+      language = window.localStorage.getItem("language") ?? "en";
+    } catch {
+      language = "en";
+    }
+  }
+  const locale = language.toLowerCase().replace("_", "-");
   return locale === "zh" || locale.startsWith("zh-");
 }
 

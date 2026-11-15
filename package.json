@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production",
+    "test:i18n": "node scripts/test-i18n.cjs",
     "prettier": "prettier --write 'src/**/*.+(ts|tsx|json|html|css)' 'styles.css'",
     "eslint": "eslint . --ext .ts,.tsx --fix"
   },
