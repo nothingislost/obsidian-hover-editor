@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting, requireApiVersion } from "obsidian";
 
 import HoverEditorPlugin from "../main";
+import { t } from "../i18n";
 import { parseCssUnitValue } from "../utils/misc";
 
 export interface HoverEditorSettings {
@@ -40,14 +41,24 @@ export const DEFAULT_SETTINGS: HoverEditorSettings = {
 };
 
 export const modeOptions = {
-  preview: "Reading view",
-  source: "Editing view",
-  match: "Match current view",
+  get preview() {
+    return t("readingView");
+  },
+  get source() {
+    return t("editingView");
+  },
+  get match() {
+    return t("matchCurrent");
+  },
 };
 
 export const pinOptions = {
-  onMove: "On drag or resize",
-  always: "Always",
+  get onMove() {
+    return t("onMove");
+  },
+  get always() {
+    return t("always");
+  },
 };
 
 export class SettingTab extends PluginSettingTab {
@@ -65,7 +76,7 @@ export class SettingTab extends PluginSettingTab {
 
     containerEl.empty();
 
-    new Setting(containerEl).setName("Default Mode").addDropdown(cb => {
+    new Setting(containerEl).setName(t("defaultMode")).addDropdown(cb => {
       cb.addOptions(modeOptions);
       cb.setValue(this.plugin.settings.defaultMode);
       cb.onChange(async value => {
@@ -74,7 +85,7 @@ export class SettingTab extends PluginSettingTab {
       });
     });
 
-    new Setting(containerEl).setName("Auto Pin").addDropdown(cb => {
+    new Setting(containerEl).setName(t("autoPin")).addDropdown(cb => {
       cb.addOptions(pinOptions);
       cb.setValue(this.plugin.settings.autoPin);
       cb.onChange(value => {
@@ -84,10 +95,8 @@ export class SettingTab extends PluginSettingTab {
     });
 
     new Setting(containerEl)
-      .setName("Trigger hover preview on embeds")
-      .setDesc(
-        "Allow hover preview to trigger when hovering over any type of rendered embed such as images or block references",
-      )
+      .setName(t("hoverEmbeds"))
+      .setDesc(t("hoverEmbedsDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.hoverEmbeds).onChange(value => {
           this.plugin.settings.hoverEmbeds = value;
@@ -96,10 +105,8 @@ export class SettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Trigger hover preview on sub-heading links")
-      .setDesc(
-        "Use hover editor for links to subheadings, instead of the built-in preview/editor",
-      )
+      .setName(t("headings"))
+      .setDesc(t("headingsDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.headings === "always").onChange(value => {
           this.plugin.settings.headings = value ? "always" : "never";
@@ -108,10 +115,8 @@ export class SettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Trigger hover preview on block links")
-      .setDesc(
-        "Use hover editor for links to blocks, instead of the built-in preview/editor",
-      )
+      .setName(t("blocks"))
+      .setDesc(t("blocksDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.blocks === "always").onChange(value => {
           this.plugin.settings.blocks = value ? "always" : "never";
@@ -120,10 +125,8 @@ export class SettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Trigger hover preview on footnotes")
-      .setDesc(
-        "Use hover editor for footnotes, instead of the built-in preview/editor",
-      )
+      .setName(t("footnotes"))
+      .setDesc(t("footnotesDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.footnotes === "always").onChange(value => {
           this.plugin.settings.footnotes = value ? "always" : "never";
@@ -132,8 +135,8 @@ export class SettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Auto Focus")
-      .setDesc("Set the hover editor as the active pane when opened")
+      .setName(t("autoFocus"))
+      .setDesc(t("autoFocusDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.autoFocus).onChange(value => {
           this.plugin.settings.autoFocus = value;
@@ -142,8 +145,8 @@ export class SettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Minimize downwards")
-      .setDesc("When double clicking to minimize, the window will roll down instead of rolling up")
+      .setName(t("minimizeDown"))
+      .setDesc(t("minimizeDownDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.rollDown).onChange(value => {
           this.plugin.settings.rollDown = value;
@@ -152,12 +155,8 @@ export class SettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Snap to edges")
-      .setDesc(
-        `Quickly arrange popovers by dragging them to the edges of the screen. The left and right edges 
-        will maximize the popover vertically. The top edge will maximize the popover to fill the entire 
-        screen. Dragging the popovers away from the edges will restore the popver to its original size.`,
-      )
+      .setName(t("snapEdges"))
+      .setDesc(t("snapEdgesDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.snapToEdges).onChange(value => {
           this.plugin.settings.snapToEdges = value;
@@ -166,11 +165,8 @@ export class SettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Show view header by default")
-      .setDesc(
-        `Show the view header by default when triggering a hover editor.
-         When disabled, view headers will only show if you click the view header icon to the left of the minimize button.`,
-      )
+      .setName(t("showHeader"))
+      .setDesc(t("showHeaderDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.showViewHeader).onChange(value => {
           this.plugin.settings.showViewHeader = value;
@@ -179,11 +175,8 @@ export class SettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Click to zoom image")
-      .setDesc(
-        `Click and hold an image within a hover editor to temporarily maximize the popover and image to fill the entire viewport. 
-        On mouse up, the hover editor will restore to its original size.`,
-      )
+      .setName(t("imageZoom"))
+      .setDesc(t("imageZoomDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.imageZoom).onChange(value => {
           this.plugin.settings.imageZoom = value;
@@ -192,8 +185,8 @@ export class SettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Initial popover width")
-      .setDesc("Enter any valid CSS unit")
+      .setName(t("initialWidth"))
+      .setDesc(t("cssUnit"))
       .addText(textfield => {
         textfield.setPlaceholder(this.plugin.settings.initialWidth);
         textfield.inputEl.type = "text";
@@ -206,8 +199,8 @@ export class SettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Initial popover height")
-      .setDesc("Enter any valid CSS unit")
+      .setName(t("initialHeight"))
+      .setDesc(t("cssUnit"))
       .addText(textfield => {
         textfield.setPlaceholder(String(this.plugin.settings.initialHeight));
         textfield.inputEl.type = "text";
@@ -220,8 +213,8 @@ export class SettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Hover Trigger Delay (ms)")
-      .setDesc("How long to wait before showing a Hover Editor when hovering over a link")
+      .setName(t("triggerDelay"))
+      .setDesc(t("triggerDelayDesc"))
       .addText(textfield => {
         textfield.setPlaceholder(String(this.plugin.settings.triggerDelay));
         textfield.inputEl.type = "number";
@@ -233,8 +226,8 @@ export class SettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Hover Close Delay (ms)")
-      .setDesc("How long to wait before closing a Hover Editor once the mouse leaves")
+      .setName(t("closeDelay"))
+      .setDesc(t("closeDelayDesc"))
       .addText(textfield => {
         textfield.setPlaceholder(String(this.plugin.settings.closeDelay));
         textfield.inputEl.type = "number";

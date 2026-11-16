@@ -35,6 +35,7 @@ import { snapActivePopover, snapDirections, restoreActivePopover, minimizeActive
 import { Scope } from "@interactjs/types";
 import interactStatic from "@nothingislost/interactjs";
 import { isA } from "./utils/misc";
+import { t } from "./i18n";
 
 class Interactor extends PerWindowComponent {
   interact = this.createInteractor();
@@ -217,7 +218,7 @@ export default class HoverEditorPlugin extends Plugin {
             menu.addItem(item => {
               item
                 .setIcon("popup-open")
-                .setTitle("Open in Hover Editor")
+                .setTitle(t("openInHover"))
                 .onClick(async () => {
                   const newLeaf = plugin.spawnPopover(), {autoFocus} = plugin.settings;
                   await newLeaf.setViewState({...this.leaf.getViewState(), active: autoFocus}, {focus: autoFocus});
@@ -231,7 +232,7 @@ export default class HoverEditorPlugin extends Plugin {
             menu.addItem(item => {
               item
                 .setIcon("popup-open")
-                .setTitle("Convert to Hover Editor")
+                .setTitle(t("convertToHover"))
                 .onClick(() => {
                   plugin.convertLeafToPopover(this.leaf);
                 })
@@ -241,7 +242,7 @@ export default class HoverEditorPlugin extends Plugin {
             menu.addItem(item => {
               item
                 .setIcon("popup-open")
-                .setTitle("Dock Hover Editor to workspace")
+                .setTitle(t("dockToWorkspace"))
                 .onClick(() => {
                   plugin.dockPopoverToWorkspace(this.leaf);
                 })
@@ -264,7 +265,7 @@ export default class HoverEditorPlugin extends Plugin {
             iconEl.draggable = true
             iconEl.addEventListener("dragstart", e => { this.app.workspace.onDragLeaf(e, this.leaf) })
             setIcon(iconEl, this.getIcon())
-            setTooltip(iconEl, "Drag to rearrange")
+            setTooltip(iconEl, t("dragToRearrange"))
           }
           return old.call(this)
         }
@@ -477,7 +478,7 @@ export default class HoverEditorPlugin extends Plugin {
           menu.addItem(item => {
             item
               .setIcon("popup-open")
-              .setTitle("Open in Hover Editor")
+              .setTitle(t("openInHover"))
               .onClick(() => {
                 const newLeaf = this.spawnPopover();
                 newLeaf.openFile(file);
@@ -595,7 +596,7 @@ export default class HoverEditorPlugin extends Plugin {
   registerCommands() {
     this.addCommand({
       id: "bounce-popovers",
-      name: "Toggle bouncing popovers",
+      name: t("toggleBounce"),
       callback: () => {
         this.activePopovers.forEach(popover => {
           popover.toggleBounce();
@@ -604,7 +605,7 @@ export default class HoverEditorPlugin extends Plugin {
     });
     this.addCommand({
       id: "open-new-popover",
-      name: "Open new Hover Editor",
+      name: t("openNew"),
       callback: () => {
         // Focus the leaf after it's shown
         const newLeaf = this.spawnPopover(undefined, () => this.app.workspace.setActiveLeaf(newLeaf, false, true));
@@ -612,7 +613,7 @@ export default class HoverEditorPlugin extends Plugin {
     });
     this.addCommand({
       id: "open-link-in-new-popover",
-      name: "Open link under cursor in new Hover Editor",
+      name: t("openLinkNew"),
       checkCallback: (checking: boolean) => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView) {
@@ -632,7 +633,7 @@ export default class HoverEditorPlugin extends Plugin {
     });
     this.addCommand({
       id: "open-current-file-in-new-popover",
-      name: "Open current file in new Hover Editor",
+      name: t("openCurrentNew"),
       checkCallback: (checking: boolean) => {
         const activeFile = this.app.workspace.activeEditor?.file ?? this.app.workspace.getActiveFile();
         if (activeFile) {
@@ -647,7 +648,7 @@ export default class HoverEditorPlugin extends Plugin {
     });
     this.addCommand({
       id: "convert-active-pane-to-popover",
-      name: "Convert active pane to Hover Editor",
+      name: t("convertActive"),
       checkCallback: (checking: boolean) => {
         const { activeLeaf } = this.app.workspace;
         if (activeLeaf) {
@@ -661,7 +662,7 @@ export default class HoverEditorPlugin extends Plugin {
     });
     this.addCommand({
       id: "dock-active-popover-to-workspace",
-      name: "Dock active Hover Editor to workspace",
+      name: t("dockActive"),
       checkCallback: (checking: boolean) => {
         const { activeLeaf } = this.app.workspace;
         if (activeLeaf && HoverEditor.forLeaf(activeLeaf)) {
@@ -675,14 +676,14 @@ export default class HoverEditorPlugin extends Plugin {
     });
     this.addCommand({
       id: `restore-active-popover`,
-      name: `Restore active Hover Editor`,
+      name: t("restoreActive"),
       checkCallback: (checking: boolean) => {
         return restoreActivePopover(checking);
       },
     });
     this.addCommand({
       id: `minimize-active-popover`,
-      name: `Minimize active Hover Editor`,
+      name: t("minimizeActive"),
       checkCallback: (checking: boolean) => {
         return minimizeActivePopover(checking);
       },
@@ -690,7 +691,7 @@ export default class HoverEditorPlugin extends Plugin {
     snapDirections.forEach(direction => {
       this.addCommand({
         id: `snap-active-popover-to-${direction}`,
-        name: `Snap active Hover Editor to ${direction}`,
+        name: t("snapActive", { direction: t(`snap${direction[0].toUpperCase()}${direction.slice(1)}` as "snapLeft" | "snapRight" | "snapViewport") }),
         checkCallback: (checking: boolean) => {
           return snapActivePopover(direction, checking);
         },
