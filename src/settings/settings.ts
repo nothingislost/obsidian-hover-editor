@@ -41,14 +41,24 @@ export const DEFAULT_SETTINGS: HoverEditorSettings = {
 };
 
 export const modeOptions = {
-  get preview() { return t("readingView"); },
-  get source() { return t("editingView"); },
-  get match() { return t("matchCurrent"); },
+  get preview() {
+    return t("readingView");
+  },
+  get source() {
+    return t("editingView");
+  },
+  get match() {
+    return t("matchCurrent");
+  },
 };
 
 export const pinOptions = {
-  get onMove() { return t("onMove"); },
-  get always() { return t("always"); },
+  get onMove() {
+    return t("onMove");
+  },
+  get always() {
+    return t("always");
+  },
 };
 
 export class SettingTab extends PluginSettingTab {
@@ -86,9 +96,7 @@ export class SettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("hoverEmbeds"))
-      .setDesc(
-        t("hoverEmbedsDesc"),
-      )
+      .setDesc(t("hoverEmbedsDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.hoverEmbeds).onChange(value => {
           this.plugin.settings.hoverEmbeds = value;
@@ -98,9 +106,7 @@ export class SettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("headings"))
-      .setDesc(
-        t("headingsDesc"),
-      )
+      .setDesc(t("headingsDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.headings === "always").onChange(value => {
           this.plugin.settings.headings = value ? "always" : "never";
@@ -110,9 +116,7 @@ export class SettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("blocks"))
-      .setDesc(
-        t("blocksDesc"),
-      )
+      .setDesc(t("blocksDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.blocks === "always").onChange(value => {
           this.plugin.settings.blocks = value ? "always" : "never";
@@ -122,9 +126,7 @@ export class SettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t("footnotes"))
-      .setDesc(
-        t("footnotesDesc"),
-      )
+      .setDesc(t("footnotesDesc"))
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.footnotes === "always").onChange(value => {
           this.plugin.settings.footnotes = value ? "always" : "never";

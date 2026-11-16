@@ -4,7 +4,8 @@ const en = {
   defaultMode: "Default Mode",
   autoPin: "Auto Pin",
   hoverEmbeds: "Trigger hover preview on embeds",
-  hoverEmbedsDesc: "Allow hover preview to trigger when hovering over any type of rendered embed such as images or block references",
+  hoverEmbedsDesc:
+    "Allow hover preview to trigger when hovering over any type of rendered embed such as images or block references",
   headings: "Trigger hover preview on sub-heading links",
   headingsDesc: "Use hover editor for links to subheadings, instead of the built-in preview/editor",
   blocks: "Trigger hover preview on block links",
@@ -53,7 +54,7 @@ const en = {
   snapLeft: "left",
   snapRight: "right",
   snapViewport: "viewport",
-  createFile: "{{link}} is not yet created. Click to create."
+  createFile: "{{link}} is not yet created. Click to create.",
 };
 
 const zh: typeof en = {
@@ -105,7 +106,7 @@ const zh: typeof en = {
   snapLeft: "左侧",
   snapRight: "右侧",
   snapViewport: "视口",
-  createFile: "{{link}} 尚未创建。点击创建。"
+  createFile: "{{link}} 尚未创建。点击创建。",
 };
 
 function isChinese(): boolean {
@@ -125,8 +126,5 @@ function isChinese(): boolean {
 
 export function t(key: keyof typeof en, values: Record<string, string> = {}): string {
   const template = (isChinese() ? zh : en)[key];
-  return Object.entries(values).reduce(
-    (text, [name, value]) => text.split(`{{${name}}}`).join(value),
-    template,
-  );
+  return Object.entries(values).reduce((text, [name, value]) => text.split(`{{${name}}}`).join(value), template);
 }
